@@ -19,7 +19,7 @@ OPEN_LAKE = (-87.55, 41.90)       # a point 6 km offshore from downtown: certain
 PLACE = f"https://www2.census.gov/geo/tiger/TIGER{YEAR}/PLACE/tl_{YEAR}_17_place.zip"
 # the area covered: well past every L and Metra station (Kenosha 42.58 N, Harvard -88.61, Manhattan 41.42 N, University Park,
 # the Indiana shore), wider than the map itself, so its cut edges sit off-screen. (CTABot's was 41.50-42.25 N, 88.20-87.25 W.)
-S, N, W, E = 41.30, 42.72, -88.80, -87.15
+S, N, W, E = 41.30, 42.72, -88.80, -86.20   # east to 86.2 W: the Indiana shore past Michigan City and the corner of Michigan, so zoomed all the way out the lake has its real south-east shore
 SIMPLIFY_M = 15
 
 

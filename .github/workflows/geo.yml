@@ -1,10 +1,10 @@
-# Downloads the real Lake Michigan shoreline and town boundaries (US Census TIGER), saves data/geo.json and rebuilds the map.
+# Downloads the real Lake Michigan shoreline, town boundaries and state lines (US Census), saves data/geo.json + data/states.json and rebuilds the map.
 # Boundaries rarely change, so this runs only when the builder changes, or by hand: Actions tab -> "Refresh map outlines" -> Run workflow.
 name: Refresh map outlines
 on:
   workflow_dispatch:
   push:
-    paths: ["tools/build_geo.py", ".github/workflows/geo.yml"]
+    paths: ["tools/build_geo.py", "tools/build_states.py", ".github/workflows/geo.yml"]
 permissions:
   contents: write
 jobs:
@@ -20,10 +20,12 @@ jobs:
         run: |
           mkdir -p data
           python tools/build_geo.py 2> err.txt || { echo "::error::$(tail -c 1500 err.txt | tr '\n' ' ')"; exit 1; }
+      - name: Build data/states.json (state lines, from census.gov)
+        run: python tools/build_states.py
       - run: python tools/build_layout.py
       - name: Save it if it changed
         run: |
-          git add data/geo.json data/network.json index.html
+          git add data/geo.json data/states.json data/network.json index.html
           if git diff --cached --quiet; then echo "Outlines unchanged."; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

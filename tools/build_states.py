@@ -23,9 +23,9 @@ import io, json, math, os, sys, urllib.request, zipfile
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 URL = "https://raw.githubusercontent.com/unitedstates/districts/gh-pages/states/{}/shape.geojson"
 CENSUS = "https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_us_state_500k.zip"
-FIPS = {"17": "IL", "18": "IN", "55": "WI"}
-S, N, W, E = 41.30, 42.72, -88.80, -87.15          # the base map's area (tools/build_geo.py)
-PAIRS = [("IL", "WI"), ("IL", "IN")]
+FIPS = {"17": "IL", "18": "IN", "55": "WI", "26": "MI"}
+S, N, W, E = 41.30, 42.72, -88.80, -86.20          # the base map's area (tools/build_geo.py)
+PAIRS = [("IL", "WI"), ("IL", "IN"), ("IN", "MI")]   # every state line in the area (Wisconsin-Michigan runs mid-lake: covered by the water)
 ON_LINE_M = 60                                     # an Illinois point this close to the neighbour's outline is on the state line
 SIMPLIFY_M = 15
 COS = math.cos(math.radians(42.0))
@@ -54,7 +54,7 @@ def from_census():
 
 def from_unitedstates(d):
     out = {}
-    for code in ("IL", "IN", "WI"):
+    for code in ("IL", "IN", "WI", "MI"):
         g = json.load(open(os.path.join(d, code + ".geojson"))) if d else \
             json.loads(urllib.request.urlopen(urllib.request.Request(URL.format(code), headers=UA), timeout=120).read())
         out[code] = rings(g)

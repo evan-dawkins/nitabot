@@ -600,7 +600,7 @@ def main():
         for L in json.load(open("data/states.json"))["lines"]:
             for part in L["parts"]:
                 states.append({"between": L["between"], "pts": [[round(x, 1), round(y, 1)] for x, y in (xy(a, b) for a, b in part)]})
-        for name, lat, lon in (("WISCONSIN", 42.545, -88.36), ("ILLINOIS", 42.445, -88.36), ("INDIANA", 41.36, -87.40), ("ILLINOIS", 41.36, -87.66)):
+        for name, lat, lon in (("WISCONSIN", 42.545, -88.36), ("ILLINOIS", 42.445, -88.36), ("INDIANA", 41.36, -87.40), ("ILLINOIS", 41.36, -87.66), ("INDIANA", 41.62, -86.75), ("MICHIGAN", 41.90, -86.50)):
             x, y = xy(lat, lon); state_names.append({"name": name, "xy": [round(x, 1), round(y, 1)]})
 
     # ---- 7. O'Hare's Airport Transit System (not CTA: drawn only when zoomed in at the airport; data/ats.json from OpenStreetMap)
