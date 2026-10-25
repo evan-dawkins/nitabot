@@ -33,6 +33,8 @@ Phase A split CTABot's published page into these files without changing a byte: 
 | `systems/cta/trains.js` | Train markers, CTA feed, GPS matching, polling |
 | `systems/cta/alerts.js` | Service alerts, simulated mode, header status, tooltips, train card |
 | `systems/cta/times.js` | CTA arrival times |
+| `systems/metra/feed.js` | Metra's feed: GPS positions, trip predictions, alerts; turns Metra trains into the shared train shape |
+| `systems/metra/board.js` | Departure boards for Ogilvie, Union Station, LaSalle St and Millennium (from `schedule.json`) |
 | `core/favorites.js` | Favorite stations, station sheet, mood ticker |
 | `core/chase.js` | Train of the moment |
 | `core/checkins.js` | Voice check-ins (clips in `voice/cta/`) |

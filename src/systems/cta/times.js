@@ -41,6 +41,7 @@ function upcoming(rec){const a=ARR.get(rec.id),nowMs=serverNow();
   if(!a||a.err)return a;return{...a,etas:a.etas.filter(e=>!e.arrives_at||e.arrives_at>nowMs-45000)}}
 function arrivalSections(rec,per){
   if(mode==="sim")return{msg:"Arrival times show for live trains only."};
+  if(rec.sys==="metra"&&M_DOWNTOWN.has(rec.id))return mBoardSections(rec,per);   // downtown terminal: the departure board
   const a=upcoming(rec);
   if(!a)return{msg:"Getting arrival times…"};
   if(a.err)return{msg:"CTA's arrival times aren't answering right now."};
@@ -52,5 +53,6 @@ function arrivalSections(rec,per){
   return{html,src:"pred"}}
 function stationSchedule(rec,per){const r=arrivalSections(rec,per);
   if(r.msg)return`<div class="fav none" style="padding:0;border:0">${r.msg}</div>`;
+  if(r.src==="board")return r.html+`<div class="note">From Metra's timetable; a live prediction replaces the time when Metra has one.</div>`;
   return r.html+(rec.sys==="metra"?`<div class="note">Minutes are Metra's live predictions. Faded = no train reporting its position for it yet.</div>`
     :`<div class="note">Minutes are CTA's live predictions. Faded = scheduled, no train reporting for it yet.</div>`)}

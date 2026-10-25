@@ -73,10 +73,13 @@ def fake_metra():
                           "last_stop": st[-1]})
             n += 1
         lines[L["api"]] = out
-    return {"metra_lines": lines, "trips": trips, "alerts": [], "report": None}, n
+    alerts = [{"id": "T1", "header": "UP-N test alert: trains running 10 to 15 minutes late", "description": "Test only.",
+               "url": "", "routes": ["UP-N"], "stops": [], "periods": [], "effect": 3}]
+    return {"metra_lines": lines, "trips": trips, "alerts": alerts}, n
 
 
 METRA, N_METRA = fake_metra()
+METRA_DOWN = {"on": False}                     # set True to make the mock Metra feed fail
 arrival_ids = []
 hits = {}
 
@@ -87,6 +90,9 @@ def mock(route):
     hits[path] = hits.get(path, 0) + 1
     now = int(time.time() * 1000)
     if path == "/":
+        if METRA_DOWN["on"]:
+            return route.fulfill(status=502, content_type="application/json", body=json.dumps({"metra_error": "test outage"}),
+                                 headers={"access-control-allow-origin": "*"})
         body = dict(METRA, fetched_at=now)
     elif path == "/cta/positions":
         body = dict(POS, fetched_at=now)
@@ -198,6 +204,16 @@ def main():
         pg.screenshot(path=os.path.join(OUT, "desktop-metra-station.png"))
         pg.evaluate("document.querySelector('#spop .x').click()")
         check("no CTA arrival request ever names a Metra station", all(i.isdigit() for i in arrival_ids), ",".join(arrival_ids[:8]))
+        # a downtown terminal shows its departure board (from schedule.json)
+        pg.evaluate("__cta.openStationPop(__cta.STN.get('CUS'))"); pg.wait_for_timeout(1500)
+        txt = pg.evaluate("document.getElementById('spop').innerText")
+        ok = "departures" in txt.lower() and ("Scheduled" in txt or "On time" in txt or "late" in txt) or "No Metra departures in the next 3 hours" in txt
+        check("Union Station shows its departure board", ok, txt.replace("\n", " | ")[:200])
+        pg.screenshot(path=os.path.join(OUT, "desktop-departures.png"))
+        pg.evaluate("document.querySelector('#spop .x').click()")
+        # Metra's alert sits beside CTA's
+        n_al = pg.evaluate("document.getElementById('acount').textContent")
+        check("Metra's alerts show in the alert panel", n_al == "1", f"count {n_al!r}")
 
         # train of the moment
         pg.evaluate("__cta.startRide()"); pg.wait_for_timeout(4500)
@@ -222,6 +238,17 @@ def main():
         # requests made, all to the mocked Worker
         check("both feeds were polled", hits.get("/cta/positions", 0) >= 1 and hits.get("/", 0) >= 1, json.dumps(hits))
         check("no errors on desktop", not errs, "; ".join(errs[:3]))
+        pg.context.close()
+
+        # ---- Metra's feed down: the header says so, CTA keeps running
+        METRA_DOWN["on"] = True
+        pg, errs = open_page(br, port)
+        pg.wait_for_function("window.__cta && __cta.trains.length > 0", timeout=20000)
+        pg.wait_for_timeout(2500)
+        st = pg.evaluate("document.getElementById('stateText').textContent")
+        msg = pg.evaluate("document.getElementById('notice').innerText")
+        check("Metra feed down: header says so, CTA trains still live", st == "Metra offline" and "Metra" in msg, f"{st} / {msg[:80]}")
+        METRA_DOWN["on"] = False
         pg.context.close()
 
         # ---- welcome guide on first visit

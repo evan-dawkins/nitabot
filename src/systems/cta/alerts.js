@@ -10,24 +10,36 @@ const ROUTE_KEY=API_KEY;
 const EFFECT={1:"No service",2:"Reduced service",3:"Significant delays",4:"Detour",5:"Added service",6:"Modified service",
   9:"Stop moved",11:"Accessibility"};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function takeAlerts(data){
-  if(!("alerts" in data)&&!("alerts_error" in data)){alerts=null;renderAlerts();return}   // older Worker: no alerts feature
-  alertsErr=data.alerts_error?String(data.alerts_error):"";
-  if(Array.isArray(data.alerts)){
-    const seen=new Set(),list=[];
-    for(const a of data.alerts){if(!a||typeof a!=="object")continue;const id=String(a.id??(a.header||"")+(a.description||""));
-      if(seen.has(id))continue;seen.add(id);
-      const keys=[...new Set((Array.isArray(a.lines)?a.lines:[]).map(r=>ROUTE_KEY[r]).filter(Boolean))];
-      const where=[...new Set((Array.isArray(a.stations)?a.stations:[]).map(s=>STN.get(String(s))).filter(Boolean).map(r=>r.label))].join(", ");
-      list.push({id,keys,where,header:String(a.header||a.short||"").trim(),desc:String(a.description||a.short||"").trim(),
-        url:/^https:\/\//i.test(a.url||"")?a.url:"",effect:String(a.impact||"").trim(),
-        end:+a.end>0?Math.round(+a.end/1000):0})}
+// Both systems' alerts, kept apart and shown together. sys = "cta" (CTA Customer Alerts) or "metra" (Metra's alerts feed).
+const ALERT_BY={cta:null,metra:null},ALERT_ERR={cta:"",metra:""};
+const SYS_NAME={cta:"CTA",metra:"Metra"};
+function alertEnd(a,sys){if(sys==="cta")return+a.end>0?Math.round(+a.end/1000):0;
+  const ends=(Array.isArray(a.periods)?a.periods:[]).map(p=>+p.end||0);return ends.length&&ends.every(x=>x>0)?Math.max(...ends):0}
+function takeAlerts(data,sys="cta"){
+  if(!("alerts" in data)&&!("alerts_error" in data))ALERT_BY[sys]=null;   // older Worker: no alerts from it
+  else{
+    ALERT_ERR[sys]=data.alerts_error?String(data.alerts_error):"";
+    if(Array.isArray(data.alerts)){
+      const seen=new Set(),list=[],KEY=sys==="metra"?METRA_KEY:ROUTE_KEY;
+      for(const a of data.alerts){if(!a||typeof a!=="object")continue;const id=sys+":"+String(a.id??(a.header||"")+(a.description||""));
+        if(seen.has(id))continue;seen.add(id);
+        const keys=[...new Set((Array.isArray(sys==="metra"?a.routes:a.lines)?(sys==="metra"?a.routes:a.lines):[]).map(r=>KEY[r]).filter(Boolean))];
+        const where=[...new Set((Array.isArray(sys==="metra"?a.stops:a.stations)?(sys==="metra"?a.stops:a.stations):[]).map(x=>STN.get(String(x))).filter(Boolean).map(r=>r.label))].join(", ");
+        list.push({id,sys,keys,where,header:String(a.header||a.short||"").trim(),desc:String(a.description||a.short||"").trim(),
+          url:/^https:\/\//i.test(a.url||"")?a.url:"",effect:sys==="metra"?(EFFECT[a.effect]||""):String(a.impact||"").trim(),end:alertEnd(a,sys)})}
+      ALERT_BY[sys]=list;
+    }else if(!ALERT_BY[sys])ALERT_BY[sys]=[];
+  }
+  const parts=[ALERT_BY.cta,ALERT_BY.metra].filter(Boolean);
+  const list=parts.length?[].concat(...parts):null;
+  alertsErr=["cta","metra"].filter(k=>ALERT_ERR[k]).map(k=>SYS_NAME[k]).join(" and ");   // whose alerts feed isn't answering
+  if(list){
     // a gentle pulse on the button only when a genuinely new alert shows up after the first load
     if(seenAlertIds){for(const a of list)if(!seenAlertIds.has(a.id)){pulseAlerts();break}}
     seenAlertIds=new Set(list.map(a=>a.id));
     for(const id of[...openAlerts])if(!seenAlertIds.has(id))openAlerts.delete(id);
-    alerts=list;
-  }else if(!alerts)alerts=[];
+  }
+  alerts=list;
   renderAlerts();
 }
 function pulseAlerts(){const b=$("abtn");b.classList.remove("fresh");void b.offsetWidth;b.classList.add("fresh")}
@@ -48,21 +60,21 @@ function renderAlerts(){
   btn.classList.toggle("has",n>0);
   $("acount").textContent=n?String(n):"";
   $("aword").textContent=n?(n===1?"alert":"alerts"):(alertsErr&&!alerts.length?"Alerts unavailable":"No alerts");
-  btn.title=n?`${n} CTA service alert${n>1?"s":""}${focusKey?" for the "+LINES[focusKey].name:""}`:"No active CTA service alerts";
+  btn.title=n?`${n} service alert${n>1?"s":""}${focusKey?" for the "+LINES[focusKey].name:""}`:"No active service alerts";
   const stale=alertsErr&&alerts.length;           // feed down: these are the last ones we saw, say so
   $("ascope").textContent=(focusKey?`${LINES[focusKey].code} and system-wide`:n?"All lines":"")+(stale?" · last known, feed not answering":"");
   if(stale)btn.title+=" (last known; alerts feed not answering)";
   const sig=JSON.stringify([vis.map(a=>a.id),focusKey,alertsErr,[...openAlerts]]);
   if(sig===alertSig)return;alertSig=sig;
   const L=$("alist");
-  if(!n){L.innerHTML=`<div class="aempty">${alertsErr&&!alerts.length?"CTA's alerts feed isn't answering right now.":"No active alerts"+(focusKey?" for "+esc(LINES[focusKey].name):"")+"."}</div>`;return}
+  if(!n){L.innerHTML=`<div class="aempty">${alertsErr&&!alerts.length?alertsErr+"'s alerts feed isn't answering right now.":"No active alerts"+(focusKey?" for "+esc(LINES[focusKey].name):"")+"."}</div>`;return}
   L.innerHTML=vis.map(a=>{
     const bars=a.keys.length?a.keys.map(k=>`<i style="background:${LINES[k].color}"></i>`).join(""):`<i style="background:var(--faint)"></i>`;
-    const tags=[a.keys.length?a.keys.map(k=>LINES[k].code).join(", "):a.where||"All lines"];
+    const tags=[a.keys.length?a.keys.map(k=>LINES[k].code).join(", "):a.where||(a.sys==="metra"?"All Metra lines":"All L lines")];
     const fx=a.effect?`<span class="fx">${esc(a.effect)}</span>`:"";
     const until=a.end?`<span>${esc(fmtUntil(a.end))}</span>`:"";
     const body=a.desc||a.url;
-    const more=body?`<div class="more"><div>${esc(a.desc)}${a.url?`${a.desc?"\n\n":""}<a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">Details on transitchicago.com</a>`:""}</div></div>`:"";
+    const more=body?`<div class="more"><div>${esc(a.desc)}${a.url?`${a.desc?"\n\n":""}<a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">Details on ${a.sys==="metra"?"metra.com":"transitchicago.com"}</a>`:""}</div></div>`:"";
     return`<div class="aitem${openAlerts.has(a.id)?" open":""}" data-id="${esc(a.id)}" ${body?'role="button" tabindex="0" aria-expanded="'+openAlerts.has(a.id)+'"':""}>`
       +`<span class="bars">${bars}</span><div><div class="tags"><span>${esc(tags[0])}</span>${fx}${until}${body?'<span class="chev" aria-hidden="true">▾</span>':""}</div>`
       +`<div class="h">${esc(a.header||a.desc.split("\n")[0])}</div>${more}</div></div>`}).join("");
@@ -108,14 +120,14 @@ document.addEventListener("visibilitychange",()=>{
 /* ---- status ---- */
 function ago(ms){const s=Math.max(0,Math.round(ms/1000));if(s<5)return"just now";if(s<60)return s+" s ago";const m=Math.round(s/60);return m<60?m+" min ago":Math.round(m/60)+" h ago"}
 function setState(cls,text){const s=$("state");s.className="state "+cls;$("stateText").textContent=text;
-  document.body.classList.toggle("trouble",everLoaded&&mode!=="sim"&&(cls==="warn"||cls==="err"))}
+  document.body.classList.toggle("trouble",(everLoaded||mEverLoaded)&&mode!=="sim"&&(cls==="warn"||cls==="err"))}
 function notice(html){const n=$("notice");
   if(html){if(n.dataset.h!==html){const i=html.indexOf('<div class="acts">');
       n.innerHTML=i<0?`<div class="msg">${html}</div>`:`<div class="msg">${html.slice(0,i)}</div>${html.slice(i)}`;n.dataset.h=html;labelsDirty=true}
     if(!n.classList.contains("on")){n.classList.add("on");labelsDirty=true}}
   else if(n.classList.contains("on")){n.classList.remove("on");n.dataset.h="";labelsDirty=true}}
 $("notice").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
-  if(b.dataset.act==="sim")startSim();else if(b.dataset.act==="live")stopSim();else if(b.dataset.act==="retry")poll()});
+  if(b.dataset.act==="sim")startSim();else if(b.dataset.act==="live")stopSim();else if(b.dataset.act==="retry"){poll();pollMetra()}});
 const SIM_OFFER=`<div class="acts"><button class="go" data-act="sim">Show simulated trains</button><button data-act="retry">Try again</button></div>`;
 function refreshStatus(){
   if(mode==="sim"){
@@ -125,29 +137,34 @@ function refreshStatus(){
     notice(liveBack?`The live feed is working again. <div class="acts"><button class="go" data-act="live">Switch to live</button></div>`
       :`Simulated trains, not real positions. <div class="acts"><button data-act="live">Try live</button></div>`);
     return}
-  const vis=trains.filter(t=>!focusKey||t.L.key===focusKey),fresh=vis.filter(t=>!t.stale);
-  $("count").textContent=everLoaded?fresh.length:"–";
-  for(const k of ORDER){const n=trains.filter(t=>t.L.key===k&&!t.stale).length;$("n-"+k).textContent=everLoaded?n:""}
-  const age=Date.now()-lastOkAt;
-  if(!everLoaded){
-    if(fails>0){setState("err","Offline");$("updated").textContent="No data received yet";
-      notice(`Can't reach the live feed. <span>${lastError}. Trying again every 30 s.</span>${SIM_OFFER}`)}
+  const vis=trains.filter(t=>!focusKey||t.L.key===focusKey),fresh=vis.filter(t=>!t.stale),any=everLoaded||mEverLoaded;
+  $("count").textContent=any?fresh.length:"–";
+  for(const k of ORDER){const n=trains.filter(t=>t.L.key===k&&!t.stale).length;$("n-"+k).textContent=any?n:""}
+  // each feed on its own: CTA (positions every 30 s) and Metra (GPS + predictions every 30 s)
+  const F=[{name:"CTA",loaded:everLoaded,ok:lastOkAt,fails,err:lastError},{name:"Metra",loaded:mEverLoaded,ok:mLastOk,fails:mFails,err:mErr}];
+  for(const f of F){f.age=Date.now()-f.ok;f.down=f.loaded?(f.fails>=3||f.age>3*POLL):f.fails>0;f.slow=!f.down&&f.loaded&&(f.fails>0||f.age>POLL*1.6)}
+  const down=F.filter(f=>f.down),up=F.filter(f=>f.loaded&&!f.down);
+  if(!any){
+    if(down.length===2){setState("err","Offline");$("updated").textContent="No data received yet";
+      notice(`Can't reach the live feeds. <span>${F[0].err||F[1].err}. Trying again every 30 s.</span>${SIM_OFFER}`)}
     else{setState("busy","Connecting");$("updated").textContent="Waiting for first report";notice("")}
     return}
-  $("updated").textContent="Updated "+ago(age);
-  if(fails>=3||age>3*POLL){setState("err","Offline");
-    notice(`Can't reach the live feed. <span>Last good data ${ago(age)}; trains shown at their last known positions. Retrying every 30 s.</span>${SIM_OFFER}`);return}
-  if(fails>0||age>POLL*1.6){setState("warn","Delayed");notice("");return}
-  if(!trains.length){setState("live","Live");notice(`No L trains are reporting right now. <span>Overnight only the Red and Blue Lines run. The map fills in as service starts.</span>`);return}
-  if(trains.every(t=>t.stale)){setState("warn","Feed not moving");notice(`CTA's feed is answering, but no train has reported a new position recently.`);return}
-  notice("");setState(inflight?"busy":"live","Live");
+  $("updated").textContent="Updated "+ago(Math.max(...up.map(f=>f.age),0));       // the older of the feeds that are working
+  if(down.length===2){setState("err","Offline");
+    notice(`Can't reach the live feeds. <span>Trains are shown at their last known positions. Retrying every 30 s.</span>${SIM_OFFER}`);return}
+  if(down.length===1){const d=down[0];setState("warn",d.name+" offline");
+    notice(`${d.name}'s feed isn't answering. <span>${d.loaded?`Its trains are shown at their last known positions (${ago(d.age)}).`:`Its trains will appear when it answers.`} Retrying every 30 s.</span>`);return}
+  if(F.some(f=>f.slow)){setState("warn","Delayed");notice("");return}
+  if(!trains.length){setState("live","Live");notice(`No trains are reporting right now. <span>Overnight only the Red and Blue Lines run, and Metra runs few trains. The map fills in as service starts.</span>`);return}
+  if(trains.every(t=>t.stale)){setState("warn","Feeds not moving");notice(`The feeds are answering, but no train has reported a new position recently.`);return}
+  notice("");setState(inflight||mInflight?"busy":"live","Live");
 }
 function tickHeader(){
   const now=new Date();$("clock").textContent=now.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",second:"2-digit",timeZone:"America/Chicago"});$("clock").title="Chicago time";
   const left=Math.max(0,nextPollAt-Date.now());
   $("state").title=mode==="sim"?"Simulated trains, not real positions":
     (everLoaded?"Updated "+ago(Date.now()-lastOkAt)+". ":"")+(inflight?"Checking now.":nextPollAt?"Next check in about "+Math.max(5,Math.ceil(left/5000)*5)+" s.":"")
-    +" CTA publishes new positions about every 30 seconds.";
+    +" CTA and Metra publish new positions about every 30 seconds.";
 }
 
 /* ---- tooltip ---- */

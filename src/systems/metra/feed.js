@@ -1,6 +1,6 @@
 /* =====================================================================
    METRA FEED — Metra's live GPS positions and trip predictions, through the same Worker MetraBot uses
-   (/?trips=1&report=1, every 30 s; paused while the tab is hidden, like the CTA feed).
+   (/?trips=1, every 30 s; paused while the tab is hidden, like the CTA feed).
    Each Metra train is turned into the same shape as a CTA report, so the train model, cards, tooltips and
    train of the moment treat both systems alike:
      uid          Metra's vehicle id (stable while the train runs)
@@ -11,7 +11,7 @@
    Positions are Metra's GPS. Nothing is placed where Metra didn't report it.
    ===================================================================== */
 const METRA_POLL=30000;
-let mTrips=null,mTripById=new Map(),mReport=null,mAlertsRaw=null,mLastOk=0,mFails=0,mErr="",mInflight=false,mTimer=0,mEverLoaded=false;
+let mTrips=null,mTripById=new Map(),mLastOk=0,mFails=0,mErr="",mInflight=false,mTimer=0,mEverLoaded=false;
 const mStopName=id=>{const r=STN.get(id);return r?r.label:id};
 // the first stop a trip still has ahead (Metra lists every stop with a predicted time; past ones drop off)
 function mNextStop(tr,nowSec){if(!tr||!Array.isArray(tr.stops))return null;
@@ -46,13 +46,12 @@ async function pollMetra(){clearTimeout(mTimer);
   if(mInflight)return;
   if(document.hidden&&mode==="live"&&!bgVoice()){mTimer=setTimeout(pollMetra,METRA_POLL);return}   // background tab: don't ask
   mInflight=true;const ac=new AbortController(),to=setTimeout(()=>ac.abort(),FETCH_TIMEOUT);
-  try{const resp=await fetch(WORKER_URL+"/?trips=1&report=1",{cache:"no-store",signal:ac.signal});
+  try{const resp=await fetch(WORKER_URL+"/?trips=1",{cache:"no-store",signal:ac.signal});
     let data=null;try{data=await resp.json()}catch(_){}
     if(!data||typeof data!=="object")throw new Error(resp.ok?"Metra's relay sent something unreadable":"Metra's relay answered "+resp.status);
     if(data.metra_error)throw new Error("Metra's feed returned an error: "+data.metra_error);
-    if(mode!=="sim"){mTakeTrips(data);ingest({lines:mReports(data)},METRA_ORDER);mEverLoaded=true}
-    mReport=data.report||null;mAlertsRaw=Array.isArray(data.alerts)?data.alerts:null;
+    if(mode!=="sim"){mTakeTrips(data);ingest({lines:mReports(data)},METRA_ORDER);mEverLoaded=true;takeAlerts(data,"metra")}
     mFails=0;mLastOk=Date.now();mErr=""}
   catch(e){mFails++;mErr=e&&e.name==="AbortError"?"Metra's feed took too long to answer":(e&&e.message)||"Network error"}
-  finally{clearTimeout(to);mInflight=false;mTimer=setTimeout(pollMetra,mFails?Math.min(METRA_POLL,10000*mFails):METRA_POLL)}}
+  finally{clearTimeout(to);mInflight=false;mTimer=setTimeout(pollMetra,mFails?Math.min(METRA_POLL,10000*mFails):METRA_POLL);refreshStatus()}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-mLastOk>METRA_POLL)pollMetra()});
