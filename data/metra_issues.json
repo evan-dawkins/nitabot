@@ -1,0 +1,1623 @@
+{
+ "checked": {
+  "metra_stations": 239,
+  "metrabot_stop_ids": 240,
+  "inbound_shapes": 15,
+  "branches_in_order": 15,
+  "limits_m": {
+   "station_off_track": 75,
+   "terminal": 150,
+   "long_stretch": 1000
+  }
+ },
+ "openstreetmap": "not checked yet: tools/check_osm.py runs as a GitHub Action (OpenStreetMap isn't reachable from the build machine)",
+ "problems": [],
+ "to_verify": [
+  {
+   "check": "no trains scheduled at this stop in Metra's file",
+   "stop_id": "95TH-UP",
+   "metrabot_station": "95th St|Chicago State",
+   "name": "95th St."
+  },
+  {
+   "check": "no trains scheduled at this stop in Metra's file",
+   "stop_id": "RAVINIAPK",
+   "metrabot_station": "Ravinia Park",
+   "name": "Ravinia Park"
+  },
+  {
+   "check": "Metra stop not in MetraBot",
+   "stop_id": "PETERSON",
+   "name": "Peterson/Ridge"
+  },
+  {
+   "check": "long straight stretch",
+   "line": "BNSF",
+   "shape_id": "BNSF_IB_1",
+   "metres": 1516,
+   "from": [
+    41.778521,
+    -88.190386
+   ],
+   "to": [
+    41.779028,
+    -88.172104
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "BNSF",
+   "shape_id": "BNSF_IB_1",
+   "metres": 1017,
+   "from": [
+    41.784188,
+    -88.119568
+   ],
+   "to": [
+    41.789407,
+    -88.109462
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "BNSF",
+   "shape_id": "BNSF_IB_1",
+   "metres": 2438,
+   "from": [
+    41.792958,
+    -88.100883
+   ],
+   "to": [
+    41.797834,
+    -88.0722
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "BNSF",
+   "shape_id": "BNSF_IB_1",
+   "metres": 1046,
+   "from": [
+    41.797179,
+    -88.055184
+   ],
+   "to": [
+    41.795705,
+    -88.042713
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "HC",
+   "shape_id": "HC_IB_1",
+   "metres": 1015,
+   "from": [
+    41.818734,
+    -87.736272
+   ],
+   "to": [
+    41.822275,
+    -87.724967
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 2123,
+   "from": [
+    42.352707,
+    -88.089826
+   ],
+   "to": [
+    42.342697,
+    -88.067968
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 1169,
+   "from": [
+    42.342697,
+    -88.067968
+   ],
+   "to": [
+    42.338021,
+    -88.055316
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 1145,
+   "from": [
+    42.338021,
+    -88.055316
+   ],
+   "to": [
+    42.333408,
+    -88.042945
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 1356,
+   "from": [
+    42.333408,
+    -88.042945
+   ],
+   "to": [
+    42.327983,
+    -88.028278
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 1912,
+   "from": [
+    42.299481,
+    -87.976636
+   ],
+   "to": [
+    42.291107,
+    -87.956446
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 2515,
+   "from": [
+    42.286281,
+    -87.93441
+   ],
+   "to": [
+    42.284416,
+    -87.904169
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 2301,
+   "from": [
+    42.249407,
+    -87.886888
+   ],
+   "to": [
+    42.22981,
+    -87.877523
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 2073,
+   "from": [
+    42.22981,
+    -87.877523
+   ],
+   "to": [
+    42.212167,
+    -87.869038
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 3621,
+   "from": [
+    42.212167,
+    -87.869038
+   ],
+   "to": [
+    42.181295,
+    -87.854427
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 1544,
+   "from": [
+    42.181295,
+    -87.854427
+   ],
+   "to": [
+    42.167788,
+    -87.849689
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 1509,
+   "from": [
+    42.151252,
+    -87.840667
+   ],
+   "to": [
+    42.138861,
+    -87.833039
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-N",
+   "shape_id": "MD-N_IB_1",
+   "metres": 1519,
+   "from": [
+    41.948871,
+    -87.740413
+   ],
+   "to": [
+    41.936065,
+    -87.733752
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-W",
+   "shape_id": "MD-W_IB_1",
+   "metres": 1128,
+   "from": [
+    42.058102,
+    -88.319242
+   ],
+   "to": [
+    42.058249,
+    -88.305629
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-W",
+   "shape_id": "MD-W_IB_1",
+   "metres": 1097,
+   "from": [
+    41.985828,
+    -88.088608
+   ],
+   "to": [
+    41.983232,
+    -88.075835
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-W",
+   "shape_id": "MD-W_IB_1",
+   "metres": 1424,
+   "from": [
+    41.981677,
+    -88.068066
+   ],
+   "to": [
+    41.97837,
+    -88.051463
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "MD-W",
+   "shape_id": "MD-W_IB_1",
+   "metres": 1429,
+   "from": [
+    41.960045,
+    -87.961874
+   ],
+   "to": [
+    41.95751,
+    -87.944971
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 1461,
+   "from": [
+    41.458782,
+    -87.723654
+   ],
+   "to": [
+    41.471005,
+    -87.716955
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 1044,
+   "from": [
+    41.476855,
+    -87.71392
+   ],
+   "to": [
+    41.485603,
+    -87.70917
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 1713,
+   "from": [
+    41.506238,
+    -87.698115
+   ],
+   "to": [
+    41.520636,
+    -87.690472
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 2717,
+   "from": [
+    41.520636,
+    -87.690472
+   ],
+   "to": [
+    41.543479,
+    -87.678382
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 2235,
+   "from": [
+    41.543479,
+    -87.678382
+   ],
+   "to": [
+    41.562243,
+    -87.668348
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 1244,
+   "from": [
+    41.562243,
+    -87.668348
+   ],
+   "to": [
+    41.57267,
+    -87.662701
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 3263,
+   "from": [
+    41.580809,
+    -87.658568
+   ],
+   "to": [
+    41.608194,
+    -87.643867
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 1244,
+   "from": [
+    41.612167,
+    -87.641676
+   ],
+   "to": [
+    41.62262,
+    -87.636117
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_1",
+   "metres": 1078,
+   "from": [
+    41.761289,
+    -87.594802
+   ],
+   "to": [
+    41.770898,
+    -87.592616
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_2",
+   "metres": 1054,
+   "from": [
+    41.662367,
+    -87.668738
+   ],
+   "to": [
+    41.669568,
+    -87.660402
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "ME",
+   "shape_id": "ME_IB_2",
+   "metres": 1078,
+   "from": [
+    41.761289,
+    -87.594802
+   ],
+   "to": [
+    41.770898,
+    -87.592616
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1376,
+   "from": [
+    42.476775,
+    -88.09116
+   ],
+   "to": [
+    42.464335,
+    -88.090674
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1292,
+   "from": [
+    42.464335,
+    -88.090674
+   ],
+   "to": [
+    42.452654,
+    -88.090217
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1048,
+   "from": [
+    42.452654,
+    -88.090217
+   ],
+   "to": [
+    42.443176,
+    -88.089811
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1399,
+   "from": [
+    42.441407,
+    -88.089431
+   ],
+   "to": [
+    42.429338,
+    -88.084357
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1374,
+   "from": [
+    42.429338,
+    -88.084357
+   ],
+   "to": [
+    42.417513,
+    -88.079257
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1603,
+   "from": [
+    42.417513,
+    -88.079257
+   ],
+   "to": [
+    42.403698,
+    -88.073364
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 2366,
+   "from": [
+    42.403698,
+    -88.073364
+   ],
+   "to": [
+    42.383339,
+    -88.064543
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1015,
+   "from": [
+    42.367973,
+    -88.057059
+   ],
+   "to": [
+    42.360061,
+    -88.050834
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 4380,
+   "from": [
+    42.360061,
+    -88.050834
+   ],
+   "to": [
+    42.326003,
+    -88.023817
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1039,
+   "from": [
+    42.326003,
+    -88.023817
+   ],
+   "to": [
+    42.317954,
+    -88.017342
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1557,
+   "from": [
+    42.317954,
+    -88.017342
+   ],
+   "to": [
+    42.305842,
+    -88.007745
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1615,
+   "from": [
+    42.299829,
+    -88.005083
+   ],
+   "to": [
+    42.285233,
+    -88.004292
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1359,
+   "from": [
+    42.265027,
+    -87.996389
+   ],
+   "to": [
+    42.254266,
+    -87.988454
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 2784,
+   "from": [
+    42.238866,
+    -87.976914
+   ],
+   "to": [
+    42.215409,
+    -87.964692
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 2166,
+   "from": [
+    42.215409,
+    -87.964692
+   ],
+   "to": [
+    42.197159,
+    -87.955192
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1347,
+   "from": [
+    42.190935,
+    -87.951995
+   ],
+   "to": [
+    42.179575,
+    -87.946129
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1140,
+   "from": [
+    42.178407,
+    -87.94557
+   ],
+   "to": [
+    42.168621,
+    -87.941248
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 3410,
+   "from": [
+    42.168621,
+    -87.941248
+   ],
+   "to": [
+    42.139317,
+    -87.928385
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1042,
+   "from": [
+    42.134102,
+    -87.926164
+   ],
+   "to": [
+    42.125167,
+    -87.922156
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1122,
+   "from": [
+    42.090626,
+    -87.907094
+   ],
+   "to": [
+    42.080972,
+    -87.902902
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1040,
+   "from": [
+    42.035718,
+    -87.893882
+   ],
+   "to": [
+    42.026514,
+    -87.891271
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "NCS",
+   "shape_id": "NCS_IB_1",
+   "metres": 1263,
+   "from": [
+    42.005611,
+    -87.884106
+   ],
+   "to": [
+    41.994554,
+    -87.880257
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "RI",
+   "shape_id": "RI_IB_1",
+   "metres": 1605,
+   "from": [
+    41.54964,
+    -87.843683
+   ],
+   "to": [
+    41.556883,
+    -87.826904
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "RI",
+   "shape_id": "RI_IB_1",
+   "metres": 1100,
+   "from": [
+    41.604539,
+    -87.738339
+   ],
+   "to": [
+    41.611926,
+    -87.72945
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "RI",
+   "shape_id": "RI_IB_1",
+   "metres": 1757,
+   "from": [
+    41.611926,
+    -87.72945
+   ],
+   "to": [
+    41.623708,
+    -87.715226
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "RI",
+   "shape_id": "RI_IB_2",
+   "metres": 1605,
+   "from": [
+    41.54964,
+    -87.843683
+   ],
+   "to": [
+    41.556883,
+    -87.826904
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "RI",
+   "shape_id": "RI_IB_2",
+   "metres": 1100,
+   "from": [
+    41.604539,
+    -87.738339
+   ],
+   "to": [
+    41.611926,
+    -87.72945
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "RI",
+   "shape_id": "RI_IB_2",
+   "metres": 1757,
+   "from": [
+    41.611926,
+    -87.72945
+   ],
+   "to": [
+    41.623708,
+    -87.715226
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 3032,
+   "from": [
+    41.418158,
+    -87.989077
+   ],
+   "to": [
+    41.444241,
+    -87.977746
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 2187,
+   "from": [
+    41.457333,
+    -87.966696
+   ],
+   "to": [
+    41.476443,
+    -87.959858
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 1089,
+   "from": [
+    41.476443,
+    -87.959858
+   ],
+   "to": [
+    41.486294,
+    -87.960031
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 1551,
+   "from": [
+    41.526596,
+    -87.941472
+   ],
+   "to": [
+    41.539716,
+    -87.934841
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 1240,
+   "from": [
+    41.551309,
+    -87.925146
+   ],
+   "to": [
+    41.55798,
+    -87.913118
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 1152,
+   "from": [
+    41.55798,
+    -87.913118
+   ],
+   "to": [
+    41.564121,
+    -87.901889
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 1156,
+   "from": [
+    41.574967,
+    -87.888704
+   ],
+   "to": [
+    41.584928,
+    -87.88445
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 1642,
+   "from": [
+    41.653075,
+    -87.836031
+   ],
+   "to": [
+    41.665022,
+    -87.824261
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 1139,
+   "from": [
+    41.72805,
+    -87.730048
+   ],
+   "to": [
+    41.735494,
+    -87.720542
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "SWS",
+   "shape_id": "SWS_IB_1",
+   "metres": 1650,
+   "from": [
+    41.772541,
+    -87.639537
+   ],
+   "to": [
+    41.787462,
+    -87.639939
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1195,
+   "from": [
+    42.557362,
+    -87.821528
+   ],
+   "to": [
+    42.54659,
+    -87.820367
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1024,
+   "from": [
+    42.540906,
+    -87.819728
+   ],
+   "to": [
+    42.53172,
+    -87.818145
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 4275,
+   "from": [
+    42.530064,
+    -87.818104
+   ],
+   "to": [
+    42.491406,
+    -87.816601
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 2337,
+   "from": [
+    42.475703,
+    -87.816001
+   ],
+   "to": [
+    42.454598,
+    -87.81767
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 4030,
+   "from": [
+    42.449029,
+    -87.81808
+   ],
+   "to": [
+    42.412636,
+    -87.820968
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 2027,
+   "from": [
+    42.412636,
+    -87.820968
+   ],
+   "to": [
+    42.394335,
+    -87.822504
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1103,
+   "from": [
+    42.394335,
+    -87.822504
+   ],
+   "to": [
+    42.384431,
+    -87.824173
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1092,
+   "from": [
+    42.247508,
+    -87.8383
+   ],
+   "to": [
+    42.237878,
+    -87.835377
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1824,
+   "from": [
+    42.233279,
+    -87.832951
+   ],
+   "to": [
+    42.218884,
+    -87.822191
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1751,
+   "from": [
+    42.21724,
+    -87.821024
+   ],
+   "to": [
+    42.203401,
+    -87.810752
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1394,
+   "from": [
+    42.201556,
+    -87.809369
+   ],
+   "to": [
+    42.19022,
+    -87.80201
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1055,
+   "from": [
+    42.173407,
+    -87.790004
+   ],
+   "to": [
+    42.165333,
+    -87.783216
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-N",
+   "shape_id": "UP-N_IB_1",
+   "metres": 1333,
+   "from": [
+    41.999994,
+    -87.675269
+   ],
+   "to": [
+    41.98794,
+    -87.674899
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_1",
+   "metres": 1105,
+   "from": [
+    42.416098,
+    -88.608818
+   ],
+   "to": [
+    42.412778,
+    -88.596243
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_1",
+   "metres": 1733,
+   "from": [
+    42.344277,
+    -88.485482
+   ],
+   "to": [
+    42.333658,
+    -88.470107
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_1",
+   "metres": 1956,
+   "from": [
+    42.292463,
+    -88.408344
+   ],
+   "to": [
+    42.282246,
+    -88.389074
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_1",
+   "metres": 1785,
+   "from": [
+    42.141876,
+    -88.110869
+   ],
+   "to": [
+    42.132765,
+    -88.093084
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_1",
+   "metres": 1167,
+   "from": [
+    42.132765,
+    -88.093084
+   ],
+   "to": [
+    42.127393,
+    -88.080969
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_1",
+   "metres": 1171,
+   "from": [
+    42.124614,
+    -88.074727
+   ],
+   "to": [
+    42.119233,
+    -88.062556
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_1",
+   "metres": 1406,
+   "from": [
+    42.119233,
+    -88.062556
+   ],
+   "to": [
+    42.112744,
+    -88.047968
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_1",
+   "metres": 2086,
+   "from": [
+    42.107839,
+    -88.036983
+   ],
+   "to": [
+    42.098194,
+    -88.015355
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_2",
+   "metres": 2132,
+   "from": [
+    42.335403,
+    -88.279139
+   ],
+   "to": [
+    42.318625,
+    -88.291831
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_2",
+   "metres": 1200,
+   "from": [
+    42.307413,
+    -88.297984
+   ],
+   "to": [
+    42.296667,
+    -88.299998
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_2",
+   "metres": 1937,
+   "from": [
+    42.284681,
+    -88.302027
+   ],
+   "to": [
+    42.267211,
+    -88.30027
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_2",
+   "metres": 1785,
+   "from": [
+    42.141876,
+    -88.110869
+   ],
+   "to": [
+    42.132765,
+    -88.093084
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_2",
+   "metres": 1167,
+   "from": [
+    42.132765,
+    -88.093084
+   ],
+   "to": [
+    42.127393,
+    -88.080969
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_2",
+   "metres": 1171,
+   "from": [
+    42.124614,
+    -88.074727
+   ],
+   "to": [
+    42.119233,
+    -88.062556
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_2",
+   "metres": 1406,
+   "from": [
+    42.119233,
+    -88.062556
+   ],
+   "to": [
+    42.112744,
+    -88.047968
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-NW",
+   "shape_id": "UP-NW_IB_2",
+   "metres": 2086,
+   "from": [
+    42.107839,
+    -88.036983
+   ],
+   "to": [
+    42.098194,
+    -88.015355
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 3312,
+   "from": [
+    41.890655,
+    -88.463959
+   ],
+   "to": [
+    41.887691,
+    -88.424197
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 3131,
+   "from": [
+    41.886826,
+    -88.412353
+   ],
+   "to": [
+    41.883902,
+    -88.374773
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 2805,
+   "from": [
+    41.883902,
+    -88.374773
+   ],
+   "to": [
+    41.881318,
+    -88.3411
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 1812,
+   "from": [
+    41.880858,
+    -88.33239
+   ],
+   "to": [
+    41.881484,
+    -88.310543
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 2024,
+   "from": [
+    41.882954,
+    -88.241859
+   ],
+   "to": [
+    41.883328,
+    -88.217442
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 2195,
+   "from": [
+    41.876391,
+    -88.064661
+   ],
+   "to": [
+    41.883091,
+    -88.039734
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 1102,
+   "from": [
+    41.883664,
+    -88.037241
+   ],
+   "to": [
+    41.885096,
+    -88.024078
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 1126,
+   "from": [
+    41.88652,
+    -88.018432
+   ],
+   "to": [
+    41.890362,
+    -88.005855
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 2485,
+   "from": [
+    41.887366,
+    -87.779813
+   ],
+   "to": [
+    41.887692,
+    -87.749839
+   ]
+  },
+  {
+   "check": "long straight stretch",
+   "line": "UP-W",
+   "shape_id": "UP-W_IB_1",
+   "metres": 1516,
+   "from": [
+    41.887973,
+    -87.724582
+   ],
+   "to": [
+    41.888306,
+    -87.706293
+   ]
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Irving Park",
+   "best_shape": "UP-NW_IB_2"
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Jefferson Park",
+   "best_shape": "UP-NW_IB_2"
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Gladstone Park",
+   "best_shape": "UP-NW_IB_2"
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Norwood Park",
+   "best_shape": "UP-NW_IB_2"
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Edison Park",
+   "best_shape": "UP-NW_IB_2"
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Park Ridge",
+   "best_shape": "UP-NW_IB_2"
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Dee Road",
+   "best_shape": "UP-NW_IB_2"
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Fox River Grove",
+   "best_shape": "UP-NW_IB_2"
+  },
+  {
+   "check": "station served by another shape of the line",
+   "line": "UP-NW",
+   "branch": "McHenry Branch",
+   "station": "Cary",
+   "best_shape": "UP-NW_IB_2"
+  }
+ ]
+}

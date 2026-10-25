@@ -1,0 +1,37 @@
+# Downloads Metra's official timetable, saves data/metra.json (track shapes, stations), checks it against
+# MetraBot's network and OpenStreetMap, and saves the reports (data/metra_issues.json, data/osm_check.json).
+# Runs once a week, when the builders change, and on demand: Actions tab -> "Refresh Metra track" -> Run workflow.
+# If a check finds a problem, nothing is saved and the run fails with the problem in its annotation.
+name: Refresh Metra track
+on:
+  schedule:
+    - cron: "53 9 * * 1"        # Mondays, about 4:53 AM Chicago time in summer
+  workflow_dispatch:
+  push:
+    paths: ["tools/build_metra.py", "tools/check_metra.py", "tools/check_osm.py", ".github/workflows/metra.yml"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build data/metra.json
+        run: python tools/build_metra.py 2> err.txt || { echo "::error::$(tail -c 1500 err.txt | tr '\n' ' ')"; exit 1; }
+      - name: Check it against MetraBot's network
+        run: |
+          python tools/check_metra.py > out.txt || { echo "::error::$(tail -c 1500 out.txt | tr '\n' ' ')"; exit 1; }
+          cat out.txt
+      - name: Check it against OpenStreetMap
+        run: python tools/check_osm.py 2> err.txt || { echo "::warning::OpenStreetMap check didn't run: $(tail -c 800 err.txt | tr '\n' ' ')"; }
+      - name: Save it if it changed
+        run: |
+          git add data/metra.json data/metra_issues.json data/osm_check.json data/osm_metra.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Metra track unchanged."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh Metra track"
+          git pull --rebase -q && git push
