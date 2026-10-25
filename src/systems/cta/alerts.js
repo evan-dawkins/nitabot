@@ -7,87 +7,150 @@ function clearTrains(){closeCard();for(const t of[...trains])removeTrain(t,false
    ===================================================================== */
 let alerts=null,alertsErr="",seenAlertIds=null,openAlerts=new Set(),alertSig="";
 const ROUTE_KEY=API_KEY;
+// GTFS-realtime enums, as Metra sends them (the Worker passes the numbers through)
 const EFFECT={1:"No service",2:"Reduced service",3:"Significant delays",4:"Detour",5:"Added service",6:"Modified service",
   9:"Stop moved",11:"Accessibility"};
+const SEVERITY={2:"info",3:"warning",4:"severe"};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 // Both systems' alerts, kept apart and shown together. sys = "cta" (CTA Customer Alerts) or "metra" (Metra's alerts feed).
-const ALERT_BY={cta:null,metra:null},ALERT_ERR={cta:"",metra:""};
+const ALERT_BY={cta:null,metra:null},ALERT_ERR={cta:"",metra:""},ALERT_AT={cta:0,metra:0};
 const SYS_NAME={cta:"CTA",metra:"Metra"};
-function alertEnd(a,sys){if(sys==="cta")return+a.end>0?Math.round(+a.end/1000):0;
-  const ends=(Array.isArray(a.periods)?a.periods:[]).map(p=>+p.end||0);return ends.length&&ends.every(x=>x>0)?Math.max(...ends):0}
+/* Categories come from what each feed says about the alert itself, never guessed from the line or place:
+     CTA:   its "Impact" text (e.g. Elevator Status, Planned Work, Significant Delays, Service Change)
+     Metra: the GTFS-realtime effect, and cause = maintenance/construction for planned work
+   Only when a feed gives neither (Metra's "other"/"unknown" effect) does a headline that literally names an
+   elevator or escalator count as an accessibility alert. Everything else is "Other notices". */
+const ACAT=[["delay","Delays"],["disrupt","Suspensions & disruptions"],["station","Station & service changes"],
+  ["access","Elevators & accessibility"],["planned","Planned work"],["other","Other notices"]];
+const ACAT_NAME=Object.fromEntries(ACAT);
+function alertCategory(a,sys){
+  if(sys==="cta"){const im=String(a.impact||"").toLowerCase();
+    if(/elevator|escalator|accessib/.test(im))return"access";
+    if(/planned|construction|maintenance|track work/.test(im))return"planned";
+    if(/delay/.test(im))return"delay";
+    if(/suspen|no (train )?service|disrupt|reroute|detour|shuttle|cancel/.test(im))return"disrupt";
+    if(/station|service change|closure|closed|stop|added service|entrance/.test(im))return"station";
+    return"other"}
+  const e=+a.effect||0,c=+a.cause||0;
+  if(e===11)return"access";
+  if(e===3)return"delay";
+  if(e===1||e===2||e===4)return"disrupt";
+  if(c===9||c===10)return"planned";                    // MAINTENANCE, CONSTRUCTION
+  if(e===5||e===6||e===9)return"station";
+  if(/\b(elevator|escalator)s?\b/i.test(String(a.header||"")))return"access";
+  return"other"}
+// serious = the feed itself says so: CTA's MajorAlert flag, Metra's SEVERE level or a no-service effect
+function alertSerious(a,sys){return sys==="cta"?!!a.major:(+a.severity===4||+a.effect===1)}
+function alertTimes(a,sys){if(sys==="cta")return{start:+a.start>0?Math.round(+a.start/1000):0,end:+a.end>0?Math.round(+a.end/1000):0};
+  const P=(Array.isArray(a.periods)?a.periods:[]).filter(p=>p&&(p.start||p.end));if(!P.length)return{start:0,end:0};
+  const nowS=serverNow()/1000,cur=P.find(p=>(!p.start||p.start<=nowS)&&(!p.end||p.end>nowS))||P.find(p=>p.start>nowS)||P[P.length-1];
+  return{start:+cur.start||0,end:P.every(p=>+p.end>0)?Math.max(...P.map(p=>+p.end)):(+cur.end||0)}}
 function takeAlerts(data,sys="cta"){
   if(!("alerts" in data)&&!("alerts_error" in data))ALERT_BY[sys]=null;   // older Worker: no alerts from it
   else{
     ALERT_ERR[sys]=data.alerts_error?String(data.alerts_error):"";
     if(Array.isArray(data.alerts)){
-      const seen=new Set(),list=[],KEY=sys==="metra"?METRA_KEY:ROUTE_KEY;
-      for(const a of data.alerts){if(!a||typeof a!=="object")continue;const id=sys+":"+String(a.id??(a.header||"")+(a.description||""));
-        if(seen.has(id))continue;seen.add(id);
+      ALERT_AT[sys]=Date.now();
+      const seen=new Map(),KEY=sys==="metra"?METRA_KEY:ROUTE_KEY,nowS=serverNow()/1000;
+      for(const a of data.alerts){if(!a||typeof a!=="object")continue;
+        const header=String(a.header||a.short||"").trim(),desc=String(a.description||a.short||"").trim();
+        if(!header&&!desc)continue;
+        const id=sys+":"+String(a.id||header+"|"+desc);                    // the feed's own id; text only if it has none
         const keys=[...new Set((Array.isArray(sys==="metra"?a.routes:a.lines)?(sys==="metra"?a.routes:a.lines):[]).map(r=>KEY[r]).filter(Boolean))];
-        const where=[...new Set((Array.isArray(sys==="metra"?a.stops:a.stations)?(sys==="metra"?a.stops:a.stations):[]).map(x=>STN.get(String(x))).filter(Boolean).map(r=>r.label))].join(", ");
-        list.push({id,sys,keys,where,header:String(a.header||a.short||"").trim(),desc:String(a.description||a.short||"").trim(),
-          url:/^https:\/\//i.test(a.url||"")?a.url:"",effect:sys==="metra"?(EFFECT[a.effect]||""):String(a.impact||"").trim(),end:alertEnd(a,sys)})}
-      ALERT_BY[sys]=list;
+        const stns=[...new Set((Array.isArray(sys==="metra"?a.stops:a.stations)?(sys==="metra"?a.stops:a.stations):[]).map(x=>STN.get(String(x))).filter(Boolean))];
+        const tm=alertTimes(a,sys);
+        if(tm.end&&tm.end<nowS-60)continue;                                 // already over
+        const rec={id,sys,keys,stns,where:stns.map(r=>r.label).join(", "),header,desc,
+          url:/^https:\/\//i.test(a.url||"")?a.url:"",cat:alertCategory(a,sys),serious:alertSerious(a,sys),
+          effect:sys==="metra"?(EFFECT[a.effect]||""):String(a.impact||"").trim(),start:tm.start,end:tm.end,
+          sev:sys==="cta"?(+a.severity||0):(+a.severity||0)*25,ver:header+"|"+desc+"|"+tm.end};
+        const prev=seen.get(id);if(prev&&prev.ver===rec.ver)continue;        // the same alert twice in one answer
+        seen.set(id,rec)}
+      ALERT_BY[sys]=[...seen.values()];
     }else if(!ALERT_BY[sys])ALERT_BY[sys]=[];
   }
   const parts=[ALERT_BY.cta,ALERT_BY.metra].filter(Boolean);
   const list=parts.length?[].concat(...parts):null;
   alertsErr=["cta","metra"].filter(k=>ALERT_ERR[k]).map(k=>SYS_NAME[k]).join(" and ");   // whose alerts feed isn't answering
   if(list){
-    // a gentle pulse on the button only when a genuinely new alert shows up after the first load
-    if(seenAlertIds){for(const a of list)if(!seenAlertIds.has(a.id)){pulseAlerts();break}}
-    seenAlertIds=new Set(list.map(a=>a.id));
-    for(const id of[...openAlerts])if(!seenAlertIds.has(id))openAlerts.delete(id);
+    // a gentle pulse on the button only when a genuinely new (or changed) serious alert shows up after the first load
+    if(seenAlertIds){for(const a of list)if(!seenAlertIds.has(a.id+a.ver)&&a.serious){pulseAlerts();break}}
+    seenAlertIds=new Set(list.map(a=>a.id+a.ver));
+    for(const id of[...openAlerts])if(!list.some(a=>a.id===id))openAlerts.delete(id);
   }
   alerts=list;
   renderAlerts();
 }
 function pulseAlerts(){const b=$("abtn");b.classList.remove("fresh");void b.offsetWidth;b.classList.add("fresh")}
-function visibleAlerts(){if(!alerts)return[];
-  const list=focusKey?alerts.filter(a=>!a.keys.length||a.keys.includes(focusKey)):alerts.slice();
-  // line-specific first in network order, system-wide notices last
+let aSys="all",aCat="all";                                                 // the alert panel's filters (this visit only)
+function alertPool(){if(!alerts)return[];return focusKey?alerts.filter(a=>!a.keys.length||a.keys.includes(focusKey)):alerts.slice()}
+function visibleAlerts(){
   const rank=a=>a.keys.length?Math.min(...a.keys.map(k=>ORDER.indexOf(k))):99;
-  return list.sort((a,b)=>rank(a)-rank(b))}
+  return alertPool().filter(a=>(aSys==="all"||a.sys===aSys)&&(aCat==="all"||a.cat===aCat))
+    .sort((a,b)=>(b.serious-a.serious)||(ACAT.findIndex(c=>c[0]===a.cat)-ACAT.findIndex(c=>c[0]===b.cat))||(rank(a)-rank(b))||(b.sev-a.sev))}
+const fmtDay=(sec,o)=>new Date(sec*1000).toLocaleString([],{timeZone:"America/Chicago",...o});
 function fmtUntil(sec){const d=new Date(sec*1000);if(!isFinite(d))return"";
-  const now=new Date(),same=d.toDateString()===now.toDateString();
-  return"Until "+(same?d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"}):d.toLocaleDateString([],{month:"short",day:"numeric",timeZone:"America/Chicago"}))}
+  const same=fmtDay(sec,{dateStyle:"short"})===fmtDay(serverNow()/1000,{dateStyle:"short"});
+  return"Until "+(same?fmtDay(sec,{hour:"numeric",minute:"2-digit"}):fmtDay(sec,{month:"short",day:"numeric"}))}
+function fmtFrom(sec){return"Starts "+fmtDay(sec,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}
 function renderAlerts(){
   const btn=$("abtn"),show=alerts!==null&&mode!=="sim";
   btn.classList.toggle("show",show);
-  for(const k of ORDER)chips[k].classList.toggle("alerted",!!show&&alerts.some(a=>a.keys.includes(k)));
+  for(const k of ORDER)chips[k].classList.toggle("alerted",!!show&&alerts.some(a=>a.keys.includes(k)&&(a.serious||a.cat==="delay"||a.cat==="disrupt")));
   if(!show){closeAlerts();return}
-  const vis=visibleAlerts(),n=vis.length;
-  btn.classList.toggle("has",n>0);
+  const pool=alertPool(),n=pool.length,serious=pool.filter(a=>a.serious).length;
+  btn.classList.toggle("has",n>0);btn.classList.toggle("serious",serious>0);
   $("acount").textContent=n?String(n):"";
   $("aword").textContent=n?(n===1?"alert":"alerts"):(alertsErr&&!alerts.length?"Alerts unavailable":"No alerts");
-  btn.title=n?`${n} service alert${n>1?"s":""}${focusKey?" for the "+LINES[focusKey].name:""}`:"No active service alerts";
-  const stale=alertsErr&&alerts.length;           // feed down: these are the last ones we saw, say so
-  $("ascope").textContent=(focusKey?`${LINES[focusKey].code} and system-wide`:n?"All lines":"")+(stale?" · last known, feed not answering":"");
-  if(stale)btn.title+=" (last known; alerts feed not answering)";
-  const sig=JSON.stringify([vis.map(a=>a.id),focusKey,alertsErr,[...openAlerts]]);
+  btn.title=n?`${n} service alert${n>1?"s":""}${serious?`, ${serious} major`:""}${focusKey?" for the "+LINES[focusKey].name:""}`:"No active service alerts";
+  const sig=JSON.stringify([pool.map(a=>a.id+a.ver),focusKey,ALERT_ERR,aSys,aCat,[...openAlerts]]);
   if(sig===alertSig)return;alertSig=sig;
-  const L=$("alist");
-  if(!n){L.innerHTML=`<div class="aempty">${alertsErr&&!alerts.length?alertsErr+"'s alerts feed isn't answering right now.":"No active alerts"+(focusKey?" for "+esc(LINES[focusKey].name):"")+"."}</div>`;return}
-  L.innerHTML=vis.map(a=>{
+  // filters: system, then the categories that actually have alerts (with counts)
+  const sysN=k=>pool.filter(a=>k==="all"||a.sys===k).length,inSys=pool.filter(a=>aSys==="all"||a.sys===aSys);
+  if(aCat!=="all"&&!inSys.some(a=>a.cat===aCat))aCat="all";
+  $("afilt").innerHTML=`<div class="aseg" role="group" aria-label="System">${[["all","All"],["cta","CTA"],["metra","Metra"]].map(([k,l])=>
+      `<button data-sys="${k}" aria-pressed="${aSys===k}">${l}<span>${sysN(k)}</span></button>`).join("")}</div>`
+    +`<div class="acats" role="group" aria-label="Type of alert">${[["all","Everything"],...ACAT].map(([k,l])=>{const c=k==="all"?inSys.length:inSys.filter(a=>a.cat===k).length;
+      return c||k==="all"?`<button data-cat="${k}" aria-pressed="${aCat===k}">${esc(l)} <span>${c}</span></button>`:""}).join("")}</div>`;
+  $("ascope").textContent=focusKey?`${LINES[focusKey].code} and system-wide`:"";
+  const vis=visibleAlerts(),L=$("alist");
+  // a feed that isn't answering never reads as "no alerts": say whose, and since when
+  const down=["cta","metra"].filter(k=>ALERT_ERR[k]&&(aSys==="all"||aSys===k)).map(k=>`<div class="awarn">${SYS_NAME[k]}'s alerts aren't loading${ALERT_AT[k]?`; showing what it last sent (${ago(Date.now()-ALERT_AT[k])})`:""}. That doesn't mean there are none.</div>`).join("");
+  if(!vis.length){const what=(aCat==="all"?"":ACAT_NAME[aCat].toLowerCase()+" ")+"alerts";
+    L.innerHTML=down+`<div class="aempty">No ${aSys==="all"?"":SYS_NAME[aSys]+" "}${esc(what)}${focusKey?" for the "+esc(LINES[focusKey].name):""} right now.</div>`;return}
+  L.innerHTML=down+vis.map(a=>{
     const bars=a.keys.length?a.keys.map(k=>`<i style="background:${LINES[k].color}"></i>`).join(""):`<i style="background:var(--faint)"></i>`;
-    const tags=[a.keys.length?a.keys.map(k=>LINES[k].code).join(", "):a.where||(a.sys==="metra"?"All Metra lines":"All L lines")];
-    const fx=a.effect?`<span class="fx">${esc(a.effect)}</span>`:"";
-    const until=a.end?`<span>${esc(fmtUntil(a.end))}</span>`:"";
-    const body=a.desc||a.url;
-    const more=body?`<div class="more"><div>${esc(a.desc)}${a.url?`${a.desc?"\n\n":""}<a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">Details on ${a.sys==="metra"?"metra.com":"transitchicago.com"}</a>`:""}</div></div>`:"";
-    return`<div class="aitem${openAlerts.has(a.id)?" open":""}" data-id="${esc(a.id)}" ${body?'role="button" tabindex="0" aria-expanded="'+openAlerts.has(a.id)+'"':""}>`
-      +`<span class="bars">${bars}</span><div><div class="tags"><span>${esc(tags[0])}</span>${fx}${until}${body?'<span class="chev" aria-hidden="true">▾</span>':""}</div>`
-      +`<div class="h">${esc(a.header||a.desc.split("\n")[0])}</div>${more}</div></div>`}).join("");
+    const lines=a.keys.length?a.keys.map(k=>bullet(k)).join(""):`<span class="aall">${a.sys==="metra"?"Metra":"CTA"}${a.stns.length?"":" · all lines"}</span>`;
+    const when=a.start&&a.start>serverNow()/1000?fmtFrom(a.start):a.end?fmtUntil(a.end):"";
+    const mapb=a.stns.length||a.keys.length?`<button class="amap" data-id="${esc(a.id)}">Show on map</button>`:"";
+    const more=`<div class="more"><div>${a.where?`<p class="awhere"><b>Stations:</b> ${esc(a.where)}</p>`:""}${a.desc&&a.desc!==a.header?esc(a.desc):""}${a.url?`<p><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">Full notice on ${a.sys==="metra"?"metra.com":"transitchicago.com"} ↗</a></p>`:""}${mapb}</div></div>`;
+    return`<div class="aitem${openAlerts.has(a.id)?" open":""}${a.serious?" major":""}" data-id="${esc(a.id)}" role="button" tabindex="0" aria-expanded="${openAlerts.has(a.id)}">`
+      +`<span class="bars">${bars}</span><div><div class="tags"><span class="asys ${a.sys}">${SYS_NAME[a.sys]}</span><span class="acat c-${a.cat}">${esc(ACAT_NAME[a.cat])}</span>${a.serious?'<span class="amaj">Major</span>':""}${when?`<span>${esc(when)}</span>`:""}<span class="chev" aria-hidden="true">▾</span></div>`
+      +`<div class="h">${esc(a.header||a.desc.split("\n")[0])}</div><div class="alines">${lines}${a.where&&!openAlerts.has(a.id)?`<span class="awh">${esc(a.where)}</span>`:""}</div>${more}</div></div>`}).join("");
 }
-function toggleAlertItem(it){const id=it.dataset.id;if(!it.querySelector(".more"))return;
+function toggleAlertItem(it){const id=it.dataset.id;
   if(openAlerts.has(id))openAlerts.delete(id);else openAlerts.add(id);
-  it.classList.toggle("open");it.setAttribute("aria-expanded",String(openAlerts.has(id)));alertSig=""}
+  it.classList.toggle("open");it.setAttribute("aria-expanded",String(openAlerts.has(id)));alertSig="";renderAlerts()}
+// an alert on the map: its stations if it names any (an elevator alert finds its station), else its line(s)
+function showAlertOnMap(a){
+  if(a.stns.length){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const r of a.stns){x0=Math.min(x0,r.xy[0]);y0=Math.min(y0,r.xy[1]);x1=Math.max(x1,r.xy[0]);y1=Math.max(y1,r.xy[1])}
+    const pad=Math.max(18,(x1-x0+y1-y0)*.15);stopFollowing();flyTo(fitBox({x0:x0-pad,y0:y0-pad,x1:x1+pad,y1:y1+pad}));
+    for(const r of a.stns){r.g.classList.remove("ahl");void r.g.getBBox();r.g.classList.add("ahl");setTimeout(()=>r.g.classList.remove("ahl"),9000)}
+    if(a.stns.length===1)setTimeout(()=>openStationPop(a.stns[0]),700)}
+  else if(a.keys.length===1)setFocus(a.keys[0]);
+  else if(a.keys.length){let b=null;for(const k of a.keys){const q=lineBounds(k);b=b?{x0:Math.min(b.x0,q.x0),y0:Math.min(b.y0,q.y0),x1:Math.max(b.x1,q.x1),y1:Math.max(b.y1,q.y1)}:q}
+    stopFollowing();flyTo(fitBox(b))}
+  if(isNarrow())closeAlerts()}
 function openAlertsPanel(){$("apanel").classList.add("on");$("abtn").setAttribute("aria-expanded","true");hideTip()}
 function closeAlerts(){$("apanel").classList.remove("on");$("abtn").setAttribute("aria-expanded","false")}
 $("abtn").onclick=e=>{e.stopPropagation();$("apanel").classList.contains("on")?closeAlerts():openAlertsPanel()};
 $("aclose").onclick=closeAlerts;
-$("alist").addEventListener("click",e=>{if(e.target.closest("a"))return;const it=e.target.closest(".aitem");if(it)toggleAlertItem(it)});
-$("alist").addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const it=e.target.closest(".aitem");if(it){e.preventDefault();toggleAlertItem(it)}});
+$("afilt").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.sys)aSys=b.dataset.sys;if(b.dataset.cat)aCat=b.dataset.cat;alertSig="";renderAlerts()});
+$("alist").addEventListener("click",e=>{if(e.target.closest("a"))return;
+  const m=e.target.closest(".amap");if(m){const a=(alerts||[]).find(x=>x.id===m.dataset.id);if(a)showAlertOnMap(a);return}
+  const it=e.target.closest(".aitem");if(it)toggleAlertItem(it)});
+$("alist").addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;if(e.target.closest("a,button"))return;const it=e.target.closest(".aitem");if(it){e.preventDefault();toggleAlertItem(it)}});
 document.addEventListener("pointerdown",e=>{if($("apanel").classList.contains("on")&&!e.target.closest("#apanel,#abtn"))closeAlerts()});
 
 function startSim(){
@@ -133,32 +196,51 @@ function refreshStatus(){
   if(mode==="sim"){
     const vis=trains.filter(t=>!focusKey||t.L.key===focusKey);
     $("count").textContent=vis.length;for(const k of ORDER)$("n-"+k).textContent=trains.filter(t=>t.L.key===k).length;
-    setState("sim","Simulated");$("updated").textContent="Not real positions";
+    setState("sim","Simulated");$("updated").textContent="Not real positions";metraUI("ok",false);
     notice(liveBack?`The live feed is working again. <div class="acts"><button class="go" data-act="live">Switch to live</button></div>`
       :`Simulated trains, not real positions. <div class="acts"><button data-act="live">Try live</button></div>`);
     return}
-  const vis=trains.filter(t=>!focusKey||t.L.key===focusKey),fresh=vis.filter(t=>!t.stale),any=everLoaded||mEverLoaded;
+  const vis=trains.filter(t=>!focusKey||t.L.key===focusKey),fresh=vis.filter(t=>!t.stale&&!t.hidden),any=everLoaded||mEverLoaded;
   $("count").textContent=any?fresh.length:"–";
-  for(const k of ORDER){const n=trains.filter(t=>t.L.key===k&&!t.stale).length;$("n-"+k).textContent=any?n:""}
-  // each feed on its own: CTA (positions every 30 s) and Metra (GPS + predictions every 30 s)
-  const F=[{name:"CTA",loaded:everLoaded,ok:lastOkAt,fails,err:lastError},{name:"Metra",loaded:mEverLoaded,ok:mLastOk,fails:mFails,err:mErr}];
-  for(const f of F){f.age=Date.now()-f.ok;f.down=f.loaded?(f.fails>=3||f.age>3*POLL):f.fails>0;f.slow=!f.down&&f.loaded&&(f.fails>0||f.age>POLL*1.6)}
-  const down=F.filter(f=>f.down),up=F.filter(f=>f.loaded&&!f.down);
+  for(const k of ORDER){const n=trains.filter(t=>t.L.key===k&&!t.stale&&!t.hidden).length;$("n-"+k).textContent=any?n:""}
+  // each system on its own. CTA: positions every 30 s. Metra: see metraHealth() in systems/metra/feed.js
+  const C={loaded:everLoaded,ok:lastOkAt,fails,err:lastError};C.age=Date.now()-C.ok;
+  C.down=C.loaded?(C.fails>=3||C.age>3*POLL):C.fails>0;C.slow=!C.down&&C.loaded&&(C.fails>0||C.age>POLL*1.6);
+  const mh=metraHealth(),mDown=mh==="down"||(!mEverLoaded&&MH.fails>=2);
   if(!any){
-    if(down.length===2){setState("err","Offline");$("updated").textContent="No data received yet";
-      notice(`Can't reach the live feeds. <span>${F[0].err||F[1].err}. Trying again every 30 s.</span>${SIM_OFFER}`)}
-    else{setState("busy","Connecting");$("updated").textContent="Waiting for first report";notice("")}
+    if(C.down&&mDown){setState("err","Offline");$("updated").textContent="No data received yet";metraUI(mh,false);
+      notice(`Can't reach the live feeds. <span>${C.err||MH.detail}. Trying again every 30 s.</span>${SIM_OFFER}`)}
+    else{setState("busy","Connecting");$("updated").textContent="Waiting for first report";metraUI(mh,!C.down);notice("")}
     return}
-  $("updated").textContent="Updated "+ago(Math.max(...up.map(f=>f.age),0));       // the older of the feeds that are working
-  if(down.length===2){setState("err","Offline");
+  $("updated").textContent=C.loaded?"CTA updated "+ago(C.age):"Waiting for CTA";
+  if(C.down&&mDown){setState("err","Offline");metraUI(mh,false);
     notice(`Can't reach the live feeds. <span>Trains are shown at their last known positions. Retrying every 30 s.</span>${SIM_OFFER}`);return}
-  if(down.length===1){const d=down[0];setState("warn",d.name+" offline");
-    notice(`${d.name}'s feed isn't answering. <span>${d.loaded?`Its trains are shown at their last known positions (${ago(d.age)}).`:`Its trains will appear when it answers.`} Retrying every 30 s.</span>`);return}
-  if(F.some(f=>f.slow)){setState("warn","Delayed");notice("");return}
+  metraUI(mh,true);
+  if(C.down){setState("warn","CTA offline");
+    notice(`CTA's feed isn't answering. <span>${C.loaded?`L trains are shown at their last known positions (${ago(C.age)}).`:`L trains will appear when it answers.`} Metra is separate. Retrying every 30 s.</span>`);return}
+  if(C.slow){setState("warn","CTA delayed");notice("");return}
   if(!trains.length){setState("live","Live");notice(`No trains are reporting right now. <span>Overnight only the Red and Blue Lines run, and Metra runs few trains. The map fills in as service starts.</span>`);return}
   if(trains.every(t=>t.stale)){setState("warn","Feeds not moving");notice(`The feeds are answering, but no train has reported a new position recently.`);return}
   notice("");setState(inflight||mInflight?"busy":"live","Live");
 }
+const fmtHM=ms=>new Date(ms).toLocaleTimeString([],{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
+// the Metra mark by the status (stage 1) and the Metra banner (stage 2)
+function metraUI(mh,banner){const m=$("mhealth"),b=$("mbanner");
+  const show=mh==="missed"||mh==="down"||mh==="empty"||(mh==="waiting"&&MH.fails>0);
+  m.hidden=!show;m.className="mh "+(mh==="down"?"down":mh==="empty"?"quiet":"miss");
+  const last=MH.lastUsable?`Last good Metra update ${ago(Date.now()-MH.lastUsable)} (${fmtHM(MH.lastUsable)}).`:"No Metra update received yet.";
+  const why=MH.detail?` Reason: ${MH.detail}.`:"";
+  m.title=mh==="empty"?"Metra's feed is answering but has no trains reporting right now (normal late at night)."
+    :mh==="down"?`Metra updates have stopped. ${last}${why} Trying again every 30 s.`
+    :`Missed a Metra update at ${fmtHM(MH.lastMissAt||Date.now())}${MH.fails>1?` (${MH.fails} in a row)`:""}. ${last}${why} Trying again shortly.`;
+  m.querySelector("span").textContent=mh==="empty"?"Metra: none reporting":mh==="down"?"Metra stopped":"Metra";
+  m.setAttribute("aria-label",m.title);
+  const on=banner&&mh==="down";
+  if(on){const h=`<b>Metra updates have stopped.</b> <span>${MH.lastUsable?`Last good update ${ago(Date.now()-MH.lastUsable)}.`:"No update yet."} Metra trains stay greyed out where they last reported. ${everLoaded&&!(Date.now()-lastOkAt>3*POLL)?"L trains are still live.":""}</span><button data-act="mretry">Try now</button>`;
+    if(b.dataset.h!==h){b.innerHTML=h;b.dataset.h=h}}
+  if(on!==!b.hidden){b.hidden=!on;labelsDirty=true}
+}
+$("mbanner").addEventListener("click",e=>{if(e.target.closest("[data-act=mretry]"))pollMetra()});
 function tickHeader(){
   const now=new Date();$("clock").textContent=now.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",second:"2-digit",timeZone:"America/Chicago"});$("clock").title="Chicago time";
   const left=Math.max(0,nextPollAt-Date.now());
@@ -178,7 +260,7 @@ function showStationTip(rec,e){
 function showTrainTip(t,e){
   const v=t.cta||{},nx=v.next_sta_id&&STN.get(v.next_sta_id);
   tip.innerHTML=`<div><span class="lc" style="background:${t.L.color}"></span>${t.L.code}${trainLabel(t)?" · "+trainLabel(t):""}${v.dest?" to "+esc(v.dest):""}</div>`
-   +`<div class="s">${nx?(v.approaching?"Arriving at ":"Next: ")+esc(nx.label):dirText(t)}${v.delayed?" · delayed":""}${t.stale?" · position out of date":""}</div>`;placeTip(e)}
+   +`<div class="s">${nx?(v.approaching?"Arriving at ":"Next: ")+esc(nx.label):dirText(t)}${v.delayed?" · delayed":""}${t.stale?" · position out of date":t.held?" · checking an odd report":""}</div>`;placeTip(e)}
 function trainLabel(t){return t.run.sim?"Simulated "+t.run.no:t.run.no?(t.L.sys==="metra"?"Train ":"Run ")+t.run.no:""}
 function hideTip(){tip.style.opacity=0}
 function dirText(t){const d=t.cta&&t.cta.dest;return d?"to "+d:t.dirSign===0?"Direction not known yet":"Direction known"}
@@ -253,7 +335,9 @@ function renderCard(){
         +`<span class="t"><b>${w}</b> ${tm?fmtClock(tm/1000):""}</span></div>`}).join("")+`</div>`}
   const headline=v.dest?`to ${esc(v.dest)}`:"Destination not known";
   const age=serverNow()-t.updated;
-  const foot=mode==="sim"?`<span>Simulated train, not real</span>`:t.stale?`<span class="wn">No new position for ${ago(age).replace(" ago","")}</span>`
+  const foot=mode==="sim"?`<span>Simulated train, not real</span>`
+    :t.held?`<span class="wn">Shown where it was ${ago(age)}: its newest report jumped somewhere it couldn't have reached, so it's being checked</span>`
+    :t.stale?`<span class="wn">No new position for ${ago(age).replace(" ago","")}</span>`
     :t.L.sys==="metra"?(v.delayed?`<span class="wn">Running ${Math.round(v.delay/60)} min late, per Metra</span>`:`<span>GPS position from Metra, ${ago(age)}</span>`)
     :v.delayed?`<span class="wn">CTA reports a delay</span>`:`<span>Position from CTA's signals, ${ago(age)}</span>`;
   const sub=[trainLabel(t),r.branch].filter(Boolean).join(" · ");

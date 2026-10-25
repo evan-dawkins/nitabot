@@ -80,6 +80,8 @@ def fake_metra():
 
 METRA, N_METRA = fake_metra()
 METRA_DOWN = {"on": False}                     # set True to make the mock Metra feed fail
+# MOCK["metra"]: ok | fail502 | metra_error | empty | stale | garbage | abort   (tests/test_health_alerts.py)
+MOCK = {"metra": "ok", "cta_alerts": None, "metra_alerts": None}
 arrival_ids = []
 hits = {}
 
@@ -90,20 +92,32 @@ def mock(route):
     hits[path] = hits.get(path, 0) + 1
     now = int(time.time() * 1000)
     if path == "/":
-        if METRA_DOWN["on"]:
-            return route.fulfill(status=502, content_type="application/json", body=json.dumps({"metra_error": "test outage"}),
-                                 headers={"access-control-allow-origin": "*"})
+        m = "fail502" if METRA_DOWN["on"] else MOCK["metra"]
+        H = {"access-control-allow-origin": "*"}
+        if m == "fail502":
+            return route.fulfill(status=502, content_type="application/json", body=json.dumps({"metra_error": "test outage"}), headers=H)
+        if m == "garbage":
+            return route.fulfill(status=200, content_type="text/html", body="<html>gateway hiccup</html>", headers=H)
+        if m == "abort":
+            return route.abort("timedout")
         body = dict(METRA, fetched_at=now)
-        for vs in body["metra_lines"].values():           # a live feed's reports are fresh every time it's asked
-            for v in vs:
-                v["updated_at"] = now // 1000
+        if MOCK["metra_alerts"] is not None:
+            body["alerts"] = MOCK["metra_alerts"]
+        if m == "metra_error":
+            body = {"metra_error": "Metra positions feed returned 503", "alerts": body["alerts"], "fetched_at": now}
+        elif m == "empty":
+            body["metra_lines"] = {}
+        else:
+            for vs in body["metra_lines"].values():       # a live feed's reports are fresh every time it's asked
+                for v in vs:
+                    v["updated_at"] = now // 1000 - (600 if m == "stale" else 0)
     elif path == "/cta/positions":
         body = dict(POS, fetched_at=now, feed_time=now)
         for ts in body["lines"].values():
             for t in ts:
                 t["predicted_at"] = now
     elif path == "/cta/alerts":
-        body = {"alerts": [], "fetched_at": now}
+        body = {"alerts": MOCK["cta_alerts"] or [], "fetched_at": now}
     elif path == "/cta/arrivals":
         arrival_ids.extend(url.split("mapid=", 1)[1].split("&")[0].split(","))
         body = {"stations": {}, "fetched_at": now}
@@ -286,14 +300,14 @@ def main():
         check("no errors on desktop", not errs, "; ".join(errs[:3]))
         pg.context.close()
 
-        # ---- Metra's feed down: the header says so, CTA keeps running
+        # ---- Metra's feed down: a Metra mark by the status, CTA keeps running (escalation: tests/test_health_alerts.py)
         METRA_DOWN["on"] = True
         pg, errs = open_page(br, port)
         pg.wait_for_function("window.__cta && __cta.trains.length > 0", timeout=20000)
         pg.wait_for_timeout(2500)
         st = pg.evaluate("document.getElementById('stateText').textContent")
-        msg = pg.evaluate("document.getElementById('notice').innerText")
-        check("Metra feed down: header says so, CTA trains still live", st == "Metra offline" and "Metra" in msg, f"{st} / {msg[:80]}")
+        mh = pg.evaluate("!document.getElementById('mhealth').hidden&&document.getElementById('mhealth').title")
+        check("Metra feed down: Metra's mark shows, CTA trains still live", st == "Live" and bool(mh) and "Metra" in mh, f"{st} / {str(mh)[:90]}")
         METRA_DOWN["on"] = False
         pg.context.close()
 

@@ -507,6 +507,7 @@ body.cute .train.known .car{display:inline} body.cute .train .body.arrow{display
 .train:hover .halo{opacity:.45}
 .train.sel .halo{opacity:.95}
 .train.stale .body{fill:#6B7E8F!important}
+.train.held .body{stroke-dasharray:2.2 1.6}   /* waiting on a confirming report: a dashed outline, the marker stays put */
 .train.stale{opacity:.55}
 .train.dim{opacity:.1;pointer-events:none}
 .train.bye{opacity:0!important;transition:opacity .8s}

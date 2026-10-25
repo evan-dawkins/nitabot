@@ -135,6 +135,35 @@ function nextDir(r,s,nextId){if(!nextId)return 0;let best=null;
   r.ids.forEach((id,k)=>{if(id===nextId&&(best==null||Math.abs(k-s)<Math.abs(best-s)))best=k});
   if(best==null||Math.abs(best-s)>3)return 0;
   return best>s+.02?1:best<s-.02?-1:0}
+/* ---- position integrity ----
+   Each train keeps three things apart:
+     t.raw  the latest report exactly as it came in (source lat/lon and timestamp; never rewritten)
+     t.acc  the last report NITABot trusts: the marker only ever glides between trusted reports
+     t.pend a report that disagrees with the trusted one, held back until the next report settles it
+   A report is held back when it would mean an impossible trip from the trusted one (further than the train could
+   go in the time between them), a hop to another branch with neither report on shared track, or (as before) a
+   step backwards. The next report decides: if it agrees with the trusted position the odd one was a blip
+   (dropped); if it carries on from the held one, the move was real and is accepted. Time alone never accepts it.
+   Thresholds (why these numbers):
+     VMAX   fastest a train runs: the L tops out near 55-70 mph (31 m/s); Metra at 79 mph (35 m/s, +margin)
+     SLACK  CTA positions come from its signal system and are placed by CTA's own predictions, so they can sit a
+            block or two ahead (a few hundred metres; the back-and-forth measured in Oct 2026 was 1-3% of moves).
+            Metra's is real GPS, refreshed about every 30 s.
+   A train whose position can't be confirmed goes grey after 2.5 minutes (STALE_AFTER, from the trusted report's
+   own time) and is hidden after 5 (HIDE_UNRESOLVED); it comes back the moment a report is confirmed. */
+const VMAX={cta:31,metra:37},SLACK={cta:700,metra:450},HIDE_UNRESOLVED=300000,ONTRACK2=(60/33.3)**2;
+const POSDIAG={accepted:0,held:0,blips:0,confirmed:0,replaced:0,old:0,dup:0,offtrack:0,events:[]};
+function pdLog(t,what,o){POSDIAG.events.push({at:Date.now(),id:t?t.id:"",what,lat:o&&o.lat,lon:o&&o.lon,fix:o&&o.fix});
+  if(POSDIAG.events.length>200)POSDIAG.events.shift();if(t){(t.log||(t.log=[])).push(what);if(t.log.length>8)t.log.shift()}}
+function mDist(a,b){const dy=(a.lat-b.lat)*110540,dx=(a.lon-b.lon)*111320*Math.cos(a.lat*Math.PI/180);return Math.hypot(dx,dy)}
+// could the train get from report a to report b in the time between them?
+function reachable(L,a,b){const dt=Math.max(0,(b.fix-a.fix)/1000);return mDist(a,b)<=VMAX[L.sys]*dt+SLACK[L.sys]}
+function nearRoute(r,lat,lon){const g=geo(lat,lon),A=r.anc;let mn=Infinity;
+  for(let i=1;i<A.length;i++){const a=A[i-1],b=A[i],dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy,t=l2?Math.max(0,Math.min(1,((g[0]-a[0])*dx+(g[1]-a[1])*dy)/l2)):0;
+    mn=Math.min(mn,(a[0]+dx*t-g[0])**2+(a[1]+dy*t-g[1])**2)}return mn<ONTRACK2}
+// a change of branch is believable when either report sits on track both branches use
+function branchOk(L,a,b){if(a.ri===b.ri)return true;return nearRoute(L.routes[b.ri],a.lat,a.lon)||nearRoute(L.routes[a.ri],b.lat,b.lon)}
+function suspicious(L,a,b){if(!reachable(L,a,b))return"jump";if(!branchOk(L,a,b))return"branch";return""}
 // data.lines: line api name -> reports shaped like CTA's (Metra's are turned into this shape by systems/metra/feed.js)
 function ingest(data,keys=CTA_ORDER){
   const ml=data.lines||{};const seenAll=new Set();let bad=0;
@@ -147,8 +176,9 @@ function ingest(data,keys=CTA_ORDER){
       let fix=+v.predicted_at;fix=isFinite(fix)&&fix>0?(fix<1e12?fix*1000:fix):serverNow();
       let t=live.get(id);
       const loc=locate(L,lat,lon,t?t.ri:null,v.next_sta_id,t?t.lastObsS:null);
-      if(!loc){bad++;continue}                                              // fix isn't on this line (yard, bad data)
+      if(!loc){bad++;POSDIAG.offtrack++;if(t){t.lastSeen=Date.now();pdLog(t,"off track",{lat,lon,fix})}continue}   // fix isn't on this line (yard, bad data)
       seenAll.add(id);
+      const obs={lat,lon,fix,ri:loc.ri,s:loc.s,next:v.next_sta_id||""};
       const hint=nextDir(L.routes[loc.ri],loc.s,v.next_sta_id);
       const now=performance.now();
       if(!t){
@@ -157,41 +187,57 @@ function ingest(data,keys=CTA_ORDER){
           requestAnimationFrame(()=>requestAnimationFrame(()=>{for(const q of[vis.g,vis.trail.g])q.classList.remove("born");
             setTimeout(()=>{for(const q of[vis.g,vis.trail.g])q.classList.remove("grow")},700)}))}
         t={id,L,ri:loc.ri,segFrom:loc.s,segTo:loc.s,segT0:now,segDur:1,lastObsS:loc.s,dirSign:hint,
-           updated:fix,lastSeen:Date.now(),stale:false,shown:[p.x,p.y],ang:0,a11y:"",...vis};
-        t.run=runLabel(v);t.cta=v;
+           updated:fix,lastSeen:Date.now(),stale:false,shown:[p.x,p.y],ang:0,a11y:"",raw:obs,acc:obs,pend:null,held:false,...vis};
+        t.run=runLabel(v);t.cta=v;POSDIAG.accepted++;
         bindTrain(t);applyTrainClass(t);trains.push(t);live.set(id,t);
+        continue}
+      t.run=runLabel(v);t.lastSeen=Date.now();t.raw=obs;
+      // older than what we trust, or the same report again: nothing new
+      if(fix<t.acc.fix){POSDIAG.old++;pdLog(t,"older than trusted",obs);continue}
+      if(fix===t.acc.fix){if(mDist(obs,t.acc)>1){POSDIAG.dup++;pdLog(t,"same time, other place",obs)}t.cta=v;continue}
+      if(t.pend&&fix<=t.pend.fix)continue;                                  // a repeat of the report being checked
+      let why=suspicious(L,t.acc,obs),corroborated=false;
+      if(why){
+        if(t.pend&&!suspicious(L,t.pend,obs)){corroborated=true;POSDIAG.confirmed++;pdLog(t,"confirmed "+t.pend.why,obs)}   // it carries on from the held report: real
+        else{if(t.pend){POSDIAG.replaced++;pdLog(t,"held report contradicted",obs)}else{POSDIAG.held++;pdLog(t,"held: "+why,obs)}
+          t.pend={...obs,why};t.held=true;continue}                        // hold the marker where it was trusted
+      }else if(t.pend){POSDIAG.blips++;pdLog(t,"dropped a blip ("+t.pend.why+")",t.pend)}
+      t.pend=null;t.held=false;t.cta=v;
+      const moved=Math.abs(loc.s-t.lastObsS)>0.02||loc.ri!==t.ri;
+      // CTA now and then puts a train a few hundred metres back, then forward again (1-3% of moves, measured
+      // Oct 2026; often after placing it at its next station early). A train goes backwards on the map only if CTA
+      // keeps saying so for 3 reports in a row (about a minute and a half), or turns it around.
+      const exp=hint||t.dirSign;
+      if(!corroborated&&moved&&loc.ri===t.ri&&exp&&(loc.s-t.lastObsS)*exp<-0.08){t.backN=(t.backN||0)+1;if(t.backN<3){pdLog(t,"held: step back",obs);continue}}
+      t.backN=0;
+      const gap=Math.max(5000,Math.min(75000,fix-t.acc.fix));
+      const cs=curS(t,now);
+      if(corroborated&&!reachable(L,t.acc,obs)){
+        // a confirmed jump: put it there, without drawing a trip along track nobody saw it take
+        t.ri=loc.ri;t.segFrom=loc.s;t.hist=[];t.dirSign=hint;
+      }else if(loc.ri===t.ri){
+        const dl=loc.s-t.lastObsS;if(Math.abs(dl)>0.03)t.dirSign=dl<0?-1:1;
+        // a jump of more than a few stations isn't a train moving along the line (e.g. finishing a lap of the
+        // Loop and heading back out): place it there, don't draw a path we don't know
+        t.segFrom=Math.abs(loc.s-cs)>4?loc.s:cs;
       }else{
-        t.run=runLabel(v);t.cta=v;t.lastSeen=Date.now();
-        const moved=Math.abs(loc.s-t.lastObsS)>0.02||loc.ri!==t.ri;
-        // CTA now and then puts a train a few hundred metres back, then forward again (1-3% of moves, measured
-        // Oct 2026; often after placing it at its next station early). A train goes backwards on the map only if CTA
-        // keeps saying so for 3 reports in a row (about a minute and a half), or turns it around.
-        const exp=hint||t.dirSign;
-        if(moved&&loc.ri===t.ri&&exp&&(loc.s-t.lastObsS)*exp<-0.08){t.backN=(t.backN||0)+1;if(t.backN<3)continue}
-        t.backN=0;
-        if(fix>t.updated||moved){
-          const gap=fix>t.updated?Math.max(5000,Math.min(75000,fix-t.updated)):POLL;
-          const cs=curS(t,now);
-          if(loc.ri===t.ri){
-            const dl=loc.s-t.lastObsS;if(Math.abs(dl)>0.03)t.dirSign=dl<0?-1:1;
-            // a jump of more than a few stations isn't a train moving along the line (e.g. finishing a lap of the
-            // Loop and heading back out): place it there, don't draw a path we don't know
-            t.segFrom=Math.abs(loc.s-cs)>4?loc.s:cs;
-          }else{
-            // branch change: positions are comparable only while one of them is on the shared stretch
-            const P=sharedPrefix(L,t.ri,loc.ri);
-            if(Math.min(t.lastObsS,loc.s)<=P){const dl=loc.s-t.lastObsS;if(Math.abs(dl)>0.03)t.dirSign=dl<0?-1:1}else t.dirSign=0;
-            t.segFrom=cs<=P?cs:loc.s;t.ri=loc.ri;
-          }
-          t.lastObsS=loc.s;t.segTo=loc.s;t.segT0=now;t.segDur=gap;t.updated=fix;
-          if(moved)pingTrain(t);
-        }
-        if(hint)t.dirSign=hint;                                             // CTA's own next station settles the direction
+        // branch change: positions are comparable only while one of them is on the shared stretch
+        const P=sharedPrefix(L,t.ri,loc.ri);
+        if(Math.min(t.lastObsS,loc.s)<=P){const dl=loc.s-t.lastObsS;if(Math.abs(dl)>0.03)t.dirSign=dl<0?-1:1}else t.dirSign=0;
+        t.segFrom=cs<=P?cs:loc.s;t.ri=loc.ri;
       }
+      t.lastObsS=loc.s;t.segTo=loc.s;t.segT0=now;t.segDur=gap;t.updated=fix;t.acc=obs;POSDIAG.accepted++;
+      if(moved)pingTrain(t);
+      if(hint)t.dirSign=hint;                                               // CTA's own next station settles the direction
     }
   }
   for(const t of[...trains])if(keys.includes(t.L.key)&&!seenAll.has(t.id)&&Date.now()-t.lastSeen>DROP_AFTER)removeTrain(t,true);
   return bad}
+// what the map may say about a train's position right now
+function posState(t){if(t.held&&serverNow()-t.updated>HIDE_UNRESOLVED)return"hidden";if(t.stale)return t.held?"held-stale":"stale";return t.held?"held":"ok"}
+function posDiag(){const by={};for(const t of trains){const k=posState(t);by[k]=(by[k]||0)+1}
+  return{...POSDIAG,events:POSDIAG.events.slice(-40),now:by,trains:trains.filter(t=>t.held||t.stale).map(t=>({id:t.id,state:posState(t),
+    trusted:t.acc,raw:t.raw,held:t.pend,age_s:Math.round((serverNow()-t.updated)/1000),log:t.log||[]}))}}
 async function poll(){
   clearTimeout(pollTimer);
   if(inflight)return;

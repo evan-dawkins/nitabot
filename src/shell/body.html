@@ -16,6 +16,7 @@
   <div class="ops">
     <button class="abtn" id="abtn" aria-expanded="false" aria-controls="apanel" title="CTA and Metra service alerts"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="ico" d="M8 1.8 L15 14 H1 Z M8 6.2 V9.6 M8 11.6 V11.7"/></svg><span id="acount"></span><span class="aw" id="aword"></span></button>
     <span class="state" id="state"><i></i><span id="stateText">Connecting</span></span>
+    <span id="mhealth" class="mh" role="status" tabindex="0" hidden><i></i><span>Metra</span></span>
     <span id="updated">Waiting for first report</span>
     <span><b id="count">–</b> <span class="cnt-word">trains reporting</span><span class="short">trains</span></span>
     <span class="clock" id="clock"></span>
@@ -49,8 +50,9 @@
   <div class="sep" role="separator"></div>
   <button role="menuitemcheckbox" id="ciTog" aria-checked="true" title="A voice checks in on each train of the moment"><span class="ck" aria-hidden="true"></span><span>Train check-ins</span></button>
 </div>
-<div id="apanel" class="pnl" role="dialog" aria-label="Service alerts"><div class="ahd"><b>Service alerts</b><span id="ascope"></span><button id="aclose" aria-label="Close alerts">×</button></div><div class="alist" id="alist"></div></div>
+<div id="apanel" class="pnl" role="dialog" aria-label="Service alerts"><div class="ahd"><b>Service alerts</b><span id="ascope"></span><button id="aclose" aria-label="Close alerts">×</button></div><div id="afilt"></div><div class="alist" id="alist"></div></div>
 <div id="notice" class="pnl" role="status"></div>
+<div id="mbanner" role="alert" hidden></div>
 <div id="tip"></div>
 <div id="introVeil"></div>
 <div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>

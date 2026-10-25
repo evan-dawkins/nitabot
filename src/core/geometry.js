@@ -4,6 +4,7 @@
    ===================================================================== */
 const GP=NET.proj;
 function geo(lat,lon){return[(lon-GP.lon0)*111.32*GP.cos*GP.k,(GP.lat0-lat)*110.54*GP.k]}
+function ungeo(x,y){return[GP.lat0-y/(110.54*GP.k),GP.lon0+x/(111.32*GP.cos*GP.k)]}   // map units -> [lat, lon] (tests and diagnostics)
 const MAX_MATCH_D2=36*36;                                         // ~1.2 km: a fix further than that from its own line isn't placed
 function cum(p){const c=[0];for(let i=1;i<p.length;i++)c.push(c[i-1]+Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]));return c}
 function along(p,c,d){const tot=c[c.length-1];d=Math.max(0,Math.min(tot,d));
