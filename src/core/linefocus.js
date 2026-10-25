@@ -51,6 +51,7 @@ function setFocus(key){
   for(const k of ORDER){chips[k].setAttribute("aria-pressed",String(k===key));
     lineEls[k].track.classList.toggle("dim",!!key&&k!==key);if(lineEls[k].cases)lineEls[k].cases.classList.toggle("dim",!!key&&k!==key)}
   for(const rec of STATIONS)rec.g.classList.toggle("dim",!!key&&!rec.lines.has(key));
+  for(const x of XLINKS)x.g.classList.toggle("dim",!!key&&!x.a.lines.has(key)&&!x.b.lines.has(key));
   // put the focused line on top so shared corridors read clearly
   if(key)trackG.appendChild(lineEls[key].track);
   for(const t of trains)applyTrainClass(t);

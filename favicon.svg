@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>NITABot</title>
+  <rect width="64" height="64" rx="14" fill="#12212E"/>
+  <path d="M4 50H14L50 14H60" fill="none" stroke="#EF4B3C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 4V60" fill="none" stroke="#3E9BF2" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="8.5" fill="#FFFFFF" stroke="#12212E" stroke-width="4"/>
+</svg>

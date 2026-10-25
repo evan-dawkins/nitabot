@@ -3,9 +3,9 @@
 <body>
 
 <div class="top">
-  <div class="mark"><b>NITABot</b><span>Unofficial Chicago L and Metra live map</span>
+  <div class="mark"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#12212E"/><path d="M4 50H14L50 14H60" fill="none" stroke="#EF4B3C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 4V60" fill="none" stroke="#3E9BF2" stroke-width="9" stroke-linecap="round"/><circle cx="32" cy="32" r="8.5" fill="#fff" stroke="#12212E" stroke-width="4"/></svg><b>NITABot</b><span>Unofficial CTA &lsquo;L&rsquo; and Metra live map</span>
     <div class="tools">
-      <button id="helpBtn" aria-label="What is this? Open the welcome guide" title="What is this? (?)" aria-controls="intro">?</button>
+      <button id="helpBtn" class="ibtn" aria-label="Help: open the welcome guide" title="Help and about (?)" aria-controls="intro">?</button>
       <button id="snd" class="ibtn snd" aria-pressed="true" aria-label="Sound" aria-haspopup="menu" aria-expanded="false" aria-controls="sndmenu" title="Sound (M mutes)"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="sp" d="M3 7.6h3.1L10.4 4v12l-4.3-3.6H3z"/><path class="w1" d="M13.2 7.6c.9.6 1.4 1.4 1.4 2.4s-.5 1.8-1.4 2.4"/><path class="w2" d="M15.5 5.2c1.7 1.2 2.6 2.9 2.6 4.8s-.9 3.6-2.6 4.8"/><path class="x" d="M13.2 7.8l4.6 4.4M17.8 7.8l-4.6 4.4"/></svg></button>
       <button id="styleBtn" class="ibtn" aria-pressed="false" aria-label="Show trains as cute little trains" title="Cute trains (C)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 12.5V8a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v4.5z"/><path d="M6 8h2.2M11.8 8H14"/><circle cx="6.5" cy="14.6" r="1.4"/><circle cx="13.5" cy="14.6" r="1.4"/></svg></button>
       <button id="satBtn" class="ibtn" aria-pressed="false" aria-label="Switch to the satellite map" title="Satellite map (S)"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6.6"/><path d="M3.4 10h13.2M10 3.4c2 2 2.9 4.2 2.9 6.6s-.9 4.6-2.9 6.6M10 3.4c-2 2-2.9 4.2-2.9 6.6s.9 4.6 2.9 6.6"/></svg></button>
@@ -55,31 +55,30 @@
 <div id="mbanner" role="alert" hidden></div>
 <div id="tip"></div>
 <div id="introVeil"></div>
-<div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
-  <button class="x" aria-label="Close welcome guide">×</button>
-  <div class="kick"><i></i>Live</div>
-  <h2 id="introTitle">Every L and Metra train, right now</h2>
-  <svg class="hero" viewBox="0 0 400 64" aria-hidden="true">
-    <path class="trk" d="M14 40H386" stroke="#C60C30"/>
-    <circle class="st" cx="60" cy="40" r="5"/><circle class="st" cx="160" cy="40" r="5"/><circle class="st" cx="260" cy="40" r="5"/><circle class="st" cx="350" cy="40" r="5"/>
-    <g class="mover"><path class="tl" d="M-60 40H0" stroke="url(#heroTrail)"/><path d="M12 0L-7 8L-3.2 0L-7-8Z" transform="translate(0 40)" fill="#C60C30" stroke="var(--panel)" stroke-width="1.6"/></g>
-    <defs><linearGradient id="heroTrail" x1="-60" x2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#C60C30" stop-opacity="0"/><stop offset="1" stop-color="#C60C30" stop-opacity=".8"/></linearGradient></defs>
-    <text x="200" y="16" text-anchor="middle">Each arrow is a real train</text>
-  </svg>
-  <p>A live map of CTA &lsquo;L&rsquo; and Metra trains around Chicago. Leave it on like a fish tank and watch them go. Zoom out for the suburbs.</p>
-  <ul class="how">
-    <li><span class="ic" style="--c:#3D95F0"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg></span><span><b>Move the map</b><small>Drag it. Scroll or pinch to zoom.</small></span></li>
-    <li><span class="ic" style="--c:#C60C30"><svg viewBox="0 0 24 24"><path class="f" d="M20 12L5 18l3-6-3-6z"/></svg></span><span><b>Tap a train</b><small>See where it's going.</small></span></li>
-    <li><span class="ic" style="--c:#F5892E"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" class="f"/><circle cx="12" cy="12" r="8.5"/></svg></span><span><b>Tap a station</b><small>See the next arrivals. Tap ☆ to save it.</small></span></li>
-    <li><span class="ic" style="--c:#B26BE0"><svg viewBox="0 0 24 24"><path d="M4 7h16" stroke="#C60C30"/><path d="M4 12h16" stroke="#00A1DE"/><path d="M4 17h16" stroke="#E27EA6"/></svg></span><span><b>Pick a line</b><small>Tap one at the bottom to see just it. Switch between L and Metra there too.</small></span></li>
-    <li><span class="ic" style="--c:#47C6E4"><svg viewBox="0 0 24 24"><path class="f" d="M4 9h3.5L12 5v14l-4.5-4H4z"/><path d="M15.5 9.5c1 .7 1.5 1.5 1.5 2.5s-.5 1.8-1.5 2.5M18 7c1.8 1.3 2.7 3 2.7 5s-.9 3.7-2.7 5"/></svg></span><span><b>Pick a sound</b><small>Tap the speaker by the title.</small></span></li>
-    <li><span class="ic" style="--c:#E27EA6"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/><path class="f" d="M17 12l4-3v6z"/><path d="M12 7.5V12l3 2"/></svg></span><span><b>Leave it be</b><small>After 2 minutes (20 seconds on a phone) it rides along with live trains. Close the train's card (×) to stop.</small></span></li>
-  </ul>
-  <p class="nota">Not affiliated with the Chicago Transit Authority (CTA) or Metra. Train positions and times come from CTA's public Train Tracker data and Metra's public GTFS feeds.</p>
+<div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" aria-describedby="introLede" hidden>
+  <button class="x" aria-label="Close the welcome guide">×</button>
+  <div class="kick"><i></i>Live map</div>
+  <h2 id="introTitle">Every CTA &lsquo;L&rsquo; and Metra train, on one map</h2>
+  <p class="lede" id="introLede">Each arrow is a real train, drawn where it last reported. Leave it running like a fish tank, or dig in.</p>
+  <ol class="steps">
+    <li><span class="n">1</span><span><b>Drag to move, scroll or pinch to zoom.</b> Zoom out for the suburbs and every Metra line.</span></li>
+    <li><span class="n">2</span><span><b>Tap a train</b> to see where it&rsquo;s headed, then <b>Follow</b> to ride along.</span></li>
+    <li><span class="n">3</span><span><b>Tap a station</b> for its next trains. <b>☆</b> pins it to your board.</span></li>
+    <li><span class="n">4</span><span><b>Alerts</b> (top right) has CTA and Metra service notices. The <b>line bar</b> (bottom) shows one line at a time.</span></li>
+  </ol>
+  <div class="key" aria-label="Map key">
+    <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M1 7h20" stroke="#C60C30" stroke-width="4"/><circle cx="11" cy="7" r="3.4" fill="var(--stnfill)" stroke="#C60C30" stroke-width="1.6"/></svg>Station</span>
+    <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M1 4h20" stroke="#C60C30" stroke-width="3.4"/><path d="M1 10h20" stroke="#00A1DE" stroke-width="3.4"/><rect x="7" y="1.2" width="8" height="11.6" rx="4" fill="var(--stnfill)" stroke="var(--ink)" stroke-width="1.8"/></svg>Transfer</span>
+    <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M1 7h20" stroke="var(--metra-sample)" stroke-width="4.4"/><path d="M1 7h20" stroke="var(--city)" stroke-width="1.4"/></svg>Metra line</span>
+    <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="#C60C30" stroke="var(--bg)" stroke-width="1.3"/></svg>Live train</span>
+    <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="#6B7E8F" stroke="var(--bg)" stroke-width="1.3" opacity=".7"/></svg>Out of date</span>
+  </div>
+  <p class="extras">By the title: sound, cute trains, satellite, light or dark. Leave it alone for a couple of minutes and it rides along with a train.</p>
+  <p class="about">NITABot is an unofficial personal project made for fun and is not affiliated with NITA. It isn&rsquo;t affiliated with the CTA or Metra either: train positions and times come from CTA&rsquo;s public Train Tracker data and Metra&rsquo;s public GTFS feeds.</p>
   <div class="foot">
-    <button class="go">Start watching</button>
-    <label><input type="checkbox" id="introHide">Don't show this on start</label>
-    <span class="hint">Tap <b>?</b> by the title to see this again.</span>
+    <button class="go">Start exploring</button>
+    <span class="hint">Open this again any time with <b>?</b> by the title.</span>
   </div>
 </div>
+
 

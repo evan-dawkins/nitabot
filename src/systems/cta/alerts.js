@@ -22,7 +22,7 @@ const SYS_NAME={cta:"CTA",metra:"Metra"};
    elevator or escalator count as an accessibility alert. Everything else is "Other notices". */
 const ACAT=[["delay","Delays"],["disrupt","Suspensions & disruptions"],["station","Station & service changes"],
   ["access","Elevators & accessibility"],["planned","Planned work"],["other","Other notices"]];
-const ACAT_NAME=Object.fromEntries(ACAT);
+const ACAT_NAME=Object.fromEntries(ACAT),ACAT_SHORT={delay:"Delays",disrupt:"Disruptions",station:"Station changes",access:"Elevators",planned:"Planned work",other:"Other"};
 function alertCategory(a,sys){
   if(sys==="cta"){const im=String(a.impact||"").toLowerCase();
     if(/elevator|escalator|accessib/.test(im))return"access";
@@ -111,7 +111,7 @@ function renderAlerts(){
   $("afilt").innerHTML=`<div class="aseg" role="group" aria-label="System">${[["all","All"],["cta","CTA"],["metra","Metra"]].map(([k,l])=>
       `<button data-sys="${k}" aria-pressed="${aSys===k}">${l}<span>${sysN(k)}</span></button>`).join("")}</div>`
     +`<div class="acats" role="group" aria-label="Type of alert">${[["all","Everything"],...ACAT].map(([k,l])=>{const c=k==="all"?inSys.length:inSys.filter(a=>a.cat===k).length;
-      return c||k==="all"?`<button data-cat="${k}" aria-pressed="${aCat===k}">${esc(l)} <span>${c}</span></button>`:""}).join("")}</div>`;
+      return c||k==="all"?`<button data-cat="${k}" aria-pressed="${aCat===k}" title="${esc(l)}">${esc(k==="all"?l:ACAT_SHORT[k])} <span>${c}</span></button>`:""}).join("")}</div>`;
   $("ascope").textContent=focusKey?`${LINES[focusKey].code} and system-wide`:"";
   const vis=visibleAlerts(),L=$("alist");
   // a feed that isn't answering never reads as "no alerts": say whose, and since when

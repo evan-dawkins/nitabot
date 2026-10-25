@@ -259,13 +259,15 @@ function radarFrame(now){
   radarPh=(radarPh+speed*dt*1000/radarCycle)%1;
   radarFresh=false;
   const r=`rotate(${(radarPh*360).toFixed(2)})`;if(r!==radarRot){radarRot=r;radarSweep.setAttribute("transform",r)}}
-/* ---- welcome panel ----
-   Shows on start unless "Don't show this on start" was ticked (remembered in this browser).
-   Closing shrinks it into the ? button by the title; the ? grows it back out. */
-const intro=$("intro"),introVeil=$("introVeil"),helpBtn=$("helpBtn"),introHide=$("introHide"),HIDE_KEY="nitabot.hideIntro";
+/* ---- welcome guide ----
+   Opens by itself on a first visit only: closing it (button, ×, Esc or a click outside) marks it seen in this
+   browser (nitabot.introSeen; nitabot.hideIntro from older versions counts too). ? by the title opens it again.
+   If the browser won't store anything, it still closes normally and simply shows again on the next visit.
+   Closing shrinks it into the ? button; the ? grows it back out. */
+const intro=$("intro"),introVeil=$("introVeil"),helpBtn=$("helpBtn"),SEEN_KEY="nitabot.introSeen",HIDE_KEY="nitabot.hideIntro";
 let introOpen=false,introBusy=false;
-const store={get(){try{return localStorage.getItem(HIDE_KEY)==="1"}catch(_){return false}},
-  set(v){try{v?localStorage.setItem(HIDE_KEY,"1"):localStorage.removeItem(HIDE_KEY)}catch(_){}}};
+const store={get(){try{return localStorage.getItem(SEEN_KEY)==="1"||localStorage.getItem(HIDE_KEY)==="1"}catch(_){return false}},
+  set(){try{localStorage.setItem(SEEN_KEY,"1")}catch(_){}}};
 function reduceMotion(){return!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)}
 function introRest(){return"translate(-50%,-50%)"}
 function introAtButton(){   // transform that puts the panel's top-left corner on the ? button, tiny
@@ -273,9 +275,10 @@ function introAtButton(){   // transform that puts the panel's top-left corner o
   const W=intro.offsetWidth,H=intro.offsetHeight,cx=st.width/2,cy=st.height/2;
   const k=Math.max(.04,b.width/W);
   return`translate(${(b.left-st.left)-cx}px,${(b.top-st.top)-cy}px) scale(${k})`}
+let introBack=null;
 function openIntro(){
-  if(introOpen||introBusy)return;introOpen=true;introBusy=true;
-  introHide.checked=store.get();intro.hidden=false;hideTip();
+  if(introOpen||introBusy)return;introOpen=true;introBusy=true;introBack=document.activeElement;
+  intro.hidden=false;hideTip();helpBtn.setAttribute("aria-expanded","true");
   if(reduceMotion()){intro.style.transform=introRest();intro.style.opacity=1;introVeil.classList.add("on");introBusy=false;intro.querySelector(".go").focus();return}
   intro.classList.remove("anim");intro.style.transform=introAtButton();intro.style.opacity=0;intro.style.borderRadius="40px";
   void intro.offsetWidth;intro.classList.add("anim");
@@ -284,16 +287,20 @@ function openIntro(){
 }
 function closeIntro(){
   if(!introOpen||introBusy)return;introOpen=false;introBusy=true;
-  store.set(introHide.checked);introVeil.classList.remove("on");
+  store.set();introVeil.classList.remove("on");helpBtn.setAttribute("aria-expanded","false");
   const done=()=>{intro.hidden=true;intro.classList.remove("anim");introBusy=false;
-    helpBtn.classList.add("catch");setTimeout(()=>helpBtn.classList.remove("catch"),700)};
+    helpBtn.classList.add("catch");setTimeout(()=>helpBtn.classList.remove("catch"),700);
+    if(introBack&&introBack!==document.body&&introBack.focus)introBack.focus({preventScroll:true});else helpBtn.focus({preventScroll:true})};
   if(reduceMotion()){done();return}
   intro.classList.add("anim");intro.style.transform=introAtButton();intro.style.opacity=0;intro.style.borderRadius="40px";
   setTimeout(done,560);
 }
-introHide.onchange=()=>store.set(introHide.checked);
 intro.querySelector(".go").onclick=closeIntro;intro.querySelector(".x").onclick=closeIntro;
 introVeil.addEventListener("pointerdown",e=>{e.stopPropagation();closeIntro()});
+// keep Tab inside the guide while it's open (it's a modal dialog)
+intro.addEventListener("keydown",e=>{if(e.key!=="Tab")return;const f=[...intro.querySelectorAll("button,a[href]")].filter(x=>!x.disabled);
+  if(!f.length)return;const i=f.indexOf(document.activeElement);
+  if(e.shiftKey&&(i<=0)){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus()}});
 helpBtn.onclick=e=>{e.stopPropagation();introOpen?closeIntro():openIntro()};
 if(!store.get())setTimeout(openIntro,350);
 $("zin").onclick=()=>zoomBy(1/1.4);$("zout").onclick=()=>zoomBy(1.4);$("fit").onclick=resetView;
