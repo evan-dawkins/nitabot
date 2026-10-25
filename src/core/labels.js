@@ -43,6 +43,14 @@ function layoutLabels(){
   const M=160,inView=(x,y)=>x>-M&&x<W+M&&y>-M&&y<H+M;
   const segs=[];for(const s of SEGMENTS){if(focusKey&&s.key!==focusKey)continue;const a=toS(s.a),b=toS(s.b);
     if(Math.max(a[0],b[0])<-M||Math.min(a[0],b[0])>W+M||Math.max(a[1],b[1])<-M||Math.min(a[1],b[1])>H+M)continue;segs.push([a,b,s.key])}
+  // a coarse screen grid over the track, so a label checks only the track near it (NITABot has ~4x CTABot's track)
+  const GC=48,sgrid=new Map();
+  segs.forEach((s,i)=>{const x0=Math.floor(Math.min(s[0][0],s[1][0])/GC),x1=Math.floor(Math.max(s[0][0],s[1][0])/GC),
+    y0=Math.floor(Math.min(s[0][1],s[1][1])/GC),y1=Math.floor(Math.max(s[0][1],s[1][1])/GC);
+    for(let gx=x0;gx<=x1;gx++)for(let gy=y0;gy<=y1;gy++){const k=gx*100003+gy;let c=sgrid.get(k);if(!c)sgrid.set(k,c=[]);c.push(i)}});
+  const segsNear=(b,pad)=>{const out=new Set();for(let gx=Math.floor((b.x0-pad)/GC);gx<=Math.floor((b.x1+pad)/GC);gx++)
+    for(let gy=Math.floor((b.y0-pad)/GC);gy<=Math.floor((b.y1+pad)/GC);gy++){const c=sgrid.get(gx*100003+gy);if(c)for(const i of c)out.add(i)}
+    return[...out].map(i=>segs[i])};
   const dPtSeg=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy||1;let t=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l2;t=Math.max(0,Math.min(1,t));
     return Math.hypot(a[0]+dx*t-p[0],a[1]+dy*t-p[1])};
   const dBoxSeg=(b,a,c)=>{const cs=[[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]];let m=Infinity;
@@ -102,10 +110,10 @@ function layoutLabels(){
         if(own){const dO=dm(own);for(const m of marks){if(m.id===rec.id)continue;if(Math.abs(m.c[0]-c[0])>w+60||Math.abs(m.c[1]-c[1])>80)continue;
           if(dm(m)<=dO+2){amb=true;break}}}}
       // (2) it doesn't hug the track of a line that doesn't serve this station
-      if(!amb&&pass===0)for(const sg of segs){if(rec.lines.has(sg[2]))continue;if(dBoxSeg(box,sg[0],sg[1])<(rec.tier===0?3:7)){amb=true;break}}
+      if(!amb&&pass===0)for(const sg of segsNear(box,8)){if(rec.lines.has(sg[2]))continue;if(dBoxSeg(box,sg[0],sg[1])<(rec.tier===0?3:7)){amb=true;break}}
       if(amb)continue;
       const tb={x0:box.x0-trackHalf+1,y0:box.y0-trackHalf+1,x1:box.x1+trackHalf-1,y1:box.y1+trackHalf-1};
-      let bad=false;if(pass===0)for(const s of segs)if(boxHitsSeg(tb,s[0],s[1])){bad=true;break}
+      let bad=false;if(pass===0)for(const s of segsNear(tb,1))if(boxHitsSeg(tb,s[0],s[1])){bad=true;break}
       if(bad)continue;
       best={box,pb};break outer;
     }

@@ -94,6 +94,24 @@ class _Grid:
         return best
 
 
+def _rdp_idx(P, idx, eps):
+    """Ramer-Douglas-Peucker over P[idx[0]..idx[-1]]: the indices kept (first and last always)."""
+    if len(idx) < 3:
+        return idx
+    keep = {idx[0], idx[-1]}
+    stack = [(0, len(idx) - 1)]
+    while stack:
+        a, b = stack.pop()
+        best, bi = -1.0, -1
+        for k in range(a + 1, b):
+            d = _seg_d(P[idx[k]], P[idx[a]], P[idx[b]])
+            if d > best:
+                best, bi = d, k
+        if best > eps:
+            keep.add(idx[bi]); stack += [(a, bi), (bi, b)]
+    return sorted(keep)
+
+
 def bundle(lines_out, order, K):
     grids = {k: _Grid([r["anc"] for r in lines_out[k]["routes"]]) for k in order}
     far = {k: _Grid([r["anc"] for r in lines_out[k]["routes"]], cell=NEAR) for k in order}
@@ -129,10 +147,31 @@ def bundle(lines_out, order, K):
             for sh in seg:
                 ls = [x for x in order if x == k or x in sh]
                 slot.append(round(ls.index(k) - (len(ls) - 1) / 2, 2))
-            # 5. stations keep their distance along the (unchanged) track
-            r["anc"], r["slot"] = pts, slot
-            c = [0.0]
+            # 5. thin the points out again: the close spacing was only for finding shared track. Each run of one lane
+            #    is simplified on its own (points within ~5 m of a straight line dropped), so lane changes stay exact.
+            #    Every extra point costs the page work at each zoom and in label placement.
+            keep = [0]
+            i = 0
+            while i < len(slot):
+                j = i
+                while j + 1 < len(slot) and slot[j + 1] == slot[i]:
+                    j += 1
+                run = list(range(i, j + 2))                       # point indices of this run (pieces i..j)
+                keep += _rdp_idx(pts, run, 0.15)[1:]
+                i = j + 1
+            c_old = [0.0]
             for a, b in zip(pts, pts[1:]):
-                c.append(c[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
-            tot = c[-1]
-            r["ds"] = [round(min(d, tot), 2) for d in r["ds"]]
+                c_old.append(c_old[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
+            new = [pts[k] for k in keep]
+            c_new = [0.0]
+            for a, b in zip(new, new[1:]):
+                c_new.append(c_new[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
+            def remap(d):                                         # a distance along the old points -> along the kept ones
+                for n in range(1, len(keep)):
+                    a0, a1 = c_old[keep[n - 1]], c_old[keep[n]]
+                    if d <= a1 or n == len(keep) - 1:
+                        f = 0.0 if a1 == a0 else max(0.0, min(1.0, (d - a0) / (a1 - a0)))
+                        return c_new[n - 1] + f * (c_new[n] - c_new[n - 1])
+                return c_new[-1]
+            r["ds"] = [round(remap(d), 2) for d in r["ds"]]
+            r["anc"], r["slot"] = new, [slot[keep[n]] for n in range(len(keep) - 1)]

@@ -3,7 +3,11 @@
    CAMERA
    ===================================================================== */
 let vb={x:0,y:0,w:1200,h:800},camAnim=null,following=null,selected=null,drag=null,focusKey=null;
-const cw=()=>svg.clientWidth||window.innerWidth||1440, ch=()=>svg.clientHeight||window.innerHeight||900;
+// the map's size in pixels, kept up to date by a ResizeObserver (reading clientWidth every call forced a layout
+// many times per frame while dragging)
+let CWv=0,CHv=0;
+const cw=()=>CWv||svg.clientWidth||window.innerWidth||1440, ch=()=>CHv||svg.clientHeight||window.innerHeight||900;
+try{new ResizeObserver(es=>{for(const e of es){CWv=Math.round(e.contentRect.width);CHv=Math.round(e.contentRect.height)}}).observe(svg)}catch(_){}
 const isNarrow=()=>cw()<=760||ch()<=500;
 const sideSheet=()=>isNarrow()&&cw()>ch()&&ch()<=500;     // phone on its side: panels dock to the left instead of the bottom
 const svgRect=()=>({left:0,top:0,right:cw(),bottom:ch(),width:cw(),height:ch()});   // #map fills the window; ignores the screensaver tilt
