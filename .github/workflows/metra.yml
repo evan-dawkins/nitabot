@@ -26,10 +26,11 @@ jobs:
           python tools/check_metra.py > out.txt || { echo "::error::$(tail -c 1500 out.txt | tr '\n' ' ')"; exit 1; }
           cat out.txt
       - name: Check it against OpenStreetMap
-        run: python tools/check_osm.py 2> err.txt || { echo "::warning::OpenStreetMap check didn't run: $(tail -c 800 err.txt | tr '\n' ' ')"; }
+        run: |
+          python tools/check_osm.py 2> err.txt || echo "::warning::OpenStreetMap check did not run - $(tail -c 800 err.txt | tr '\n' ' ')"
       - name: Save it if it changed
         run: |
-          git add data/metra.json data/metra_issues.json data/osm_check.json data/osm_metra.json 2>/dev/null || true
+          for f in data/metra.json data/metra_issues.json data/osm_check.json data/osm_metra.json; do [ -f "$f" ] && git add "$f"; done
           if git diff --cached --quiet; then echo "Metra track unchanged."; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
