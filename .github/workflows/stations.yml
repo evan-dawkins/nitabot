@@ -1,0 +1,29 @@
+# Downloads CTA's official timetable, saves data/stations.json, and rebuilds the map (data/network.json, baked into index.html).
+# Runs once a week, and on demand: Actions tab -> "Refresh CTA stations" -> Run workflow.
+name: Refresh CTA stations
+on:
+  schedule:
+    - cron: "41 9 * * 1"        # Mondays, about 4:41 AM Chicago time in summer
+  workflow_dispatch:
+  push:
+    paths: ["tools/build_stations.py", "tools/build_layout.py", ".github/workflows/stations.yml"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: mkdir -p data && python tools/build_stations.py
+      - run: python tools/build_layout.py         # stops here (nothing saved) if anything doesn't add up
+      - name: Save it if the stations changed
+        run: |
+          git add data/stations.json data/network.json index.html
+          if git diff --cached --quiet; then echo "Stations unchanged."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh CTA stations"
+          git pull --rebase -q && git push

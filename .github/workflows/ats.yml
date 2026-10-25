@@ -1,0 +1,30 @@
+# Downloads O'Hare's Airport Transit System (guideway + stations) from OpenStreetMap, saves data/ats.json and rebuilds the map.
+# The guideway rarely changes, so this runs only when the downloader changes, or by hand: Actions tab -> "Refresh airport train" -> Run workflow.
+name: Refresh airport train
+on:
+  workflow_dispatch:
+  push:
+    paths: ["tools/build_ats.py", ".github/workflows/ats.yml"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build data/ats.json
+        run: |
+          mkdir -p data
+          python tools/build_ats.py 2> err.txt || { echo "::error::$(tail -c 1500 err.txt | tr '\n' ' ')"; exit 1; }
+      - run: python tools/build_layout.py
+      - name: Save it if it changed
+        run: |
+          git add data/ats.json data/network.json index.html
+          if git diff --cached --quiet; then echo "Airport train unchanged."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh airport train (OpenStreetMap)"
+          git pull --rebase -q && git push

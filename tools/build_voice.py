@@ -20,7 +20,7 @@ from pronounce import needs_fix, phonemes   # Chicago pronunciations (Cicero, Og
 MODEL = sys.argv[1]
 ONLY = sys.argv[2].split(",") if len(sys.argv) > 2 else None   # re-record just these lines (keeps the rest)
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-OUT = os.path.join(ROOT, "voice")
+OUT = os.path.join(ROOT, "voice", "cta")
 os.makedirs(OUT, exist_ok=True)
 k = Kokoro(os.path.join(MODEL, "kokoro-v1.0.onnx"), os.path.join(MODEL, "voices-v1.0.bin"))
 VOICE = k.get_voice_style("af_heart") * 0.7 + k.get_voice_style("af_nicole") * 0.3   # warm, a little breathy (as MetraBot)

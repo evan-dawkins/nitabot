@@ -55,7 +55,7 @@ def main(path=None):
     if path:
         z = zipfile.ZipFile(path)
     else:
-        req = urllib.request.Request(URL, headers={"User-Agent": "ctabot station builder (+https://github.com/evan-dawkins/ctabot)"})
+        req = urllib.request.Request(URL, headers={"User-Agent": "nitabot station builder (+https://github.com/evan-dawkins/nitabot)"})
         z = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(req, timeout=300).read()))
 
     routes = {r["route_id"]: r for r in rows(z, "routes.txt") if r["route_id"] in LINES}

@@ -1,0 +1,26 @@
+# Rebuilds index.html from src/ whenever the source changes, so the page always matches its source.
+name: Build page
+on:
+  workflow_dispatch:
+  push:
+    paths: ["src/**", "tools/build.py", ".github/workflows/build.yml"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python tools/build.py
+      - run: python tools/build_layout.py
+      - name: Save it if the page changed
+        run: |
+          git add index.html data/network.json
+          if git diff --cached --quiet; then echo "Page already up to date."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Rebuild page from src/"
+          git pull --rebase -q && git push

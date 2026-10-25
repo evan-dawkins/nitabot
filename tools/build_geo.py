@@ -23,7 +23,7 @@ SIMPLIFY_M = 15
 
 
 def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "ctabot map builder (+https://github.com/evan-dawkins/ctabot)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "nitabot map builder (+https://github.com/evan-dawkins/nitabot)"})
     return zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(req, timeout=300).read()))
 
 

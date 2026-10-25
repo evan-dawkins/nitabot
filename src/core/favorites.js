@@ -1,9 +1,9 @@
 
 /* =====================================================================
    FAVORITE STATIONS — click a station, ☆ to pin (up to 5).
-   Saved in this browser only (localStorage key ctabot.favorites).
+   Saved in this browser only (localStorage key nitabot.favorites).
    ===================================================================== */
-const FAV_KEY="ctabot.favorites",FAV_MAX=5;
+const FAV_KEY="nitabot.favorites",FAV_MAX=5;
 const FAV=(()=>{try{const v=JSON.parse(localStorage.getItem(FAV_KEY)||"{}");return{ids:(Array.isArray(v.ids)?v.ids:[]).filter(id=>STN.has(id)).slice(0,FAV_MAX),min:!!v.min}}catch(_){return{ids:[],min:false}}})();
 function saveFav(){try{localStorage.setItem(FAV_KEY,JSON.stringify(FAV))}catch(_){}}
 const isFav=id=>FAV.ids.includes(id);

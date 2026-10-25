@@ -26,7 +26,7 @@ def download():
         for _ in range(2):
             try:
                 req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": Q}).encode(),
-                                             headers={"User-Agent": "ctabot map builder (+https://github.com/evan-dawkins/ctabot)"})
+                                             headers={"User-Agent": "nitabot map builder (+https://github.com/evan-dawkins/nitabot)"})
                 return json.load(urllib.request.urlopen(req, timeout=120))["elements"]
             except Exception as e:
                 err = e

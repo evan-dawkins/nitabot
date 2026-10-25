@@ -11,9 +11,9 @@ const VO={man:null,manP:null,bufs:{},loading:{},srcs:[],timers:[],hideT:0,gen:0}
 function setCheckins(on){ciOn=on;try{localStorage.setItem(CI_KEY,on?"1":"0")}catch(_){}
   ciTog.setAttribute("aria-checked",String(on));if(on){startAudio();applySound();ciPreload()}else ciStop()}
 ciTog.setAttribute("aria-checked",String(ciOn));
-function voManifest(){return VO.manP||=fetch("voice/manifest.json").then(r=>r.ok?r.json():null).then(m=>VO.man=m).catch(()=>{VO.manP=null;return null})}
+function voManifest(){return VO.manP||=fetch("voice/cta/manifest.json").then(r=>r.ok?r.json():null).then(m=>VO.man=m).catch(()=>{VO.manP=null;return null})}
 function voPack(name){if(VO.bufs[name])return Promise.resolve(VO.bufs[name]);if(!actx)return Promise.resolve(null);
-  return VO.loading[name]||=fetch(`voice/${name}.mp3`).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
+  return VO.loading[name]||=fetch(`voice/cta/${name}.mp3`).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
     .then(b=>new Promise((res,rej)=>actx.decodeAudioData(b,res,rej))).then(b=>VO.bufs[name]=b)
     .catch(()=>{delete VO.loading[name];return null})}
 function ciPreload(){if(ciOn&&actx)voManifest().then(m=>{if(m)voPack("core")})}

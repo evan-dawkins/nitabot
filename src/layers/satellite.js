@@ -8,7 +8,7 @@
    out on the lake). Remembered in this browser.
    ===================================================================== */
 const SAT_URL=(z,x,y)=>`https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/${z}/${y}/${x}`;
-const SAT_KEY="ctabot.satellite",SAT_ZMAX=16,SAT_ZMIN=9,SAT_MAXTILES=120;
+const SAT_KEY="nitabot.satellite",SAT_ZMAX=16,SAT_ZMIN=9,SAT_MAXTILES=120;
 let satOn=(()=>{try{return localStorage.getItem(SAT_KEY)==="1"}catch(_){return false}})();
 const satG=el("g",{class:"sat","aria-hidden":"true"});world.insertBefore(satG,world.firstChild);   // under everything: the drawn lake, the sonar and the lines all sit on top
 const satLayers=new Map(),satTiles=new Map();let satKey="",satT=0,satZ=0;

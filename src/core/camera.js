@@ -95,7 +95,7 @@ addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest('input:not(
   if(e.key==="c"||e.key==="C")styleBtn.click();
   if(e.key==="m"||e.key==="M")setSndMode(sndMode==="off"?sndLast:"off");});
 /* ---- arrows or cute trains (remembered in this browser) ---- */
-const styleBtn=$("styleBtn"),STYLE_KEY="ctabot.cuteTrains";
+const styleBtn=$("styleBtn"),STYLE_KEY="nitabot.cuteTrains";
 let cuteTrains=(()=>{try{return localStorage.getItem(STYLE_KEY)==="1"}catch(_){return false}})();
 function applyStyle(){document.body.classList.toggle("cute",cuteTrains);styleBtn.setAttribute("aria-pressed",String(cuteTrains));
   styleBtn.title=cuteTrains?"Back to arrows (C)":"Cute trains (C)";styleBtn.setAttribute("aria-label",cuteTrains?"Show trains as arrows":"Show trains as cute little trains");
@@ -117,10 +117,10 @@ themeBtn.onclick=e=>{if(e)e.stopPropagation();const next=document.documentElemen
    One 12 s noise buffer (ends crossfaded, so the loop never clicks) feeds each mode through its own
    filter and volume; switching crossfades. Sonar shows a radar over the Loop that turns once per data refresh
    and pings once each time fresh data lands. */
-const sndBtn=$("snd"),sndMenu=$("sndmenu"),SND_KEY="ctabot.sound",SND_MODES=["brown","water","sonar","off"];
+const sndBtn=$("snd"),sndMenu=$("sndmenu"),SND_KEY="nitabot.sound",SND_MODES=["brown","water","sonar","off"];
 const SND_LEVEL={brown:1,water:1,sonar:1},SND_NAME={brown:"brown noise",water:"water",sonar:"sonar",off:"off"};
 let sndMode="brown",sndLast="brown";
-const CI_KEY="ctabot.checkins";let ciOn=true;try{ciOn=localStorage.getItem(CI_KEY)!=="0"}catch(_){}
+const CI_KEY="nitabot.checkins";let ciOn=true;try{ciOn=localStorage.getItem(CI_KEY)!=="0"}catch(_){}
 try{const v=localStorage.getItem(SND_KEY);if(SND_MODES.includes(v))sndMode=v;
   const l=localStorage.getItem(SND_KEY+"Last");if(SND_MODES.includes(l)&&l!=="off")sndLast=l}catch(_){}
 if(sndMode!=="off")sndLast=sndMode;
@@ -254,7 +254,7 @@ function radarFrame(now){
 /* ---- welcome panel ----
    Shows on start unless "Don't show this on start" was ticked (remembered in this browser).
    Closing shrinks it into the ? button by the title; the ? grows it back out. */
-const intro=$("intro"),introVeil=$("introVeil"),helpBtn=$("helpBtn"),introHide=$("introHide"),HIDE_KEY="ctabot.hideIntro";
+const intro=$("intro"),introVeil=$("introVeil"),helpBtn=$("helpBtn"),introHide=$("introHide"),HIDE_KEY="nitabot.hideIntro";
 let introOpen=false,introBusy=false;
 const store={get(){try{return localStorage.getItem(HIDE_KEY)==="1"}catch(_){return false}},
   set(v){try{v?localStorage.setItem(HIDE_KEY,"1"):localStorage.removeItem(HIDE_KEY)}catch(_){}}};

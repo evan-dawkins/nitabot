@@ -14,7 +14,7 @@ for(const key of ORDER){const L=LINES[key],b=document.createElement("button");
 consoleEl.appendChild($("focusnote"));
 /* the line bar folds down to just the current choice; remembered in this browser */
 const ctog=document.createElement("button");ctog.className="ctog";consoleEl.appendChild(ctog);
-const LINES_MIN_KEY="ctabot.linesMin";
+const LINES_MIN_KEY="nitabot.linesMin";
 let linesMin=(()=>{try{return localStorage.getItem(LINES_MIN_KEY)==="1"}catch(_){return false}})();
 function syncLineBar(){consoleEl.classList.toggle("min",linesMin);
   const cur=focusKey?`<i style="background:${LINES[focusKey].color}"></i>${LINES[focusKey].code}`:"All lines";
