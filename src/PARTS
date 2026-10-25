@@ -16,6 +16,7 @@ src/systems/metra/board.js
 src/core/favorites.js
 src/core/chase.js
 src/core/checkins.js
+src/systems/metra/checkins.js
 src/layers/ats.js
 src/layers/satellite.js
 src/core/main.js

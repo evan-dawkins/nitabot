@@ -37,7 +37,8 @@ Phase A split CTABot's published page into these files without changing a byte: 
 | `systems/metra/board.js` | Departure boards for Ogilvie, Union Station, LaSalle St and Millennium (from `schedule.json`) |
 | `core/favorites.js` | Favorite stations, station sheet, mood ticker |
 | `core/chase.js` | Train of the moment |
-| `core/checkins.js` | Voice check-ins (clips in `voice/cta/`) |
+| `core/checkins.js` | Voice check-ins and the L's sentences (clips in `voice/cta/`) |
+| `systems/metra/checkins.js` | Metra's check-in sentences (clips in `voice/metra/`, from MetraBot) |
 | `layers/ats.js` | O'Hare airport train (simulated, labelled) |
 | `layers/satellite.js` | USGS satellite imagery |
 | `core/main.js` | Main loop and start-up |

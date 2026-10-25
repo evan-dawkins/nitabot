@@ -15,9 +15,9 @@ function fitBox(b){const W=cw(),H=ch(),I=uiInsets(),TOP_UI=I.top,BOT_UI=I.bot,si
   const s=Math.min(availW/(b.x1-b.x0),availH/(b.y1-b.y0));
   const w=W/s,h=H/s,cx=(b.x0+b.x1)/2,cyScreen=TOP_UI+8+availH/2,cxScreen=(W-I.right)/2;
   return{x:cx-cxScreen/s,y:(b.y0+b.y1)/2-cyScreen/s,w,h}}
-const fitAll=()=>fitBox(WORLD);
+const fitAll=()=>fitBox(HOME);                       // the home view (Chicago); sizes, labels and zoom steps are tuned to it
 let FIT_W=1200;
-function maxW(){return FIT_W*1.12} const MIN_W=10;   // fully in: the Loop fills the screen
+function maxW(){return Math.max(FIT_W,fitBox(WORLD).w)*1.12} const MIN_W=10;   // fully out: all of Metra; fully in: the Loop fills the screen
 function clampVB(){const cx=vb.x+vb.w/2,cy=vb.y+vb.h/2;
   const nx=Math.max(WORLD.x0,Math.min(WORLD.x1,cx)),ny=Math.max(WORLD.y0,Math.min(WORLD.y1,cy));
   vb.x+=nx-cx;vb.y+=ny-cy}
@@ -233,7 +233,7 @@ function paintRadarTrail(){
   g.globalCompositeOperation="source-in";g.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--ink").trim()||"#fff";g.fillRect(0,0,n,n);
   radarTrail.setAttribute("href",c.toDataURL())}
 new MutationObserver(()=>paintRadarTrail()).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-if(RADAR_C)RADAR_R=Math.ceil(Math.hypot(Math.max(RADAR_C[0],WORLD.x1-RADAR_C[0]),Math.max(RADAR_C[1],WORLD.y1-RADAR_C[1]))*1.6);   // reaches past every edge of the page
+if(RADAR_C)RADAR_R=Math.ceil(Math.hypot(Math.max(RADAR_C[0]-WORLD.x0,WORLD.x1-RADAR_C[0]),Math.max(RADAR_C[1]-WORLD.y0,WORLD.y1-RADAR_C[1]))*1.6);   // reaches past every edge of the page
 if(RADAR_C){const g=el("g",{class:"radar",transform:`translate(${RADAR_C[0].toFixed(1)},${RADAR_C[1].toFixed(1)})`});world.insertBefore(g,trackG);
   radarSweep=el("g",{class:"sweep"},g);
   radarTrail=el("image",{class:"trail",x:-RADAR_R,y:-RADAR_R,width:2*RADAR_R,height:2*RADAR_R,preserveAspectRatio:"none"},radarSweep);

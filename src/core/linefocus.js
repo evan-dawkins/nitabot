@@ -7,11 +7,22 @@ const consoleEl=$("console");
 const allChip=document.createElement("button");allChip.className="chip all";allChip.textContent="All lines";
 allChip.setAttribute("aria-pressed","true");allChip.title="Show all lines and fold this bar";
 allChip.onclick=()=>{if(focusKey)setFocus(null);if(!linesMin)ctog.onclick()};consoleEl.appendChild(allChip);   // All lines: back to every line, and fold the bar (the folded "All lines" opens it again)
+/* two groups of line buttons, the L and Metra: one shows at a time (remembered in this browser); both systems stay on the map */
+const GROUP_KEY="nitabot.lineGroup",grpWrap=document.createElement("span"),gtabs={};
+grpWrap.className="grp";grpWrap.setAttribute("role","group");grpWrap.setAttribute("aria-label","Which line buttons to show");
+let lineGroup=(()=>{try{return localStorage.getItem(GROUP_KEY)==="metra"?"metra":"cta"}catch(_){return"cta"}})();
+for(const[g,label]of[["cta","L"],["metra","Metra"]]){const b=document.createElement("button");b.className="gtab";b.textContent=label;
+  b.title=g==="cta"?"Show the L's lines":"Show Metra's lines";b.onclick=()=>setGroup(g);grpWrap.appendChild(b);gtabs[g]=b}
+consoleEl.appendChild(grpWrap);
 for(const key of ORDER){const L=LINES[key],b=document.createElement("button");
   b.className="chip";b.setAttribute("aria-pressed","false");b.title=`Show only the ${L.name}`;
   b.innerHTML=`<i style="background:${L.color}"></i>${L.code}<span class="ad" aria-hidden="true"></span><span class="n" id="n-${key}"></span>`;
   b.onclick=()=>setFocus(focusKey===key?null:key);consoleEl.appendChild(b);chips[key]=b}
 consoleEl.appendChild($("focusnote"));
+function setGroup(g){lineGroup=g;try{localStorage.setItem(GROUP_KEY,g)}catch(_){}
+  for(const k of ORDER)chips[k].hidden=LINES[k].sys!==g;
+  for(const x in gtabs)gtabs[x].setAttribute("aria-pressed",String(x===g));labelsDirty=true}
+setGroup(lineGroup);
 /* the line bar folds down to just the current choice; remembered in this browser */
 const ctog=document.createElement("button");ctog.className="ctog";consoleEl.appendChild(ctog);
 const LINES_MIN_KEY="nitabot.linesMin";
@@ -35,6 +46,7 @@ function lineBounds(key){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   const pad=15;return{x0:x0-pad,y0:y0-pad,x1:x1+pad+15,y1:y1+pad}}
 function setFocus(key){
   focusKey=key;document.body.classList.toggle("focused",!!key);
+  if(key&&LINES[key].sys!==lineGroup)setGroup(LINES[key].sys);          // its button has to be on show
   allChip.setAttribute("aria-pressed",String(!key));
   for(const k of ORDER){chips[k].setAttribute("aria-pressed",String(k===key));
     lineEls[k].track.classList.toggle("dim",!!key&&k!==key);if(lineEls[k].cases)lineEls[k].cases.classList.toggle("dim",!!key&&k!==key)}

@@ -1,0 +1,19 @@
+{
+ "note": "CTA-Metra transfers NITABot shows. Each pair is listed only because the CTA station's own page on transitchicago.com names the Metra connection (checked 2026-10-25). CTA stations near Metra whose pages name no Metra connection are left out on purpose: Washington/Wabash, Lake, Adams/Wabash, Jackson (Red), Jackson (Blue), Harold Washington Library, Western (Pink), Kedzie (Green), Oak Park (Green).",
+ "checked": "2026-10-25",
+ "pairs": [
+  {"metra": "MAINST", "cta": "40270", "source": "https://transitchicago.com/station/main", "says": "Metra UP-N (Evanston-Main St Station)"},
+  {"metra": "EVANSTON", "cta": "40050", "source": "https://www.transitchicago.com/station/davi/", "says": "Metra UP-N"},
+  {"metra": "LSS", "cta": "40160", "source": "https://www.transitchicago.com/station/lasv/", "says": "Metra RI trains (at Chicago-LaSalle St. Station)"},
+  {"metra": "LSS", "cta": "41340", "source": "https://www.transitchicago.com/station/lasa/", "says": "Metra RI trains (at Chicago-LaSalle St. Station)"},
+  {"metra": "IRVINGPK", "cta": "40550", "source": "https://www.transitchicago.com/station/irvo/", "says": "Metra UP-NW"},
+  {"metra": "JEFFERSONP", "cta": "41280", "source": "https://www.transitchicago.com/station/jrpk/", "says": "Metra UP-NW"},
+  {"metra": "35TH", "cta": "40190", "source": "https://www.transitchicago.com/station/sox/", "says": "Metra RI"},
+  {"metra": "35TH", "cta": "41120", "source": "https://www.transitchicago.com/station/35gr/", "says": "Metra RI (One block west)"},
+  {"metra": "OAKPARK", "cta": "40020", "source": "https://www.transitchicago.com/station/harl/", "says": "Metra UP-W (at adjacent Oak Park station at east end of station located at Marion/South Blvd.)"},
+  {"metra": "OTC", "cta": "41160", "source": "https://www.transitchicago.com/station/clil/", "says": "Metra Ogilvie Station (UP-N, UP-NW, UP-W trains)"},
+  {"metra": "CUS", "cta": "40430", "source": "https://www.transitchicago.com/station/clib/", "says": "Metra BNSF, HC, SWS, MD-N, MD-W, NCS (at Chicago-Union Station)"},
+  {"metra": "CUS", "cta": "40040", "source": "https://www.transitchicago.com/station/quin/", "says": "Metra BNSF, HC, SWS, MD-N, MD-W, NCS (at Union Station)"},
+  {"metra": "RAVENSWOOD", "cta": "40090", "source": "https://www.transitchicago.com/station/dmnb/", "says": "walk 2 blocks east to Ravenswood station on Metra UP-N"}
+ ]
+}

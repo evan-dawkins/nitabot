@@ -8,16 +8,18 @@
    ===================================================================== */
 const ciTog=$("ciTog");
 const VO={man:null,manP:null,bufs:{},loading:{},srcs:[],timers:[],hideT:0,gen:0};
+// the L's clips live in voice/cta, Metra's (recorded for MetraBot, same voice) in voice/metra; each has its own manifest
+const VOS={cta:VO,metra:{man:null,manP:null,bufs:{},loading:{}}};
 function setCheckins(on){ciOn=on;try{localStorage.setItem(CI_KEY,on?"1":"0")}catch(_){}
   ciTog.setAttribute("aria-checked",String(on));if(on){startAudio();applySound();ciPreload()}else ciStop()}
 ciTog.setAttribute("aria-checked",String(ciOn));
-function voManifest(){return VO.manP||=fetch("voice/cta/manifest.json").then(r=>r.ok?r.json():null).then(m=>VO.man=m).catch(()=>{VO.manP=null;return null})}
-function voPack(name){if(VO.bufs[name])return Promise.resolve(VO.bufs[name]);if(!actx)return Promise.resolve(null);
-  return VO.loading[name]||=fetch(`voice/cta/${name}.mp3`).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
-    .then(b=>new Promise((res,rej)=>actx.decodeAudioData(b,res,rej))).then(b=>VO.bufs[name]=b)
-    .catch(()=>{delete VO.loading[name];return null})}
-function ciPreload(){if(ciOn&&actx)voManifest().then(m=>{if(m)voPack("core")})}
-function ciPrep(t){if(t&&t.L.sys==="metra")return;if(ciOn&&actx)voManifest().then(m=>{if(m){voPack("core");voPack(t.L.key)}})}
+function voManifest(sys="cta"){const V=VOS[sys];return V.manP||=fetch(`voice/${sys}/manifest.json`).then(r=>r.ok?r.json():null).then(m=>V.man=m).catch(()=>{V.manP=null;return null})}
+function voPack(name,sys="cta"){const V=VOS[sys];if(V.bufs[name])return Promise.resolve(V.bufs[name]);if(!actx)return Promise.resolve(null);
+  return V.loading[name]||=fetch(`voice/${sys}/${name}.mp3`).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
+    .then(b=>new Promise((res,rej)=>actx.decodeAudioData(b,res,rej))).then(b=>V.bufs[name]=b)
+    .catch(()=>{delete V.loading[name];return null})}
+function ciPreload(){if(ciOn&&actx)for(const sys of["cta","metra"])voManifest(sys).then(m=>{if(m)voPack("core",sys)})}
+function ciPrep(t){const sys=t.L.sys;if(ciOn&&actx)voManifest(sys).then(m=>{if(m){voPack("core",sys);voPack(t.L.key,sys)}})}
 const ciPick=a=>a[Math.floor(Math.random()*a.length)];
 // what the check-in can honestly say about this train, from the same data as its card
 // the voice clips are named after the words they say: "Howard" -> howard, "95th/Dan Ryan" -> 95th_dan_ryan
@@ -53,20 +55,21 @@ function ciLines(kind,f){
 function ciStop(){VO.gen++;for(const x of VO.srcs)try{x.stop()}catch(_){}VO.srcs=[];for(const x of VO.timers)clearTimeout(x);VO.timers=[];
   if(duckG&&actx){const t=actx.currentTime;duckG.gain.cancelScheduledValues(t);duckG.gain.setTargetAtTime(1,t,.4)}}
 async function ciSay(kind,t){
-  if(!ciOn||!t||t.L.sys==="metra")return;                            // Metra's clips arrive in Phase D
+  if(!ciOn||!t)return;
+  const sys=t.L.sys,V=VOS[sys];
   const gen=++VO.gen;for(const x of VO.srcs)try{x.stop()}catch(_){}VO.srcs=[];for(const x of VO.timers)clearTimeout(x);VO.timers=[];
-  await voManifest();if(gen!==VO.gen)return;
-  const f=ciFacts(t),lines=ciLines(kind,f);if(!lines.length)return;
+  await voManifest(sys);if(gen!==VO.gen)return;
+  const lines=sys==="metra"?mciLines(kind,mciFacts(t)):ciLines(kind,ciFacts(t));if(!lines.length)return;
   // can we speak it? every piece must be recorded and loaded, and audio must be allowed (after a first click)
-  let voice=!!(VO.man&&actx&&actx.state==="running");
+  let voice=!!(V.man&&actx&&actx.state==="running");
   if(voice){const packs=[...new Set(lines.flatMap(l=>l.p.map(q=>q[0])))];
-    const bufs=await Promise.race([Promise.all(packs.map(voPack)),new Promise(r=>setTimeout(()=>r(null),2500))]);if(gen!==VO.gen)return;
-    voice=!!bufs&&bufs.every(Boolean)&&lines.every(l=>l.p.every(([pk,k])=>VO.man[pk==="core"?"core":"lines"]&&(pk==="core"?VO.man.core[k]:VO.man.lines[pk]&&VO.man.lines[pk][k])))}
+    const bufs=await Promise.race([Promise.all(packs.map(pk=>voPack(pk,sys))),new Promise(r=>setTimeout(()=>r(null),2500))]);if(gen!==VO.gen)return;
+    voice=!!bufs&&bufs.every(Boolean)&&lines.every(l=>l.p.every(([pk,k])=>V.man[pk==="core"?"core":"lines"]&&(pk==="core"?V.man.core[k]:V.man.lines[pk]&&V.man.lines[pk][k])))}
   if(!voice)return;                                                        // no voice yet (before the first click): stay quiet
   const a0=actx.currentTime+.12;let at=a0;
   duckG.gain.cancelScheduledValues(a0);duckG.gain.setTargetAtTime(.4,actx.currentTime,.25);
-  for(const l of lines){for(const[pk,k]of l.p){const ix=pk==="core"?VO.man.core[k]:VO.man.lines[pk][k],src=actx.createBufferSource();
-      src.buffer=VO.bufs[pk];src.connect(voG);src.start(at,ix[0],ix[1]);VO.srcs.push(src);at+=ix[1]-.03}
+  for(const l of lines){for(const[pk,k]of l.p){const ix=pk==="core"?V.man.core[k]:V.man.lines[pk][k],src=actx.createBufferSource();
+      src.buffer=V.bufs[pk];src.connect(voG);src.start(at,ix[0],ix[1]);VO.srcs.push(src);at+=ix[1]-.03}
     at+=.32}
   duckG.gain.setTargetAtTime(1,at,.6)}
 const nmSafe=id=>{const r=STN.get(id);return r?stnName(r):""};

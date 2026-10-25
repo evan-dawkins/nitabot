@@ -58,7 +58,7 @@ def add_metra(lines_out, stations, xy, rdp, proj, K):
                 nm = names.get(st, s["name"])
                 a, _, b = nm.partition("|")
                 stations[st] = {"name": a, "full": f"{a} ({b})" if b else a, "lat": s["lat"], "lon": s["lon"],
-                                "ada": s["ada"], "sys": "metra"}
+                                "ada": s["ada"], "sys": "metra", "mb": names.get(st, "")}   # mb: MetraBot's station id (voice clips use it)
     bundle(lines_out, order, K)
     return order
 

@@ -68,7 +68,8 @@ const lineEls={};
 // never paints over its neighbour's stripe: side by side, every colour shows in full (as on CTA's map)
 const caseG=el("g",{},trackG);
 for(const key of ORDER){const L=LINES[key],cg=el("g",{},caseG),g=el("g",{},trackG);
-  for(const r of L.routes){r.cel=el("path",{class:"track case"},cg);r.el=el("path",{class:"track",stroke:L.color},g)}
+  for(const r of L.routes){r.cel=el("path",{class:"track case"},cg);r.el=el("path",{class:"track"+(L.sys==="metra"?" metra":""),stroke:L.color},g);
+    if(L.sys==="metra")r.sel=el("path",{class:"track stripe"},g)}         // Metra: a thin stripe down the middle, like a railroad on a map
   lineEls[key]={track:g,cases:cg,stns:[]};}
 const gRec=new WeakMap();
 for(const rec of STATIONS){
@@ -93,7 +94,7 @@ function bundleGap(upp){const tw=twPx(),z=FIT_W/(upp*cw()),k=Math.max(0,Math.min
 function placeNetwork(){
   const upp=vb.w/cw(),g=bundleGap(upp);
   for(const key of ORDER)for(const r of LINES[key].routes){offsetLine(r.anc,r.slot,g,r.off);
-    const d="M"+r.off.map(p=>p[0].toFixed(2)+","+p[1].toFixed(2)).join("L");r.el.setAttribute("d",d);r.cel.setAttribute("d",d)}
+    const d="M"+r.off.map(p=>p[0].toFixed(2)+","+p[1].toFixed(2)).join("L");r.el.setAttribute("d",d);r.cel.setAttribute("d",d);if(r.sel)r.sel.setAttribute("d",d)}
   for(const rec of STATIONS){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
     for(const q of rec.inst){q.xy=alongOff(q.r,q.d);x0=Math.min(x0,q.xy[0]);y0=Math.min(y0,q.xy[1]);x1=Math.max(x1,q.xy[0]);y1=Math.max(y1,q.xy[1])}
     rec.box={x0,y0,x1,y1};rec.xy=[(x0+x1)/2,(y0+y1)/2];

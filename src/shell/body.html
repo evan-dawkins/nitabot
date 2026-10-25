@@ -3,7 +3,7 @@
 <body>
 
 <div class="top">
-  <div class="mark"><b>NITABot</b><span><i class="slogan">Enjoy the ride</i> · Unofficial Chicago L live map</span>
+  <div class="mark"><b>NITABot</b><span>Unofficial Chicago L and Metra live map</span>
     <div class="tools">
       <button id="helpBtn" aria-label="What is this? Open the welcome guide" title="What is this? (?)" aria-controls="intro">?</button>
       <button id="snd" class="ibtn snd" aria-pressed="true" aria-label="Sound" aria-haspopup="menu" aria-expanded="false" aria-controls="sndmenu" title="Sound (M mutes)"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="sp" d="M3 7.6h3.1L10.4 4v12l-4.3-3.6H3z"/><path class="w1" d="M13.2 7.6c.9.6 1.4 1.4 1.4 2.4s-.5 1.8-1.4 2.4"/><path class="w2" d="M15.5 5.2c1.7 1.2 2.6 2.9 2.6 4.8s-.9 3.6-2.6 4.8"/><path class="x" d="M13.2 7.8l4.6 4.4M17.8 7.8l-4.6 4.4"/></svg></button>
@@ -14,7 +14,7 @@
     </div></div>
   <div id="mood" aria-live="off"><span class="mt"></span></div>
   <div class="ops">
-    <button class="abtn" id="abtn" aria-expanded="false" aria-controls="apanel" title="CTA service alerts"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="ico" d="M8 1.8 L15 14 H1 Z M8 6.2 V9.6 M8 11.6 V11.7"/></svg><span id="acount"></span><span class="aw" id="aword"></span></button>
+    <button class="abtn" id="abtn" aria-expanded="false" aria-controls="apanel" title="CTA and Metra service alerts"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="ico" d="M8 1.8 L15 14 H1 Z M8 6.2 V9.6 M8 11.6 V11.7"/></svg><span id="acount"></span><span class="aw" id="aword"></span></button>
     <span class="state" id="state"><i></i><span id="stateText">Connecting</span></span>
     <span id="updated">Waiting for first report</span>
     <span><b id="count">–</b> <span class="cnt-word">trains reporting</span><span class="short">trains</span></span>
@@ -26,26 +26,13 @@
   <span class="focusnote" id="focusnote"></span>
 </div>
 <div class="zoom">
-  <span class="sibw" id="sibw"><button class="sibt" id="sibt" aria-expanded="false" aria-controls="sibl" title="Like this? Try MetraBot" aria-label="Show the link to MetraBot"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg></button><a class="sib" id="sibl" href="https://evan-dawkins.github.io/metrabot/" title="MetraBot: the same live map for Metra commuter rail" tabindex="-1"><span class="lt">Like this?&nbsp;</span>Try MetraBot&nbsp;→</a></span><span class="sep"></span>
   <button id="zout" title="Zoom out (−)" aria-label="Zoom out">−</button>
   <button id="zin" title="Zoom in (+)" aria-label="Zoom in">+</button>
-  <button id="fit" class="fit" title="Show the whole network (0)" aria-label="Show the whole network"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg></button>
+  <button id="fit" class="fit" title="Back to Chicago (0)" aria-label="Back to Chicago"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg></button>
 </div>
-<script>
-/* "Like this? Try MetraBot" folds into a small chevron beside the zoom buttons.
-   Mouse: it slides open while you hover over it and folds away when you leave. Touch or keyboard: tap the chevron. */
-(function(){const w=document.getElementById("sibw"),b=document.getElementById("sibt"),a=document.getElementById("sibl");if(!w)return;
-  let t=0,hov=false;const set=o=>{clearTimeout(t);w.classList.toggle("open",o);b.setAttribute("aria-expanded",String(o));
-    b.setAttribute("aria-label",(o?"Hide":"Show")+" the link to MetraBot");a.tabIndex=o?0:-1};
-  w.addEventListener("pointerenter",e=>{if(e.pointerType==="mouse"){hov=true;set(true)}});
-  w.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse"){hov=false;clearTimeout(t);t=setTimeout(()=>set(false),300)}});
-  w.addEventListener("focusout",e=>{if(!w.contains(e.relatedTarget))set(false)});
-  b.addEventListener("click",e=>{e.stopPropagation();if(!hov)set(!w.classList.contains("open"))});
-  set(false)})();
-</script>
 
 <div id="stage">
-  <svg id="map" role="group" aria-label="Map of the CTA L with live train positions"></svg>
+  <svg id="map" role="group" aria-label="Map of the CTA L and Metra with live train positions"></svg>
   <svg id="labels" aria-hidden="true"></svg>
 </div>
 <div id="horizon"></div>
@@ -69,7 +56,7 @@
 <div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
   <button class="x" aria-label="Close welcome guide">×</button>
   <div class="kick"><i></i>Live</div>
-  <h2 id="introTitle">Every L train, right now</h2>
+  <h2 id="introTitle">Every L and Metra train, right now</h2>
   <svg class="hero" viewBox="0 0 400 64" aria-hidden="true">
     <path class="trk" d="M14 40H386" stroke="#C60C30"/>
     <circle class="st" cx="60" cy="40" r="5"/><circle class="st" cx="160" cy="40" r="5"/><circle class="st" cx="260" cy="40" r="5"/><circle class="st" cx="350" cy="40" r="5"/>
@@ -77,17 +64,16 @@
     <defs><linearGradient id="heroTrail" x1="-60" x2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#C60C30" stop-opacity="0"/><stop offset="1" stop-color="#C60C30" stop-opacity=".8"/></linearGradient></defs>
     <text x="200" y="16" text-anchor="middle">Each arrow is a real train</text>
   </svg>
-  <p>A live map of CTA &lsquo;L&rsquo; trains around Chicago. Leave it on like a fish tank and watch them go.</p>
+  <p>A live map of CTA &lsquo;L&rsquo; and Metra trains around Chicago. Leave it on like a fish tank and watch them go. Zoom out for the suburbs.</p>
   <ul class="how">
     <li><span class="ic" style="--c:#3D95F0"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg></span><span><b>Move the map</b><small>Drag it. Scroll or pinch to zoom.</small></span></li>
     <li><span class="ic" style="--c:#C60C30"><svg viewBox="0 0 24 24"><path class="f" d="M20 12L5 18l3-6-3-6z"/></svg></span><span><b>Tap a train</b><small>See where it's going.</small></span></li>
     <li><span class="ic" style="--c:#F5892E"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" class="f"/><circle cx="12" cy="12" r="8.5"/></svg></span><span><b>Tap a station</b><small>See the next arrivals. Tap ☆ to save it.</small></span></li>
-    <li><span class="ic" style="--c:#B26BE0"><svg viewBox="0 0 24 24"><path d="M4 7h16" stroke="#C60C30"/><path d="M4 12h16" stroke="#00A1DE"/><path d="M4 17h16" stroke="#E27EA6"/></svg></span><span><b>Pick a line</b><small>Tap one at the bottom to see just it.</small></span></li>
+    <li><span class="ic" style="--c:#B26BE0"><svg viewBox="0 0 24 24"><path d="M4 7h16" stroke="#C60C30"/><path d="M4 12h16" stroke="#00A1DE"/><path d="M4 17h16" stroke="#E27EA6"/></svg></span><span><b>Pick a line</b><small>Tap one at the bottom to see just it. Switch between L and Metra there too.</small></span></li>
     <li><span class="ic" style="--c:#47C6E4"><svg viewBox="0 0 24 24"><path class="f" d="M4 9h3.5L12 5v14l-4.5-4H4z"/><path d="M15.5 9.5c1 .7 1.5 1.5 1.5 2.5s-.5 1.8-1.5 2.5M18 7c1.8 1.3 2.7 3 2.7 5s-.9 3.7-2.7 5"/></svg></span><span><b>Pick a sound</b><small>Tap the speaker by the title.</small></span></li>
     <li><span class="ic" style="--c:#E27EA6"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/><path class="f" d="M17 12l4-3v6z"/><path d="M12 7.5V12l3 2"/></svg></span><span><b>Leave it be</b><small>After 2 minutes (20 seconds on a phone) it rides along with live trains. Close the train's card (×) to stop.</small></span></li>
   </ul>
-  <p class="sib">Like this? Try <a href="https://evan-dawkins.github.io/metrabot/">MetraBot</a>, the same kind of live map for Metra commuter rail.</p>
-  <p class="nota">Not affiliated with the Chicago Transit Authority (CTA). Train positions and arrival times come from CTA's public Train Tracker data.</p>
+  <p class="nota">Not affiliated with the Chicago Transit Authority (CTA) or Metra. Train positions and times come from CTA's public Train Tracker data and Metra's public GTFS feeds.</p>
   <div class="foot">
     <button class="go">Start watching</button>
     <label><input type="checkbox" id="introHide">Don't show this on start</label>

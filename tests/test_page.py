@@ -163,6 +163,7 @@ def main():
         pg.wait_for_function("window.__cta && __cta.trains.length > 0", timeout=20000)
         pg.wait_for_timeout(1500)
         pg.wait_for_function(f"__cta.trains.length >= {N_TRAINS + N_METRA}", timeout=20000)
+        home = pg.evaluate("[__cta.vb.w, __cta.FIT_W]")                 # the view as the page opened
         n = pg.evaluate("__cta.trains.filter(t=>t.L.sys!=='metra').length")
         check("every fake CTA train is placed on its line", n == N_TRAINS, f"{n} of {N_TRAINS}")
         nm = pg.evaluate("__cta.trains.filter(t=>t.L.sys==='metra').length")
@@ -214,6 +215,45 @@ def main():
         # Metra's alert sits beside CTA's
         n_al = pg.evaluate("document.getElementById('acount').textContent")
         check("Metra's alerts show in the alert panel", n_al == "1", f"count {n_al!r}")
+
+        # ---- Phase D: one product
+        w = home
+        check("opens on Chicago (home view), not the whole region", abs(w[0] - w[1]) / w[1] < 0.05, f"{w[0]:.0f} vs {w[1]:.0f}")
+        stripes = pg.evaluate("document.querySelectorAll('path.track.stripe').length")
+        check("Metra lines carry the rail stripe; the L's don't", stripes > 0 and pg.evaluate("document.querySelectorAll('path.track.metra').length") == stripes, f"{stripes} stripes")
+        grp = pg.evaluate("""()=>{const vis=k=>!document.getElementById('n-'+k).closest('.chip').hidden;
+            const a=[vis('red'),vis('upn')];document.querySelectorAll('.gtab')[1].click();const b=[vis('red'),vis('upn')];
+            document.querySelectorAll('.gtab')[0].click();return[a,b]}""")
+        check("line bar: L and Metra groups switch", grp == [[True, False], [False, True]], str(grp))
+        pg.evaluate("__cta.openStationPop(__cta.STN.get('41160'))"); pg.wait_for_timeout(800)
+        txt = pg.evaluate("document.getElementById('spop').innerText")
+        check("Clinton (Green/Pink) offers the checked transfer to Ogilvie", "transfer to metra" in txt.lower() and "Ogilvie" in txt, txt.replace("\n", " | ")[:120])
+        pg.evaluate("document.querySelector('#spop .x').click()")
+        pg.evaluate("__cta.openStationPop(__cta.STN.get('40680'))"); pg.wait_for_timeout(800)
+        txt = pg.evaluate("document.getElementById('spop').innerText")
+        check("Adams/Wabash shows no transfer (CTA's page names none)", "transfer" not in txt.lower(), txt.replace("\n", " | ")[:80])
+        pg.evaluate("document.querySelector('#spop .x').click()")
+        stats = pg.evaluate("__cta.liveStats(__cta.trains.filter(t=>t.L.sys!=='metra'),__cta.trains.filter(t=>t.L.sys==='metra'))")
+        check("ticker has Metra lines from Metra's feed", any("Metra train" in s for s in stats) and any("6 or more minutes late" in s for s in stats), " / ".join(stats)[:200])
+        # voice: every Metra station MetraBot recorded has a clip; a Metra ride's sentences are all recorded pieces
+        cov = pg.evaluate("""async()=>{const m=await (await fetch('voice/metra/manifest.json')).json();
+            const st=__cta.STATIONS.filter(r=>r.sys==='metra');const miss=st.filter(r=>!r.mb||!m.stn[r.mb]).map(r=>r.id);
+            __cta.VOS.metra.man=m;const t=__cta.trains.find(t=>t.L.sys==='metra'&&t.run.no==='2200');
+            const L=__cta.mciLines('start',__cta.mciFacts(t));
+            const ok=L.every(l=>l.p.every(([pk,k])=>pk==='core'?m.core[k]:m.lines[pk]&&m.lines[pk][k]));
+            return{miss,n:L.length,ok,text:L.map(l=>l.tx).join(' ')}}""")
+        check("Metra voice: every station has a clip except new ones", cov["miss"] == ["PETERSON"], str(cov["miss"]))
+        check("Metra check-in is built only from recorded clips", cov["ok"] and cov["n"] >= 2, cov["text"][:160])
+        # labels: none overlap, at five zoom levels from the region to the Loop
+        overl = pg.evaluate("""async()=>{const out=[];const F=__cta.FIT_W,c=__cta.STN.get('40380').xy;   // centred on Clark/Lake, the busiest labels
+            for(const f of[3.2,1,.5,.2,.07]){const w=F*f,h=w*innerHeight/innerWidth;__cta.vb={x:c[0]-w/2,y:c[1]-h/2,w,h};
+              __cta.layoutLabels&&__cta.layoutLabels();await new Promise(r=>setTimeout(r,900));
+              const R=[...document.querySelectorAll('#labels text.lbl')].filter(t=>getComputedStyle(t).opacity>.5&&t.textContent).map(t=>t.getBoundingClientRect()).filter(r=>r.width);
+              let n=0;for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++){const a=R[i],b=R[j];
+                if(a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1)n++}
+              out.push([f,R.length,n])}return out}""")
+        check("no station labels overlap at 5 zoom levels", all(o[2] == 0 for o in overl), str(overl))
+        pg.evaluate("()=>{__cta.vb=Object.assign({},__cta.fitAll())}"); pg.wait_for_timeout(800)
 
         # train of the moment
         pg.evaluate("__cta.startRide()"); pg.wait_for_timeout(4500)

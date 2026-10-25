@@ -7,6 +7,11 @@ const FAV_KEY="nitabot.favorites",FAV_MAX=5;
 const FAV=(()=>{try{const v=JSON.parse(localStorage.getItem(FAV_KEY)||"{}");return{ids:(Array.isArray(v.ids)?v.ids:[]).filter(id=>STN.has(id)).slice(0,FAV_MAX),min:!!v.min}}catch(_){return{ids:[],min:false}}})();
 function saveFav(){try{localStorage.setItem(FAV_KEY,JSON.stringify(FAV))}catch(_){}}
 const isFav=id=>FAV.ids.includes(id);
+// stations saved on CTABot or MetraBot (same site address, so the same browser storage): offered once the board is empty
+function oldFavs(){const out=[],get=k=>{try{const v=JSON.parse(localStorage.getItem(k)||"{}");return Array.isArray(v.ids)?v.ids:[]}catch(_){return[]}};
+  for(const id of get("ctabot.favorites"))if(STN.has(id)&&!out.includes(id))out.push(id);
+  for(const nm of get("metrabot.favorites")){const rec=STATIONS.find(r=>r.mb===nm);if(rec&&!out.includes(rec.id))out.push(rec.id)}   // MetraBot saved station names
+  return out.slice(0,FAV_MAX)}
 function toggleFav(rec){if(isFav(rec.id))FAV.ids=FAV.ids.filter(x=>x!==rec.id);else if(FAV.ids.length<FAV_MAX)FAV.ids.push(rec.id);else return;
   saveFav();boardSig="";renderBoard();renderStationPop();refit();arrivalsTick()}
 function refit(){FIT_W=fitAll().w;syncZoom();labelsDirty=true}
@@ -24,9 +29,14 @@ function renderStationPop(){const rec=spopRec;if(!rec)return;
   const html=`<button class="x" aria-label="Close station">×</button><div class="nm">${esc(rec.full)}</div><div class="ln">${lines.map(bullet).join("")}</div>`
     +`<button class="star" aria-pressed="${on}" ${full?"disabled":""}>${on?"★ On your board":"☆ Add to your board"}</button>`
     +(full?`<div class="note">Your board holds ${FAV_MAX} stations. Remove one to add this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"")
-    +stationSchedule(rec,3);
+    +xferHTML(rec)+stationSchedule(rec,3);
   if(html===spopSig)return;spopSig=html;spop.innerHTML=html;labelsDirty=true;
+  for(const b of spop.querySelectorAll(".xf button"))b.onclick=()=>{const r=STN.get(b.dataset.id);if(r){const z=Math.min(vb.w,FIT_W*.12),ra=cw()/ch();flyTo({x:r.xy[0]-z/2,y:r.xy[1]-z/ra/2,w:z,h:z/ra});openStationPop(r)}};
   spop.querySelector(".x").onclick=closeStationPop;spop.querySelector(".star").onclick=()=>toggleFav(rec)}
+// transfers to the other system, from the checked list only
+function xferHTML(rec){const xs=(XFER.get(rec.id)||[]).map(id=>STN.get(id)).filter(Boolean);if(!xs.length)return"";
+  return`<div class="xf"><span class="kick2">${rec.sys==="metra"?"Transfer to the L":"Transfer to Metra"}</span>`
+    +xs.map(r=>`<button data-id="${esc(r.id)}" title="Show ${esc(r.full)}">${ORDER.filter(k=>r.lines.has(k)).map(bullet).join("")}<span>${esc(r.label)}</span></button>`).join("")+`</div>`}
 function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transform="";return}
   const sx=cw()/vb.w,sy=ch()/vb.h,px=(spopRec.xy[0]-vb.x)*sx,py=(spopRec.xy[1]-vb.y)*sy,w=spop.offsetWidth,h=spop.offsetHeight,W=cw(),H=ch(),I=uiInsets();
   let x=px+18,y=py-24;if(x+w>W-12)x=px-18-w;if(ATS&&spopRec.id===ATS.hub&&atsAlpha>.5)x=12;   // at the airport: out of the way, on the leftx=Math.max(12,Math.min(W-w-12,x));y=Math.max(I.top,Math.min(H-I.bot-h-6,y));
@@ -44,7 +54,8 @@ function renderBoard(){
   if(!board.classList.contains("fly"))board.classList.toggle("min",FAV.min&&!narrow);
   document.body.classList.toggle("favmin",FAV.min&&!narrow);
   let src="",body;
-  if(!favs.length)body=`<p class="bmsg">Click any station on the map, then ☆, to pin it here. Up to ${FAV_MAX}.</p>`;
+  if(!favs.length){const old=oldFavs();body=`<p class="bmsg">Click any station on the map, then ☆, to pin it here. Up to ${FAV_MAX}.</p>`
+    +(old.length?`<p class="bmsg"><button class="imp">Bring in ${old.length===1?"your station":"your "+old.length+" stations"} from CTABot and MetraBot</button></p>`:"")}
   else body=favs.map(rec=>{const r=boardRows(rec);if(r.src)src=src||r.src;
     return`<div class="fav" data-id="${esc(rec.id)}"><div class="fn"><button class="go" title="Show ${esc(rec.full)} on the map">${esc(rec.label)}</button>`
       +`<button class="rm" aria-label="Remove ${esc(rec.full)} from your board" title="Remove">×</button></div>`
@@ -58,6 +69,7 @@ function renderBoard(){
 }
 board.addEventListener("pointerdown",e=>e.stopPropagation());
 board.addEventListener("click",e=>{
+  if(e.target.closest(".imp")){FAV.ids=oldFavs();saveFav();boardSig="";renderBoard();refit();arrivalsTick();return}   // copies only: CTABot's and MetraBot's own lists stay as they are
   if(e.target.closest(".col")){if(isNarrow()){closeBoardSheet();return}setBoardMin(true);return}
   const f=e.target.closest(".fav");if(!f)return;const rec=STN.get(f.dataset.id);if(!rec)return;
   if(e.target.closest(".rm")){toggleFav(rec);return}
@@ -135,7 +147,7 @@ const SIT={
 const LOOP_C=(()=>{const c=geo(41.8818,-87.6298),e=geo(41.8818,-87.6250);return{c,r:Math.hypot(e[0]-c[0],e[1]-c[1])*1.25}})();
 let moodSit={key:"",why:""},sitCache=null,sitAt=0,statSlot=-1,statLines=null;
 // numbers straight off the live map, worked out once per 10-minute slot so the line doesn't flicker
-function liveStats(live){
+function liveStats(live,mlive=[]){
   const by={};for(const t of live)by[t.L.key]=(by[t.L.key]||0)+1;
   const top=ORDER.filter(k=>by[k]).sort((a,b)=>by[b]-by[a])[0];
   const loop=live.filter(t=>Math.hypot(t.shown[0]-LOOP_C.c[0],t.shown[1]-LOOP_C.c[1])<LOOP_C.r).length;
@@ -144,10 +156,19 @@ function liveStats(live){
   if(top&&by[top]>=3)out.push(`The ${LINES[top].name} has the most trains out: ${by[top]}.`);
   if(loop>=12)out.push(`A busy moment in the Loop: ${loop} trains circling it.`);else if(loop>=4)out.push(`${loop} trains around the Loop right now.`);
   if(ohare>=2)out.push(`${ohare} Blue Line trains heading to O'Hare.`);
+  // Metra, from its own feed: how many are out, the busiest line, and how many are 6+ minutes late (Metra's on-time line)
+  if(mEverLoaded&&Date.now()-mLastOk<3*METRA_POLL&&mlive.length){
+    const mb={};for(const t of mlive)mb[t.L.key]=(mb[t.L.key]||0)+1;
+    const mtop=METRA_ORDER.filter(k=>mb[k]).sort((a,b)=>mb[b]-mb[a])[0];
+    const late=mlive.filter(t=>t.cta&&t.cta.delay>=360).length;
+    out.push(mlive.length===1?"One Metra train out across the region.":`${mlive.length} Metra trains out across the region.`);
+    if(mtop&&mb[mtop]>=3)out.push(`Metra's ${LINES[mtop].name} has the most trains out: ${mb[mtop]}.`);
+    out.push(late===0?"Every Metra train reporting is within 6 minutes of its time.":late===1?"One Metra train is running 6 or more minutes late.":`${late} Metra trains are running 6 or more minutes late.`)}
   return out}
 function liveSituation(now){
   if(mode==="sim"||!feedHealthy())return null;
-  const hr=+chiParts(now).hour,live=trains.filter(t=>!t.stale&&t.L.sys!=="metra"),N=live.length;   // its phrases are about the L (Metra's come in Phase D)
+  const hr=+chiParts(now).hour,live=trains.filter(t=>!t.stale&&t.L.sys!=="metra"),N=live.length;   // the delay phrases are about the L (CTA's delay flag)
+  const mlive=trains.filter(t=>!t.stale&&t.L.sys==="metra");
   if(N===0)return hr>=1&&hr<5?{key:"nothing"}:null;                    // no trains in the day: don't trust it, use the clock
   // 1. delays CTA reports
   const dl=live.filter(t=>t.cta&&t.cta.delayed);
@@ -157,7 +178,7 @@ function liveSituation(now){
   if(worst)return{key:"line",line:LINES[worst].name};
   // 2. every other 10 minutes: what the live map shows
   const slot=Math.floor(now/600e3);if(slot%2)return null;
-  if(slot!==statSlot||!statLines){statSlot=slot;statLines=liveStats(live)}
+  if(slot!==statSlot||!statLines){statSlot=slot;statLines=liveStats(live,mlive)}
   return{key:"stats"+slot,lines:statLines}}
 function tickMood(){
   const now=window.__moodNow||Date.now();if(now-sitAt>30e3||sitAt>now||window.__moodNow){sitCache=liveSituation(now);sitAt=now}const sit=sitCache;let key,lines;   // re-read the trains every 30 s

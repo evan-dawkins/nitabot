@@ -221,6 +221,19 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .chip .ad{width:5px;height:5px;border-radius:50%;background:var(--warn);margin-left:-2px;align-self:flex-start;margin-top:8px;display:none}
 .chip.alerted .ad{display:block}
 .focusnote{font-size:13.5px;color:var(--muted);padding:0 8px 0 4px;display:none}
+.grp{display:flex;gap:2px;padding:2px;margin:0 4px;border-radius:8px;background:var(--hover);flex:none}
+.gtab{height:26px;padding:0 10px;border:0;border-radius:6px;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.gtab:hover{color:var(--ink)}
+.gtab[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+.console.min .grp{display:none}
+.chip[hidden]{display:none}
+.xf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0 10px}
+.xf .kick2{width:100%}
+.xf button{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--faint);background:none;color:var(--ink);font:inherit;font-size:13px;font-weight:600;border-radius:7px;padding:4px 8px;cursor:pointer}
+.xf button:hover{background:var(--hover)}
+.xf .bullet{font-size:10px}
+.bmsg .imp{border:1px solid var(--faint);background:none;color:var(--ink);font:inherit;font-size:13px;font-weight:600;border-radius:7px;padding:6px 10px;cursor:pointer;text-align:left}
+.bmsg .imp:hover{background:var(--hover)}
 .focusnote b{color:var(--ink);font-weight:600}
 body.focused .focusnote{display:block}
 
@@ -416,6 +429,8 @@ body.chasing .stlbl,body.chasing .lakelbl{display:none}
 /* ---------- map ---------- */
 .city{fill:var(--city)}
 .track.case{stroke:var(--city);stroke-width:calc(var(--tw) + 1.6px)}
+/* Metra: the L's solid lines stay solid; Metra's carry a thin land-coloured stripe down the middle, like railroads on a map */
+.track.stripe{stroke:var(--city);stroke-width:calc(var(--tw) * .34)}
 .town{fill:var(--town);stroke:var(--townedge);stroke-width:1;vector-effect:non-scaling-stroke}
 .grid{fill:none;stroke:var(--grid);stroke-width:1;vector-effect:non-scaling-stroke}
 .lake{fill:var(--lake)}
