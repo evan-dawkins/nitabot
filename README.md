@@ -2,7 +2,7 @@
 
 An unofficial live map of Chicago's CTA 'L' and Metra trains on one real-geography map. Not affiliated with the CTA, Metra or the RTA.
 
-**Status: built and tested locally (Phases A–E done; no report card, by choice). Not published yet.** CTA 'L' and Metra trains share one real-geography map that opens on Chicago and zooms out to all of Metra. Metra's lines carry a rail stripe so they never read as L lines. Train cards, station times, Metra's downtown departure boards, both systems' alerts, voice check-ins for both, and checked CTA-Metra transfers.
+**Status: live at https://evan-dawkins.github.io/nitabot/ (GitHub Pages, from `main`). Phases A–E done; no report card, by choice.** CTA 'L' and Metra trains share one real-geography map that opens on Chicago and zooms out to all of Metra. Metra's lines carry a rail stripe so they never read as L lines. Train cards, station times, Metra's downtown departure boards, both systems' alerts, voice check-ins for both, and checked CTA-Metra transfers.
 
 ## Run it
 
@@ -48,6 +48,8 @@ The tests run headless Chromium against a **mock** Worker with fake trains. They
 Data: Chicago Transit Authority; Metra; US Census Bureau TIGER/Line; OpenStreetMap contributors (ODbL); USDA and USGS The National Map (satellite imagery).
 
 ## Launch steps (each one approved separately)
+
+Steps 1–3 are done (2026-10-25).
 
 1. **Create the repo**: github.com/new, name `nitabot`, Public, nothing ticked.
 2. **First push** of this folder to `main`. On that push GitHub runs the data Actions once: CTA stations, Metra track (+ OpenStreetMap check), Lake Michigan and towns for the whole Metra area, the airport train, and the page build. Each saves its own commit.
