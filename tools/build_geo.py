@@ -1,4 +1,4 @@
-"""Builds data/geo.json: the real Lake Michigan shoreline and city/suburb outlines for the CTABot base map.
+"""Builds data/geo.json: the real Lake Michigan shoreline and city/suburb outlines for the NITABot base map.
 
 Source: US Census Bureau TIGER/Line 2023 (public domain).
   - COASTLINE (national): the Great Lakes shoreline as lines; the lake is the part of the map box on
@@ -17,8 +17,9 @@ YEAR = "2023"
 COAST = f"https://www2.census.gov/geo/tiger/TIGER{YEAR}/COASTLINE/tl_{YEAR}_us_coastline.zip"
 OPEN_LAKE = (-87.55, 41.90)       # a point 6 km offshore from downtown: certainly lake
 PLACE = f"https://www2.census.gov/geo/tiger/TIGER{YEAR}/PLACE/tl_{YEAR}_17_place.zip"
-# the area covered: well past every L station (Linden 42.07 N, 95th 41.72 N, O'Hare -87.90, lakefront)
-S, N, W, E = 41.50, 42.25, -88.20, -87.25     # wider than the map itself, so its cut edges sit off-screen
+# the area covered: well past every L and Metra station (Kenosha 42.58 N, Harvard -88.61, Manhattan 41.42 N, University Park,
+# the Indiana shore), wider than the map itself, so its cut edges sit off-screen. (CTABot's was 41.50-42.25 N, 88.20-87.25 W.)
+S, N, W, E = 41.30, 42.72, -88.80, -87.15
 SIMPLIFY_M = 15
 
 

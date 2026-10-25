@@ -94,8 +94,14 @@ def mock(route):
             return route.fulfill(status=502, content_type="application/json", body=json.dumps({"metra_error": "test outage"}),
                                  headers={"access-control-allow-origin": "*"})
         body = dict(METRA, fetched_at=now)
+        for vs in body["metra_lines"].values():           # a live feed's reports are fresh every time it's asked
+            for v in vs:
+                v["updated_at"] = now // 1000
     elif path == "/cta/positions":
-        body = dict(POS, fetched_at=now)
+        body = dict(POS, fetched_at=now, feed_time=now)
+        for ts in body["lines"].values():
+            for t in ts:
+                t["predicted_at"] = now
     elif path == "/cta/alerts":
         body = {"alerts": [], "fetched_at": now}
     elif path == "/cta/arrivals":

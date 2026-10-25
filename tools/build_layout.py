@@ -572,6 +572,9 @@ def main():
 
     # ---- 6. base map: lake, towns, Chicago's street grid
     geo = json.load(open("data/geo.json"))
+    if "box" in geo:                         # the base map covers what tools/build_geo.py downloaded (wider for Metra)
+        gS, gW, gN, gE = geo["box"]
+        BOX.update({"x0": round(xy(gN, gW)[0], 1), "y0": round(xy(gN, gW)[1], 1), "x1": round(xy(gS, gE)[0], 1), "y1": round(xy(gS, gE)[1], 1)})
     ring = lambda r, eps: [[round(x, 1), round(y, 1)] for x, y in rdp([xy(a, b) for a, b in r], eps)]
     lake = [ring(r, .25) for r in geo["lake"]]
     towns = []
