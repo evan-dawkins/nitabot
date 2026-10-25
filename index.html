@@ -535,11 +535,14 @@ body.satmode .stateline{stroke:#fff;opacity:.75} body.satmode .stname{fill:#fff;
 .stn{fill:var(--stnfill);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .pill{fill:var(--xfill);stroke:var(--xedge);stroke-width:1.8;vector-effect:non-scaling-stroke}
 .pill.one{fill:var(--stnfill);stroke-width:1.5}
-.stn.xend{fill:var(--xfill);stroke:var(--xedge)!important;stroke-width:1.8}
+.stn.xend,.pill.xend{fill:var(--xfill);stroke:var(--xedge)!important;stroke-width:1.8}
 .sg.termn .stn{stroke-width:2.4}
 .xlink path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke}
-.xlink .xc{stroke:var(--xedge);stroke-width:calc(var(--tw) * .7 + 3.4px)}
-.xlink .xi{stroke:var(--xfill);stroke-width:calc(var(--tw) * .7)}
+/* transfer links: slim, so they never read as track. Short = a solid connector; a walk = a dotted path */
+.xlink .xc{stroke:var(--xedge);stroke-width:calc(var(--tw) * .3 + 3px)}
+.xlink .xi{stroke:var(--xfill);stroke-width:calc(var(--tw) * .3 + .6px)}
+.xlink.walk .xc{stroke:var(--bg);stroke-width:4.6px;stroke-dasharray:.01 6}
+.xlink.walk .xi{stroke:var(--ink);stroke-width:2.8px;stroke-dasharray:.01 6}
 .xlink{transition:opacity .35s}
 .xlink.dim{opacity:.07}
 .term{fill:var(--term);stroke:var(--ink);stroke-width:2;vector-effect:non-scaling-stroke}
@@ -982,11 +985,13 @@ const gRec=new WeakMap();
 const XLINKS=[...(NET.transfers||[]).map(([a,b])=>[a,b,"cm"]),...(NET.walks||[]).map(([a,b])=>[a,b,"cc"])]
   .map(([a,b,kind])=>({a:STN.get(a),b:STN.get(b),kind})).filter(x=>x.a&&x.b);
 const XEND=new Set();for(const x of XLINKS){XEND.add(x.a);XEND.add(x.b)}
-for(const x of XLINKS){x.g=el("g",{class:"xlink "+x.kind},xlinkG);x.c=el("path",{class:"xc"},x.g);x.i=el("path",{class:"xi"},x.g)}
+// a short link (same building, under 150 m) is a solid connector; a longer one is a walk along the street: dotted
+for(const x of XLINKS){const m=Math.hypot(STOPS[x.a.id]?(STOPS[x.a.id].lat-STOPS[x.b.id].lat)*110540:0,STOPS[x.a.id]?(STOPS[x.a.id].lon-STOPS[x.b.id].lon)*82500:0);
+  x.m=Math.round(m);x.g=el("g",{class:"xlink "+x.kind+(m>150?" walk":"")},xlinkG);x.c=el("path",{class:"xc"},x.g);x.i=el("path",{class:"xi"},x.g)}
 for(const rec of STATIONS){
   rec.inter=rec.lines.size>1||XEND.has(rec);                                // a real transfer point (several lines, or a checked walk)
   const g=el("g",{class:"sg"+(rec.inter?" xfer":"")+(rec.terminus?" termn":"")},stnG);rec.g=g;
-  if(rec.multi){rec.kind="pill";rec.shape=el("rect",rec.lines.size>1?{class:"pill"}:{class:"pill one",style:`stroke:${LINES[rec.inst[0].key].color}`},g)}
+  if(rec.multi){rec.kind="pill";rec.shape=el("rect",rec.lines.size>1?{class:"pill"}:{class:"pill one"+(XEND.has(rec)?" xend":""),style:`stroke:${LINES[rec.inst[0].key].color}`},g)}
   else{const q=rec.inst[0];rec.kind="dot";rec.shape=el("circle",{class:"stn"+(XEND.has(rec)?" xend":""),stroke:LINES[q.key].color},g)}
   rec.hit=el("rect",{class:"stnhit",rx:4},g);gRec.set(g,rec);
   g.setAttribute("tabindex","0");g.setAttribute("role","button");
@@ -1388,6 +1393,7 @@ function layoutLabels(){
   const M=160,inView=(x,y)=>x>-M&&x<W+M&&y>-M&&y<H+M;
   const segs=[];for(const s of SEGMENTS){if(focusKey&&s.key!==focusKey)continue;const a=toS(s.a),b=toS(s.b);
     if(Math.max(a[0],b[0])<-M||Math.min(a[0],b[0])>W+M||Math.max(a[1],b[1])<-M||Math.min(a[1],b[1])>H+M)continue;segs.push([a,b,s.key])}
+  for(const x of XLINKS){if(focusKey&&!x.a.lines.has(focusKey)&&!x.b.lines.has(focusKey))continue;segs.push([toS(x.a.xy),toS(x.b.xy),"xlink"])}   // labels keep off the transfer links too
   // a coarse screen grid over the track, so a label checks only the track near it (NITABot has ~4x CTABot's track)
   const GC=48,sgrid=new Map();
   segs.forEach((s,i)=>{const x0=Math.floor(Math.min(s[0][0],s[1][0])/GC),x1=Math.floor(Math.max(s[0][0],s[1][0])/GC),

@@ -84,11 +84,13 @@ const gRec=new WeakMap();
 const XLINKS=[...(NET.transfers||[]).map(([a,b])=>[a,b,"cm"]),...(NET.walks||[]).map(([a,b])=>[a,b,"cc"])]
   .map(([a,b,kind])=>({a:STN.get(a),b:STN.get(b),kind})).filter(x=>x.a&&x.b);
 const XEND=new Set();for(const x of XLINKS){XEND.add(x.a);XEND.add(x.b)}
-for(const x of XLINKS){x.g=el("g",{class:"xlink "+x.kind},xlinkG);x.c=el("path",{class:"xc"},x.g);x.i=el("path",{class:"xi"},x.g)}
+// a short link (same building, under 150 m) is a solid connector; a longer one is a walk along the street: dotted
+for(const x of XLINKS){const m=Math.hypot(STOPS[x.a.id]?(STOPS[x.a.id].lat-STOPS[x.b.id].lat)*110540:0,STOPS[x.a.id]?(STOPS[x.a.id].lon-STOPS[x.b.id].lon)*82500:0);
+  x.m=Math.round(m);x.g=el("g",{class:"xlink "+x.kind+(m>150?" walk":"")},xlinkG);x.c=el("path",{class:"xc"},x.g);x.i=el("path",{class:"xi"},x.g)}
 for(const rec of STATIONS){
   rec.inter=rec.lines.size>1||XEND.has(rec);                                // a real transfer point (several lines, or a checked walk)
   const g=el("g",{class:"sg"+(rec.inter?" xfer":"")+(rec.terminus?" termn":"")},stnG);rec.g=g;
-  if(rec.multi){rec.kind="pill";rec.shape=el("rect",rec.lines.size>1?{class:"pill"}:{class:"pill one",style:`stroke:${LINES[rec.inst[0].key].color}`},g)}
+  if(rec.multi){rec.kind="pill";rec.shape=el("rect",rec.lines.size>1?{class:"pill"}:{class:"pill one"+(XEND.has(rec)?" xend":""),style:`stroke:${LINES[rec.inst[0].key].color}`},g)}
   else{const q=rec.inst[0];rec.kind="dot";rec.shape=el("circle",{class:"stn"+(XEND.has(rec)?" xend":""),stroke:LINES[q.key].color},g)}
   rec.hit=el("rect",{class:"stnhit",rx:4},g);gRec.set(g,rec);
   g.setAttribute("tabindex","0");g.setAttribute("role","button");

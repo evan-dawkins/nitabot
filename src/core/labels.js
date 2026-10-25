@@ -43,6 +43,7 @@ function layoutLabels(){
   const M=160,inView=(x,y)=>x>-M&&x<W+M&&y>-M&&y<H+M;
   const segs=[];for(const s of SEGMENTS){if(focusKey&&s.key!==focusKey)continue;const a=toS(s.a),b=toS(s.b);
     if(Math.max(a[0],b[0])<-M||Math.min(a[0],b[0])>W+M||Math.max(a[1],b[1])<-M||Math.min(a[1],b[1])>H+M)continue;segs.push([a,b,s.key])}
+  for(const x of XLINKS){if(focusKey&&!x.a.lines.has(focusKey)&&!x.b.lines.has(focusKey))continue;segs.push([toS(x.a.xy),toS(x.b.xy),"xlink"])}   // labels keep off the transfer links too
   // a coarse screen grid over the track, so a label checks only the track near it (NITABot has ~4x CTABot's track)
   const GC=48,sgrid=new Map();
   segs.forEach((s,i)=>{const x0=Math.floor(Math.min(s[0][0],s[1][0])/GC),x1=Math.floor(Math.max(s[0][0],s[1][0])/GC),

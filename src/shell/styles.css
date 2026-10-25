@@ -512,11 +512,14 @@ body.satmode .stateline{stroke:#fff;opacity:.75} body.satmode .stname{fill:#fff;
 .stn{fill:var(--stnfill);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .pill{fill:var(--xfill);stroke:var(--xedge);stroke-width:1.8;vector-effect:non-scaling-stroke}
 .pill.one{fill:var(--stnfill);stroke-width:1.5}
-.stn.xend{fill:var(--xfill);stroke:var(--xedge)!important;stroke-width:1.8}
+.stn.xend,.pill.xend{fill:var(--xfill);stroke:var(--xedge)!important;stroke-width:1.8}
 .sg.termn .stn{stroke-width:2.4}
 .xlink path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke}
-.xlink .xc{stroke:var(--xedge);stroke-width:calc(var(--tw) * .7 + 3.4px)}
-.xlink .xi{stroke:var(--xfill);stroke-width:calc(var(--tw) * .7)}
+/* transfer links: slim, so they never read as track. Short = a solid connector; a walk = a dotted path */
+.xlink .xc{stroke:var(--xedge);stroke-width:calc(var(--tw) * .3 + 3px)}
+.xlink .xi{stroke:var(--xfill);stroke-width:calc(var(--tw) * .3 + .6px)}
+.xlink.walk .xc{stroke:var(--bg);stroke-width:4.6px;stroke-dasharray:.01 6}
+.xlink.walk .xi{stroke:var(--ink);stroke-width:2.8px;stroke-dasharray:.01 6}
 .xlink{transition:opacity .35s}
 .xlink.dim{opacity:.07}
 .term{fill:var(--term);stroke:var(--ink);stroke-width:2;vector-effect:non-scaling-stroke}
