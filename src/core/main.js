@@ -4,6 +4,20 @@ applySat();
    ===================================================================== */
 FIT_W=fitAll().w;vb=fitAll();applyVB();syncZoom();
 let lastFrame=performance.now(),labelT=0,cardT=0,statusT=0,lastVB="",lastMarkW=-1;
+/* the L fades out between 1.5x and 2.8x the Chicago view's width: its track to a faint ghost (context), its trains,
+   stations, links and labels all the way (they stop taking clicks once mostly gone). A CTA line picked in the line
+   bar stays. */
+const CTA_FADE=[1.5,2.8],CTA_GHOST=.14;let ctaK=-1;
+function ctaFadeK(){if(focusKey&&!isMetra(focusKey))return 0;return Math.max(0,Math.min(1,(vb.w/FIT_W-CTA_FADE[0])/(CTA_FADE[1]-CTA_FADE[0])))}
+function fadeCTA(){const k=+ctaFadeK().toFixed(3);if(k===ctaK)return;ctaK=k;const e=k*k*(3-2*k);
+  const tr=(1-e*(1-CTA_GHOST)).toFixed(3),gone=(1-e).toFixed(3),off=e>.6;
+  // fill-/stroke-opacity, inherited by everything inside: a group opacity below 1 would put each group in its own
+  // compositor layer (measured: 11 -> 31), the thing that blurred the tracks before
+  const set=(g,v)=>{g.setAttribute("fill-opacity",v);g.setAttribute("stroke-opacity",v);g.style.display=+v<.005?"none":""};
+  for(const g of[ctaW.track,ctaW.cases])set(g,tr);
+  for(const g of[ctaW.stn,ctaW.trail,ctaW.train,xlinkG])set(g,gone);
+  for(const g of[ctaW.stn,ctaW.train,xlinkG])g.style.pointerEvents=off?"none":"";
+  document.body.classList.toggle("ctafaded",off);labelsDirty=true}
 function frame(now){
   const dt=Math.min(.25,(now-lastFrame)/1000);lastFrame=now;
   moodFrame(dt);
@@ -33,7 +47,7 @@ function frame(now){
     const a=`${t.L.name} train${trainLabel(t)?", "+trainLabel(t).toLowerCase():""}, ${dirText(t)}${t.stale?", position out of date":t.held?", position being checked":""}`;
     if(a!==t.a11y){t.a11y=a;t.g.firstChild.textContent=a}
   }
-  radarFrame(now);
+  radarFrame(now);fadeCTA();                                                 // cheap: returns at once unless the fade changed
   if(following&&!camAnim&&!drag){
     const cx=vb.x+vb.w/2,cy=vb.y+vb.h/2;
     let ox=0,oy=0;if(isNarrow()&&card.classList.contains("on")){if(sideSheet())ox=-(card.offsetWidth+16)/2*(vb.w/cw());else oy=card.offsetHeight/2*(vb.h/ch())}
@@ -55,7 +69,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 if(GEO_ISSUES.length)console.warn("Map ordering issues:",GEO_ISSUES);
-window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,renderBoard,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,glidePlan,curS,posDiag,posState,
+window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,renderBoard,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,get ctaFade(){return ctaK},glidePlan,curS,posDiag,posState,
   llAt:(key,ri,s,off=0)=>{const r=LINES[key].routes[ri],d=trackD(r,s),p=along(r.anc,r.ac,d),a=angAt(r,segAt(r.ac,d));return ungeo(p[0]-Math.sin(a)*off,p[1]+Math.cos(a)*off)},
   trackD,sharedPrefix,MH,metraHealth,pollAlerts,get spopRec(){return spopRec},get focusKey(){return focusKey},get STALE_AFTER(){return STALE_AFTER},get HIDE_UNRESOLVED(){return HIDE_UNRESOLVED}};
 applyStyle();tickHeader();poll();pollAlerts();pollMetra();loadTimetable();setInterval(loadTimetable,6*3600e3);requestAnimationFrame(frame);

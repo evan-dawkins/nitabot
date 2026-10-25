@@ -53,12 +53,12 @@ function setFocus(key){
   for(const rec of STATIONS)rec.g.classList.toggle("dim",!!key&&!rec.lines.has(key));
   for(const x of XLINKS)x.g.classList.toggle("dim",!!key&&!x.a.lines.has(key)&&!x.b.lines.has(key));
   // put the focused line on top so shared corridors read clearly
-  if(key)trackG.appendChild(lineEls[key].track);
+  if(key)lineEls[key].track.parentNode.appendChild(lineEls[key].track);
   for(const t of trains)applyTrainClass(t);
   if(selected&&key&&selected.L.key!==key)closeCard();
   $("focusnote").innerHTML=key?`Showing the <b>${LINES[key].name}</b> only`:"";syncLineBar();
   renderAlerts();
   (key?chips[key]:allChip).scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});   // phone: keep the active chip in view
   if(key){const b=lineBounds(key);flyTo(fitBox(b))}
-  labelsDirty=true;refreshStatus();
+  labelsDirty=true;refreshStatus();ctaK=-1;
 }

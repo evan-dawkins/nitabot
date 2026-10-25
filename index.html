@@ -970,13 +970,18 @@ el("path",{class:"lake",d:LAKE},world);
 
 const trackG=el("g",{},world),xlinkG=el("g",{class:"xlinks","aria-hidden":"true"},world),stnG=el("g",{},world),trailG=el("g",{},world),trainG=el("g",{},world);
 const lineEls={};
+/* the L fades out as you zoom out to the Metra network (fadeCTA in core/main.js). Each CTA layer sits in its own
+   wrapper group whose opacity attribute is set directly: no CSS transition, so nothing gets a compositor layer. */
+const ctaW={track:null,cases:null,stn:el("g",{class:"ctaw"}),trail:el("g",{class:"ctaw"},trailG),train:el("g",{class:"ctaw"},trainG)};
+const trainParent=L=>L.sys==="metra"?trainG:ctaW.train,trailParent=L=>L.sys==="metra"?trailG:ctaW.trail;
 // every line's thin casing (in the land colour) goes in one layer UNDER all the colours, so a line drawn later
 // never paints over its neighbour's stripe: side by side, every colour shows in full (as on CTA's map)
-const caseG=el("g",{},trackG);
-for(const key of ORDER){const L=LINES[key],cg=el("g",{},caseG),g=el("g",{},trackG);
+const caseG=el("g",{},trackG);ctaW.cases=el("g",{class:"ctaw"},caseG);ctaW.track=el("g",{class:"ctaw"},trackG);
+for(const key of ORDER){const L=LINES[key],cta=L.sys!=="metra",cg=el("g",{},cta?ctaW.cases:caseG),g=el("g",{},cta?ctaW.track:trackG);
   for(const r of L.routes){r.cel=el("path",{class:"track case"},cg);r.el=el("path",{class:"track"+(L.sys==="metra"?" metra":""),stroke:L.color},g);
     if(L.sys==="metra")r.sel=el("path",{class:"track stripe"},g)}         // Metra: a thin stripe down the middle, like a railroad on a map
   lineEls[key]={track:g,cases:cg,stns:[]};}
+stnG.appendChild(ctaW.stn);
 const gRec=new WeakMap();
 /* transfers, as on a wayfinding map:
      one station, several lines (same CTA station id / same Metra stop id): a white pill with a dark outline
@@ -990,7 +995,7 @@ for(const x of XLINKS){const m=Math.hypot(STOPS[x.a.id]?(STOPS[x.a.id].lat-STOPS
   x.m=Math.round(m);x.g=el("g",{class:"xlink "+x.kind+(m>150?" walk":"")},xlinkG);x.c=el("path",{class:"xc"},x.g);x.i=el("path",{class:"xi"},x.g)}
 for(const rec of STATIONS){
   rec.inter=rec.lines.size>1||XEND.has(rec);                                // a real transfer point (several lines, or a checked walk)
-  const g=el("g",{class:"sg"+(rec.inter?" xfer":"")+(rec.terminus?" termn":"")},stnG);rec.g=g;
+  const g=el("g",{class:"sg"+(rec.inter?" xfer":"")+(rec.terminus?" termn":"")},rec.sys==="metra"?stnG:ctaW.stn);rec.g=g;
   if(rec.multi){rec.kind="pill";rec.shape=el("rect",rec.lines.size>1?{class:"pill"}:{class:"pill one"+(XEND.has(rec)?" xend":""),style:`stroke:${LINES[rec.inst[0].key].color}`},g)}
   else{const q=rec.inst[0];rec.kind="dot";rec.shape=el("circle",{class:"stn"+(XEND.has(rec)?" xend":""),stroke:LINES[q.key].color},g)}
   rec.hit=el("rect",{class:"stnhit",rx:4},g);gRec.set(g,rec);
@@ -1408,7 +1413,7 @@ function layoutLabels(){
     for(const q of cs)m=Math.min(m,dPtSeg(q,a,c));
     for(const q of[a,c]){const dx=Math.max(b.x0-q[0],q[0]-b.x1,0),dy=Math.max(b.y0-q[1],q[1]-b.y1,0);m=Math.min(m,Math.hypot(dx,dy))}
     return m};
-  const marks=[];for(const rec of STATIONS){if(focusKey&&!rec.lines.has(focusKey))continue;const c=toS(rec.xy);if(!inView(c[0],c[1]))continue;
+  const marks=[];for(const rec of STATIONS){if(focusKey&&!rec.lines.has(focusKey))continue;if(document.body.classList.contains("ctafaded")&&rec.sys!=="metra")continue;const c=toS(rec.xy);if(!inView(c[0],c[1]))continue;
     const hm=turned?Math.max(rec.half[0],rec.half[1]):0,hx=(turned?hm:rec.half[0])*sx+1.5,hy=(turned?hm:rec.half[1])*sy+1.5;marks.push({x0:c[0]-hx,y0:c[1]-hy,x1:c[0]+hx,y1:c[1]+hy,id:rec.id,c,hx,hy})}
   const UI=[{x0:0,y0:0,x1:W,y1:uiInsets().top-4}];          // don't draw labels under the top strip
   const consoleR=$("console").getBoundingClientRect(),zoomR=document.querySelector(".zoom").getBoundingClientRect(),sr=svgRect();
@@ -1419,8 +1424,10 @@ function layoutLabels(){
   const placed=[],out=[],PAD=3,FS=labelScale();
   const hit=(b,list)=>{for(const p of list)if(b.x0<p.x1&&b.x1>p.x0&&b.y0<p.y1&&b.y1>p.y0)return true;return false};
   const cands=[];
+  const ctaGone=document.body.classList.contains("ctafaded");
   for(const rec of STATIONS){
     if(focusKey&&!rec.lines.has(focusKey))continue;
+    if(ctaGone&&rec.sys!=="metra")continue;                                  // zoomed out to Metra: the L's names go with it
     const c=toS(rec.xy);if(c[0]<-60||c[0]>W+60||c[1]<-30||c[1]>H+30)continue;
     cands.push({rec,c});
   }
@@ -1548,14 +1555,14 @@ function setFocus(key){
   for(const rec of STATIONS)rec.g.classList.toggle("dim",!!key&&!rec.lines.has(key));
   for(const x of XLINKS)x.g.classList.toggle("dim",!!key&&!x.a.lines.has(key)&&!x.b.lines.has(key));
   // put the focused line on top so shared corridors read clearly
-  if(key)trackG.appendChild(lineEls[key].track);
+  if(key)lineEls[key].track.parentNode.appendChild(lineEls[key].track);
   for(const t of trains)applyTrainClass(t);
   if(selected&&key&&selected.L.key!==key)closeCard();
   $("focusnote").innerHTML=key?`Showing the <b>${LINES[key].name}</b> only`:"";syncLineBar();
   renderAlerts();
   (key?chips[key]:allChip).scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});   // phone: keep the active chip in view
   if(key){const b=lineBounds(key);flyTo(fitBox(b))}
-  labelsDirty=true;refreshStatus();
+  labelsDirty=true;refreshStatus();ctaK=-1;
 }
 
 /* =====================================================================
@@ -1620,7 +1627,7 @@ function trackPath(r,d0,d1){const lo=Math.max(0,Math.min(d0,d1)),hi=Math.min(r.a
   const pts=[alongOff(r,lo)];for(let i=1;i<r.ac.length-1;i++)if(r.ac[i]>lo&&r.ac[i]<hi)pts.push(r.off[i]);
   pts.push(alongOff(r,hi));return pts}
 function makeTrainVisual(L){
-  const g=el("g",{class:"train",tabindex:"0",role:"button"},trainG);
+  const g=el("g",{class:"train",tabindex:"0",role:"button"},trainParent(L));
   el("title",{},g);
   el("circle",{class:"glow",r:10,fill:L.color},g);
   el("circle",{class:"halo",r:16},g);
@@ -1652,7 +1659,7 @@ function makeTrainVisual(L){
   const dot=el("circle",{class:"body",r:6.2,fill:L.color},g);
   el("circle",{class:"hit",r:18},g);
   // trail: a soft band in the line's colour with a bright core, both fading out behind the train
-  const tg=el("g",{class:"trail"},trailG),uid="tr"+(++trailUid);
+  const tg=el("g",{class:"trail"},trailParent(L)),uid="tr"+(++trailUid);
   const mkGrad=(id,col,a)=>{const gr=el("linearGradient",{id,gradientUnits:"userSpaceOnUse"},tg);
     el("stop",{offset:0,style:`stop-color:${col};stop-opacity:0`},gr);el("stop",{offset:1,style:`stop-color:${col};stop-opacity:${a}`},gr);return gr};
   const gh=mkGrad(uid+"h",L.color,.8),gc=mkGrad(uid+"c","#FFFFFF",.95);
@@ -2114,7 +2121,7 @@ function bindTrain(t){
 function selectTrain(t){
   closeStationPop();closeBoardSheet();
   if(selected)selected.g.classList.remove("sel");
-  selected=t;t.g.classList.add("sel");trainG.appendChild(t.g);
+  selected=t;t.g.classList.add("sel");t.g.parentNode.appendChild(t.g);
   following=t;card.classList.add("on");document.body.classList.add("sheet");renderCard();
   const r=cw()/ch(),tw=vb.w>FIT_W*0.2?Math.max(MIN_W,FIT_W/9):vb.w;    // zoom in to the neighbourhood only if we're far out
   flyTo({x:t.shown[0]-tw/2,y:t.shown[1]-(tw/r)/2,w:tw,h:tw/r});labelsDirty=true}
@@ -3071,6 +3078,20 @@ applySat();
    ===================================================================== */
 FIT_W=fitAll().w;vb=fitAll();applyVB();syncZoom();
 let lastFrame=performance.now(),labelT=0,cardT=0,statusT=0,lastVB="",lastMarkW=-1;
+/* the L fades out between 1.5x and 2.8x the Chicago view's width: its track to a faint ghost (context), its trains,
+   stations, links and labels all the way (they stop taking clicks once mostly gone). A CTA line picked in the line
+   bar stays. */
+const CTA_FADE=[1.5,2.8],CTA_GHOST=.14;let ctaK=-1;
+function ctaFadeK(){if(focusKey&&!isMetra(focusKey))return 0;return Math.max(0,Math.min(1,(vb.w/FIT_W-CTA_FADE[0])/(CTA_FADE[1]-CTA_FADE[0])))}
+function fadeCTA(){const k=+ctaFadeK().toFixed(3);if(k===ctaK)return;ctaK=k;const e=k*k*(3-2*k);
+  const tr=(1-e*(1-CTA_GHOST)).toFixed(3),gone=(1-e).toFixed(3),off=e>.6;
+  // fill-/stroke-opacity, inherited by everything inside: a group opacity below 1 would put each group in its own
+  // compositor layer (measured: 11 -> 31), the thing that blurred the tracks before
+  const set=(g,v)=>{g.setAttribute("fill-opacity",v);g.setAttribute("stroke-opacity",v);g.style.display=+v<.005?"none":""};
+  for(const g of[ctaW.track,ctaW.cases])set(g,tr);
+  for(const g of[ctaW.stn,ctaW.trail,ctaW.train,xlinkG])set(g,gone);
+  for(const g of[ctaW.stn,ctaW.train,xlinkG])g.style.pointerEvents=off?"none":"";
+  document.body.classList.toggle("ctafaded",off);labelsDirty=true}
 function frame(now){
   const dt=Math.min(.25,(now-lastFrame)/1000);lastFrame=now;
   moodFrame(dt);
@@ -3100,7 +3121,7 @@ function frame(now){
     const a=`${t.L.name} train${trainLabel(t)?", "+trainLabel(t).toLowerCase():""}, ${dirText(t)}${t.stale?", position out of date":t.held?", position being checked":""}`;
     if(a!==t.a11y){t.a11y=a;t.g.firstChild.textContent=a}
   }
-  radarFrame(now);
+  radarFrame(now);fadeCTA();                                                 // cheap: returns at once unless the fade changed
   if(following&&!camAnim&&!drag){
     const cx=vb.x+vb.w/2,cy=vb.y+vb.h/2;
     let ox=0,oy=0;if(isNarrow()&&card.classList.contains("on")){if(sideSheet())ox=-(card.offsetWidth+16)/2*(vb.w/cw());else oy=card.offsetHeight/2*(vb.h/ch())}
@@ -3122,7 +3143,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 if(GEO_ISSUES.length)console.warn("Map ordering issues:",GEO_ISSUES);
-window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,renderBoard,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,glidePlan,curS,posDiag,posState,
+window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,renderBoard,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,get ctaFade(){return ctaK},glidePlan,curS,posDiag,posState,
   llAt:(key,ri,s,off=0)=>{const r=LINES[key].routes[ri],d=trackD(r,s),p=along(r.anc,r.ac,d),a=angAt(r,segAt(r.ac,d));return ungeo(p[0]-Math.sin(a)*off,p[1]+Math.cos(a)*off)},
   trackD,sharedPrefix,MH,metraHealth,pollAlerts,get spopRec(){return spopRec},get focusKey(){return focusKey},get STALE_AFTER(){return STALE_AFTER},get HIDE_UNRESOLVED(){return HIDE_UNRESOLVED}};
 applyStyle();tickHeader();poll();pollAlerts();pollMetra();loadTimetable();setInterval(loadTimetable,6*3600e3);requestAnimationFrame(frame);

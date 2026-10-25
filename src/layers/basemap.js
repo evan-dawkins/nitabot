@@ -69,13 +69,18 @@ el("path",{class:"lake",d:LAKE},world);
 
 const trackG=el("g",{},world),xlinkG=el("g",{class:"xlinks","aria-hidden":"true"},world),stnG=el("g",{},world),trailG=el("g",{},world),trainG=el("g",{},world);
 const lineEls={};
+/* the L fades out as you zoom out to the Metra network (fadeCTA in core/main.js). Each CTA layer sits in its own
+   wrapper group whose opacity attribute is set directly: no CSS transition, so nothing gets a compositor layer. */
+const ctaW={track:null,cases:null,stn:el("g",{class:"ctaw"}),trail:el("g",{class:"ctaw"},trailG),train:el("g",{class:"ctaw"},trainG)};
+const trainParent=L=>L.sys==="metra"?trainG:ctaW.train,trailParent=L=>L.sys==="metra"?trailG:ctaW.trail;
 // every line's thin casing (in the land colour) goes in one layer UNDER all the colours, so a line drawn later
 // never paints over its neighbour's stripe: side by side, every colour shows in full (as on CTA's map)
-const caseG=el("g",{},trackG);
-for(const key of ORDER){const L=LINES[key],cg=el("g",{},caseG),g=el("g",{},trackG);
+const caseG=el("g",{},trackG);ctaW.cases=el("g",{class:"ctaw"},caseG);ctaW.track=el("g",{class:"ctaw"},trackG);
+for(const key of ORDER){const L=LINES[key],cta=L.sys!=="metra",cg=el("g",{},cta?ctaW.cases:caseG),g=el("g",{},cta?ctaW.track:trackG);
   for(const r of L.routes){r.cel=el("path",{class:"track case"},cg);r.el=el("path",{class:"track"+(L.sys==="metra"?" metra":""),stroke:L.color},g);
     if(L.sys==="metra")r.sel=el("path",{class:"track stripe"},g)}         // Metra: a thin stripe down the middle, like a railroad on a map
   lineEls[key]={track:g,cases:cg,stns:[]};}
+stnG.appendChild(ctaW.stn);
 const gRec=new WeakMap();
 /* transfers, as on a wayfinding map:
      one station, several lines (same CTA station id / same Metra stop id): a white pill with a dark outline
@@ -89,7 +94,7 @@ for(const x of XLINKS){const m=Math.hypot(STOPS[x.a.id]?(STOPS[x.a.id].lat-STOPS
   x.m=Math.round(m);x.g=el("g",{class:"xlink "+x.kind+(m>150?" walk":"")},xlinkG);x.c=el("path",{class:"xc"},x.g);x.i=el("path",{class:"xi"},x.g)}
 for(const rec of STATIONS){
   rec.inter=rec.lines.size>1||XEND.has(rec);                                // a real transfer point (several lines, or a checked walk)
-  const g=el("g",{class:"sg"+(rec.inter?" xfer":"")+(rec.terminus?" termn":"")},stnG);rec.g=g;
+  const g=el("g",{class:"sg"+(rec.inter?" xfer":"")+(rec.terminus?" termn":"")},rec.sys==="metra"?stnG:ctaW.stn);rec.g=g;
   if(rec.multi){rec.kind="pill";rec.shape=el("rect",rec.lines.size>1?{class:"pill"}:{class:"pill one"+(XEND.has(rec)?" xend":""),style:`stroke:${LINES[rec.inst[0].key].color}`},g)}
   else{const q=rec.inst[0];rec.kind="dot";rec.shape=el("circle",{class:"stn"+(XEND.has(rec)?" xend":""),stroke:LINES[q.key].color},g)}
   rec.hit=el("rect",{class:"stnhit",rx:4},g);gRec.set(g,rec);

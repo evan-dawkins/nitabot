@@ -58,7 +58,7 @@ function layoutLabels(){
     for(const q of cs)m=Math.min(m,dPtSeg(q,a,c));
     for(const q of[a,c]){const dx=Math.max(b.x0-q[0],q[0]-b.x1,0),dy=Math.max(b.y0-q[1],q[1]-b.y1,0);m=Math.min(m,Math.hypot(dx,dy))}
     return m};
-  const marks=[];for(const rec of STATIONS){if(focusKey&&!rec.lines.has(focusKey))continue;const c=toS(rec.xy);if(!inView(c[0],c[1]))continue;
+  const marks=[];for(const rec of STATIONS){if(focusKey&&!rec.lines.has(focusKey))continue;if(document.body.classList.contains("ctafaded")&&rec.sys!=="metra")continue;const c=toS(rec.xy);if(!inView(c[0],c[1]))continue;
     const hm=turned?Math.max(rec.half[0],rec.half[1]):0,hx=(turned?hm:rec.half[0])*sx+1.5,hy=(turned?hm:rec.half[1])*sy+1.5;marks.push({x0:c[0]-hx,y0:c[1]-hy,x1:c[0]+hx,y1:c[1]+hy,id:rec.id,c,hx,hy})}
   const UI=[{x0:0,y0:0,x1:W,y1:uiInsets().top-4}];          // don't draw labels under the top strip
   const consoleR=$("console").getBoundingClientRect(),zoomR=document.querySelector(".zoom").getBoundingClientRect(),sr=svgRect();
@@ -69,8 +69,10 @@ function layoutLabels(){
   const placed=[],out=[],PAD=3,FS=labelScale();
   const hit=(b,list)=>{for(const p of list)if(b.x0<p.x1&&b.x1>p.x0&&b.y0<p.y1&&b.y1>p.y0)return true;return false};
   const cands=[];
+  const ctaGone=document.body.classList.contains("ctafaded");
   for(const rec of STATIONS){
     if(focusKey&&!rec.lines.has(focusKey))continue;
+    if(ctaGone&&rec.sys!=="metra")continue;                                  // zoomed out to Metra: the L's names go with it
     const c=toS(rec.xy);if(c[0]<-60||c[0]>W+60||c[1]<-30||c[1]>H+30)continue;
     cands.push({rec,c});
   }

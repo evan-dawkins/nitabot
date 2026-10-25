@@ -61,7 +61,7 @@ function trackPath(r,d0,d1){const lo=Math.max(0,Math.min(d0,d1)),hi=Math.min(r.a
   const pts=[alongOff(r,lo)];for(let i=1;i<r.ac.length-1;i++)if(r.ac[i]>lo&&r.ac[i]<hi)pts.push(r.off[i]);
   pts.push(alongOff(r,hi));return pts}
 function makeTrainVisual(L){
-  const g=el("g",{class:"train",tabindex:"0",role:"button"},trainG);
+  const g=el("g",{class:"train",tabindex:"0",role:"button"},trainParent(L));
   el("title",{},g);
   el("circle",{class:"glow",r:10,fill:L.color},g);
   el("circle",{class:"halo",r:16},g);
@@ -93,7 +93,7 @@ function makeTrainVisual(L){
   const dot=el("circle",{class:"body",r:6.2,fill:L.color},g);
   el("circle",{class:"hit",r:18},g);
   // trail: a soft band in the line's colour with a bright core, both fading out behind the train
-  const tg=el("g",{class:"trail"},trailG),uid="tr"+(++trailUid);
+  const tg=el("g",{class:"trail"},trailParent(L)),uid="tr"+(++trailUid);
   const mkGrad=(id,col,a)=>{const gr=el("linearGradient",{id,gradientUnits:"userSpaceOnUse"},tg);
     el("stop",{offset:0,style:`stop-color:${col};stop-opacity:0`},gr);el("stop",{offset:1,style:`stop-color:${col};stop-opacity:${a}`},gr);return gr};
   const gh=mkGrad(uid+"h",L.color,.8),gc=mkGrad(uid+"c","#FFFFFF",.95);

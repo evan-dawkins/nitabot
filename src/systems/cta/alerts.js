@@ -279,7 +279,7 @@ function bindTrain(t){
 function selectTrain(t){
   closeStationPop();closeBoardSheet();
   if(selected)selected.g.classList.remove("sel");
-  selected=t;t.g.classList.add("sel");trainG.appendChild(t.g);
+  selected=t;t.g.classList.add("sel");t.g.parentNode.appendChild(t.g);
   following=t;card.classList.add("on");document.body.classList.add("sheet");renderCard();
   const r=cw()/ch(),tw=vb.w>FIT_W*0.2?Math.max(MIN_W,FIT_W/9):vb.w;    // zoom in to the neighbourhood only if we're far out
   flyTo({x:t.shown[0]-tw/2,y:t.shown[1]-(tw/r)/2,w:tw,h:tw/r});labelsDirty=true}

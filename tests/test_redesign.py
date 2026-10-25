@@ -121,7 +121,11 @@ def main():
         for f in (3.0, .12):
             c = E("__cta.STN.get('40380').xy")
             E(f"()=>{{const w=__cta.FIT_W*{f},h=w*innerHeight/innerWidth;__cta.vb={{x:{c[0]}-w/2,y:{c[1]}-h/2,w,h}}}}"); pg.wait_for_timeout(1200)
-            vis = E("[...document.querySelectorAll('.xlink')].filter(g=>{const r=g.getBoundingClientRect();return r.right>0&&r.left<innerWidth&&r.bottom>52&&r.top<innerHeight}).length")
+            vis = E("[...document.querySelectorAll('.xlink')].filter(g=>{const r=g.getBoundingClientRect();return r.width&&r.right>0&&r.left<innerWidth&&r.bottom>52&&r.top<innerHeight}).length")
+            if f > 2:                                   # zoomed out to Metra: the L (and its links) fade away
+                fd = E("[__cta.ctaFade,getComputedStyle(document.querySelector('.ctaw')).display,[...document.querySelectorAll('#labels text.lbl')].filter(t=>t.style.display!=='none'&&__cta.STN.get(__cta.STATIONS.find(r=>r.label===t.textContent)?.id||'')?.sys==='cta').length]")
+                check(f"zoom {f}x: the L has faded out (track a ghost, its trains, stations, links and names gone)", fd[0] == 1 and vis == 0, str(fd))
+                vis = 1
             ov = E("""()=>{const R=[...document.querySelectorAll('#labels text.lbl')].filter(t=>getComputedStyle(t).opacity>.5&&t.textContent).map(t=>t.getBoundingClientRect()).filter(r=>r.width);
                 let n=0;for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++){const a=R[i],b=R[j];if(a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1)n++}return[R.length,n]}""")
             check(f"zoom {f}x: transfer links on screen, station labels don't overlap", vis > 0 and ov[1] == 0, f"{vis} links, labels {ov}")
@@ -153,6 +157,9 @@ def main():
         lake_after = E("""()=>{const kids=[...document.querySelector('#map > g').children];const i=kids.findIndex(e=>e.classList&&e.classList.contains('lake'));
             const j=kids.findIndex(e=>e.querySelector&&e.querySelector('.stateline'));return i>j&&j>=0}""")
         check("state lines sit under the lake (no line across the water)", lake_after)
+        E("__cta.setFocus('red')"); pg.wait_for_timeout(1500)
+        check("a CTA line picked in the line bar stays visible zoomed out", E("__cta.ctaFade") == 0)
+        E("__cta.setFocus(null)"); pg.wait_for_timeout(300)
         # ---- keyboard focus still visible on stations and trains
         E("()=>{const r=__cta.STN.get('40380');r.g.focus()}")
         check("keyboard focus reaches stations", E("document.activeElement===__cta.STN.get('40380').g"))
