@@ -17,7 +17,8 @@ OpenStreetMap data (c) OpenStreetMap contributors, ODbL.
 import json, math, os, sys, urllib.parse, urllib.request
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-OVERPASS = "https://overpass-api.de/api/interpreter"
+OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
+            "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]   # public Overpass servers: busy ones answer 502/504, so try the next
 LIMIT_M = 50
 NEAR_M = 400                     # OpenStreetMap track further than this from a shape is some other line, not this one
 COSL = math.cos(math.radians(41.88))
@@ -32,12 +33,21 @@ def download():
     q1 = '[out:json][timeout:240];relation["type"="route"]["route"="train"]["network"~"Metra"](41.30,-88.80,42.70,-87.40);out body;'
     q2 = ('[out:json][timeout:240];relation["type"="route"]["route"="train"]["network"~"Metra"](41.30,-88.80,42.70,-87.40);'
           'way(r)["railway"];out geom;')
+    import time
     out = []
     for q in (q1, q2):
-        req = urllib.request.Request(OVERPASS, data=urllib.parse.urlencode({"data": q}).encode(),
-                                     headers={"User-Agent": "nitabot map checker (+https://github.com/evan-dawkins/nitabot)"})
-        with urllib.request.urlopen(req, timeout=300) as r:
-            out.append(json.loads(r.read()))
+        last = None
+        for attempt in range(6):                       # 3 servers, twice each, a pause between
+            url = OVERPASS[attempt % len(OVERPASS)]
+            req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": q}).encode(),
+                                         headers={"User-Agent": "nitabot map checker (+https://github.com/evan-dawkins/nitabot)"})
+            try:
+                with urllib.request.urlopen(req, timeout=300) as r:
+                    out.append(json.loads(r.read())); break
+            except Exception as e:
+                last = e; print(f"{url}: {e}", file=sys.stderr); time.sleep(20)
+        else:
+            raise last
     rels, ways = out[0]["elements"], out[1]["elements"]
     way_geom = {w["id"]: [[p["lat"], p["lon"]] for p in w.get("geometry", [])] for w in ways if w["type"] == "way"}
     lines = {}
