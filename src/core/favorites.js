@@ -147,7 +147,7 @@ function liveStats(live){
   return out}
 function liveSituation(now){
   if(mode==="sim"||!feedHealthy())return null;
-  const hr=+chiParts(now).hour,live=trains.filter(t=>!t.stale),N=live.length;
+  const hr=+chiParts(now).hour,live=trains.filter(t=>!t.stale&&t.L.sys!=="metra"),N=live.length;   // its phrases are about the L (Metra's come in Phase D)
   if(N===0)return hr>=1&&hr<5?{key:"nothing"}:null;                    // no trains in the day: don't trust it, use the clock
   // 1. delays CTA reports
   const dl=live.filter(t=>t.cta&&t.cta.delayed);

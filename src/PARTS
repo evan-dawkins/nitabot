@@ -11,6 +11,7 @@ src/core/linefocus.js
 src/systems/cta/trains.js
 src/systems/cta/alerts.js
 src/systems/cta/times.js
+src/systems/metra/feed.js
 src/core/favorites.js
 src/core/chase.js
 src/core/checkins.js

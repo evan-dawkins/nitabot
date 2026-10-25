@@ -46,7 +46,7 @@ for(const key of ORDER){const L=LINES[key];
   L.routes.forEach(r=>{const last=r.st.length-1;
     r.st.forEach((id,i)=>{
       let rec=STN.get(id);
-      if(!rec){const nm=STOPS[id].name;rec={id,label:shortName(nm),full:nm,inst:[],lines:new Set(),terminus:false,rank:99,ada:!!STOPS[id].ada};STN.set(id,rec)}
+      if(!rec){const nm=STOPS[id].name;rec={id,label:shortName(nm),full:STOPS[id].full||nm,sys:STOPS[id].sys||"cta",inst:[],lines:new Set(),terminus:false,rank:99,ada:!!STOPS[id].ada};STN.set(id,rec)}
       if(!rec.inst.some(q=>q.key===key&&q.r===r&&Math.abs(q.d-r.ds[i])<.5))rec.inst.push({key,r,d:r.ds[i],xy:[0,0]});
       rec.lines.add(key);
       if(i===0||(i===last&&r.st.indexOf(id)===last))rec.terminus=true;   // a loop route's last stop is where it started round the Loop

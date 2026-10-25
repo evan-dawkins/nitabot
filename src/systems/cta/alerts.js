@@ -96,7 +96,7 @@ function simTick(){
     const i=Math.min(last-1,Math.floor(q.s)),f=q.s-i,a=STOPS[r.st[i]],b=STOPS[r.st[i+1]];
     (out[LINES[q.key].api]||=[]).push({run:q.run,sim:true,lat:a.lat+(b.lat-a.lat)*f,lon:a.lon+(b.lon-a.lon)*f,predicted_at:now,
       next_sta_id:q.dir>0?r.st[i+1]:r.st[i],dest:shortName(STOPS[q.dir>0?r.st[last]:r.st[0]].name)})}
-  clockOffset=0;ingest({lines:out});refreshStatus();
+  clockOffset=0;ingest({lines:out},ORDER);refreshStatus();
 }
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden)return;
@@ -162,7 +162,7 @@ function showTrainTip(t,e){
   const v=t.cta||{},nx=v.next_sta_id&&STN.get(v.next_sta_id);
   tip.innerHTML=`<div><span class="lc" style="background:${t.L.color}"></span>${t.L.code}${trainLabel(t)?" · "+trainLabel(t):""}${v.dest?" to "+esc(v.dest):""}</div>`
    +`<div class="s">${nx?(v.approaching?"Arriving at ":"Next: ")+esc(nx.label):dirText(t)}${v.delayed?" · delayed":""}${t.stale?" · position out of date":""}</div>`;placeTip(e)}
-function trainLabel(t){return t.run.sim?"Simulated "+t.run.no:t.run.no?"Run "+t.run.no:""}
+function trainLabel(t){return t.run.sim?"Simulated "+t.run.no:t.run.no?(t.L.sys==="metra"?"Train ":"Run ")+t.run.no:""}
 function hideTip(){tip.style.opacity=0}
 function dirText(t){const d=t.cta&&t.cta.dest;return d?"to "+d:t.dirSign===0?"Direction not known yet":"Direction known"}
 
@@ -219,7 +219,14 @@ function renderCard(){
   else if(gpsNext)nextRow=`<div class="row"><span class="kick2">Next</span><span class="v">${esc(stnName(gpsNext))}</span><span></span></div>`;
   // the next few stops with their predicted times
   let upRows="";
-  if(mode!=="sim"&&t.run&&t.run.no){const f=FOLLOW.get(t.id);
+  if(mode!=="sim"&&t.L.sys==="metra"){const tr=mTripById.get(v.trip_id),nowSec=nowMs/1000;
+    const list=tr&&Array.isArray(tr.stops)?tr.stops.filter(x=>(x.arr||x.dep)&&(x.arr||x.dep)>nowSec-45).slice(0,4):[];   // Metra's trip predictions: the next 4
+    if(list.length)upRows=`<div class="ups"><span class="kick2 uh">Next stops</span>`+list.map((x,i)=>{
+      const rec=STN.get(x.id),nm=rec?stnName(rec):x.id,tm=x.arr||x.dep,m=Math.round((tm-nowSec)/60);
+      const late=x.delay>=60?` <span class="st${x.delay>=360?" late":""}" title="${Math.round(x.delay/60)} minutes late, per Metra">+${Math.round(x.delay/60)}</span>`:"";   // short: the station name keeps its room
+      return`<div class="row"><span class="kick2">${i===0?"Next":""}</span><span class="v">${esc(nm)}</span>`
+        +`<span class="t"><b>${m<=1?"Due":m+" min"}</b> ${fmtClock(tm)}${late}</span></div>`}).join("")+`</div>`}
+  else if(mode!=="sim"&&t.run&&t.run.no){const f=FOLLOW.get(t.id);
     if(!f||Date.now()-f.at>(f.err?20000:30000))fetchFollow(t);
     const list=f&&f.stops?f.stops.filter(e=>!e.arrives_at||e.arrives_at>nowMs-45000).slice(0,4):[];      // just the next 4
     if(list.length)upRows=`<div class="ups"><span class="kick2 uh">Next stops</span>`+list.map((e,i)=>{
@@ -230,6 +237,7 @@ function renderCard(){
   const headline=v.dest?`to ${esc(v.dest)}`:"Destination not known";
   const age=serverNow()-t.updated;
   const foot=mode==="sim"?`<span>Simulated train, not real</span>`:t.stale?`<span class="wn">No new position for ${ago(age).replace(" ago","")}</span>`
+    :t.L.sys==="metra"?(v.delayed?`<span class="wn">Running ${Math.round(v.delay/60)} min late, per Metra</span>`:`<span>GPS position from Metra, ${ago(age)}</span>`)
     :v.delayed?`<span class="wn">CTA reports a delay</span>`:`<span>Position from CTA's signals, ${ago(age)}</span>`;
   const sub=[trainLabel(t),r.branch].filter(Boolean).join(" · ");
   const keep=card.querySelector(".ups"),scroll=keep?keep.scrollTop:0;      // the card redraws every second: keep the list where you scrolled it

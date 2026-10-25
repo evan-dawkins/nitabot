@@ -39,6 +39,7 @@ function glidePlan(t){
   if(Math.abs(b-a)>1e-3)for(let k=dir>0?Math.floor(a+.02)+1:Math.ceil(a-.02)-1;dir>0?k<b-.02:k>b+.02;k+=dir)stops.push(k);   // stations strictly between
   const dist=Math.abs(trackD(r,b)-trackD(r,a)),spare=Math.max(0,t.segDur-dist/VAVG*1000);
   let end=isStn(b)&&Math.abs(b-a)>.02;                                  // CTA puts it at a station: it gets there, then waits
+  if(t.L.sys==="metra"){stops=[];end=false}                              // Metra sends GPS, and express trains skip stops: no made-up stops
   const nS=stops.length+(end?1:0);let dw=nS?Math.min(DWELL,spare/nS):0;
   if(dw<DWELL_MIN){dw=0;stops=[];end=false}                             // no time to stop: it flows through
   const pts=[a,...stops,b],moveT=t.segDur-dw*(stops.length+(end?1:0)),legs=[];let tt=0;
@@ -134,12 +135,13 @@ function nextDir(r,s,nextId){if(!nextId)return 0;let best=null;
   r.ids.forEach((id,k)=>{if(id===nextId&&(best==null||Math.abs(k-s)<Math.abs(best-s)))best=k});
   if(best==null||Math.abs(best-s)>3)return 0;
   return best>s+.02?1:best<s-.02?-1:0}
-function ingest(data){
+// data.lines: line api name -> reports shaped like CTA's (Metra's are turned into this shape by systems/metra/feed.js)
+function ingest(data,keys=CTA_ORDER){
   const ml=data.lines||{};const seenAll=new Set();let bad=0;
-  for(const key of ORDER){const L=LINES[key],vs=Array.isArray(ml[L.api])?ml[L.api]:[];
+  for(const key of keys){const L=LINES[key],vs=Array.isArray(ml[L.api])?ml[L.api]:[];
     for(const v of vs){
-      if(!v||v.run==null||v.run===""){bad++;continue}
-      const id=key+":"+v.run;if(seenAll.has(id))continue;                  // run numbers are unique within a line
+      if(!v||(v.uid==null&&(v.run==null||v.run===""))){bad++;continue}
+      const id=key+":"+(v.uid??v.run);if(seenAll.has(id))continue;         // CTA: run numbers are unique within a line; Metra: vehicle id
       const lat=+v.lat,lon=+v.lon;
       if(!isFinite(lat)||!isFinite(lon)||lat===0||lon===0){bad++;continue}
       let fix=+v.predicted_at;fix=isFinite(fix)&&fix>0?(fix<1e12?fix*1000:fix):serverNow();
@@ -188,7 +190,7 @@ function ingest(data){
       }
     }
   }
-  for(const t of[...trains])if(!seenAll.has(t.id)&&Date.now()-t.lastSeen>DROP_AFTER)removeTrain(t,true);
+  for(const t of[...trains])if(keys.includes(t.L.key)&&!seenAll.has(t.id)&&Date.now()-t.lastSeen>DROP_AFTER)removeTrain(t,true);
   return bad}
 async function poll(){
   clearTimeout(pollTimer);

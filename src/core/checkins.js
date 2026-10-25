@@ -17,7 +17,7 @@ function voPack(name){if(VO.bufs[name])return Promise.resolve(VO.bufs[name]);if(
     .then(b=>new Promise((res,rej)=>actx.decodeAudioData(b,res,rej))).then(b=>VO.bufs[name]=b)
     .catch(()=>{delete VO.loading[name];return null})}
 function ciPreload(){if(ciOn&&actx)voManifest().then(m=>{if(m)voPack("core")})}
-function ciPrep(t){if(ciOn&&actx)voManifest().then(m=>{if(m){voPack("core");voPack(t.L.key)}})}
+function ciPrep(t){if(t&&t.L.sys==="metra")return;if(ciOn&&actx)voManifest().then(m=>{if(m){voPack("core");voPack(t.L.key)}})}
 const ciPick=a=>a[Math.floor(Math.random()*a.length)];
 // what the check-in can honestly say about this train, from the same data as its card
 // the voice clips are named after the words they say: "Howard" -> howard, "95th/Dan Ryan" -> 95th_dan_ryan
@@ -53,7 +53,7 @@ function ciLines(kind,f){
 function ciStop(){VO.gen++;for(const x of VO.srcs)try{x.stop()}catch(_){}VO.srcs=[];for(const x of VO.timers)clearTimeout(x);VO.timers=[];
   if(duckG&&actx){const t=actx.currentTime;duckG.gain.cancelScheduledValues(t);duckG.gain.setTargetAtTime(1,t,.4)}}
 async function ciSay(kind,t){
-  if(!ciOn||!t)return;
+  if(!ciOn||!t||t.L.sys==="metra")return;                            // Metra's clips arrive in Phase D
   const gen=++VO.gen;for(const x of VO.srcs)try{x.stop()}catch(_){}VO.srcs=[];for(const x of VO.timers)clearTimeout(x);VO.timers=[];
   await voManifest();if(gen!==VO.gen)return;
   const f=ciFacts(t),lines=ciLines(kind,f);if(!lines.length)return;

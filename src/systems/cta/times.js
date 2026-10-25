@@ -20,7 +20,8 @@ async function fetchArrivals(ids){arrBusy=true;
   finally{arrBusy=false;spopSig="";boardSig="";if(spopRec)renderStationPop();renderBoard()}}
 function arrivalsTick(){if(arrBusy||mode==="sim"||document.hidden)return;
   const want=new Set(FAV.ids);if(spopRec&&!spopRec.ats)want.add(spopRec.id);
-  const due=[...want].filter(id=>{const a=ARR.get(id);return!a||Date.now()-a.at>(a.err?15000:30000)});
+  const due=[...want].filter(id=>/^4\d{4}$/.test(id)).filter(id=>{   // CTA stations only: Metra's times come with its feed
+    const a=ARR.get(id);return!a||Date.now()-a.at>(a.err?15000:30000)});
   if(due.length)fetchArrivals(due)}
 // CTA names each platform: "Service toward Howard", "Subway service toward O'Hare",
 // "Service at Outer Loop platform", "Dempster-Skokie (Arrival)" (trains ending their run here)
@@ -31,7 +32,7 @@ function platformHead(p){const s=String(p||"").trim();let m;
   return s||"Arriving"}
 function etaWhen(e,nowMs){const m=e.arrives_at?Math.round((e.arrives_at-nowMs)/60000):null;
   return e.approaching||(m!=null&&m<=1)?"Due":m!=null?m+" min":""}
-function etaRow(e,nowMs){const k=API_KEY[e.line];if(!k)return"";
+function etaRow(e,nowMs){const k=API_KEY[e.line]||METRA_KEY[e.line];if(!k)return"";
   const flag=e.delayed?`<span class="st late">Delayed</span>`:e.fault?`<span class="st cx">Not certain</span>`:"";
   return`<div class="arr${e.scheduled?" pred":""}" title="${e.scheduled?"Scheduled: no train is reporting for this one yet":"Live prediction from a train that's reporting"}">${bullet(k)}`
     +`<span class="to">${trainNo(e.run)?`<span class="no">${trainNo(e.run)}</span>`:""}to ${esc(e.dest||"?")}</span>`
@@ -43,6 +44,7 @@ function arrivalSections(rec,per){
   const a=upcoming(rec);
   if(!a)return{msg:"Getting arrival times…"};
   if(a.err)return{msg:"CTA's arrival times aren't answering right now."};
+  if(a.metra&&!mTrips)return{msg:"Metra's predicted times aren't available right now."};
   if(!a.etas.length)return{msg:"No trains on the way right now."};
   const nowMs=serverNow(),groups=new Map();
   for(const e of a.etas){const h=platformHead(e.platform);if(!groups.has(h))groups.set(h,[]);groups.get(h).push(e)}
@@ -50,4 +52,5 @@ function arrivalSections(rec,per){
   return{html,src:"pred"}}
 function stationSchedule(rec,per){const r=arrivalSections(rec,per);
   if(r.msg)return`<div class="fav none" style="padding:0;border:0">${r.msg}</div>`;
-  return r.html+`<div class="note">Minutes are CTA's live predictions. Faded = scheduled, no train reporting for it yet.</div>`}
+  return r.html+(rec.sys==="metra"?`<div class="note">Minutes are Metra's live predictions. Faded = no train reporting its position for it yet.</div>`
+    :`<div class="note">Minutes are CTA's live predictions. Faded = scheduled, no train reporting for it yet.</div>`)}

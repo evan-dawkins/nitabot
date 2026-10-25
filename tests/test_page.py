@@ -13,7 +13,6 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(ROOT, "tests", "out")
 os.makedirs(OUT, exist_ok=True)
 NET = json.load(open(os.path.join(ROOT, "data", "network.json")))
-API = {k: L["api"] for k, L in NET["lines"].items()}
 results = []
 
 
@@ -26,6 +25,8 @@ def fake_positions():
     """Three trains per line, each sitting at a real station of that line and heading to the next one."""
     lines, n = {}, 0
     for k, L in NET["lines"].items():
+        if L.get("sys") == "metra":
+            continue
         st = L["routes"][0]["st"]
         out = []
         for j, i in enumerate((1, len(st) // 2, len(st) - 3)):
@@ -41,6 +42,42 @@ def fake_positions():
 
 
 POS, N_TRAINS = fake_positions()
+P = NET["proj"]
+
+
+def to_ll(x, y):
+    import math
+    return P["lat0"] - y / (110.54 * P["k"]), P["lon0"] + x / (111.32 * P["cos"] * P["k"])
+
+
+def fake_metra():
+    """Two Metra trains per line, on its real track halfway between two stations, with a trip that has stops ahead."""
+    lines, trips, n, now = {}, [], 0, int(time.time())
+    for key in NET.get("metra_order", []):
+        L = NET["lines"][key]; r = L["routes"][0]; st = r["st"]
+        out = []
+        for i in (2, len(st) - 4):
+            d = (r["ds"][i] + r["ds"][i + 1]) / 2
+            acc, pt = 0.0, r["anc"][0]
+            for a, b in zip(r["anc"], r["anc"][1:]):
+                seg = ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** .5
+                if acc + seg >= d:
+                    f = (d - acc) / (seg or 1); pt = (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f); break
+                acc += seg
+            lat, lon = to_ll(*pt)
+            tid = f"TEST_{key}_{n}"
+            out.append({"route_id": L["api"], "trip_id": tid, "direction_id": 1, "latitude": lat, "longitude": lon,
+                        "updated_at": now, "vehicle_id": f"V{n}", "veh_label": str(2200 + n)})
+            trips.append({"trip_id": tid, "route_id": L["api"], "direction_id": 1, "veh_label": str(2200 + n), "updated_at": now,
+                          "stops": [{"id": s, "arr": now + 120 * (k + 1), "delay": 420 if n == 0 else 0} for k, s in enumerate(st[i + 1:])],
+                          "last_stop": st[-1]})
+            n += 1
+        lines[L["api"]] = out
+    return {"metra_lines": lines, "trips": trips, "alerts": [], "report": None}, n
+
+
+METRA, N_METRA = fake_metra()
+arrival_ids = []
 hits = {}
 
 
@@ -49,11 +86,14 @@ def mock(route):
     path = url.split("workers.dev", 1)[1].split("?")[0]
     hits[path] = hits.get(path, 0) + 1
     now = int(time.time() * 1000)
-    if path == "/cta/positions":
+    if path == "/":
+        body = dict(METRA, fetched_at=now)
+    elif path == "/cta/positions":
         body = dict(POS, fetched_at=now)
     elif path == "/cta/alerts":
         body = {"alerts": [], "fetched_at": now}
     elif path == "/cta/arrivals":
+        arrival_ids.extend(url.split("mapid=", 1)[1].split("&")[0].split(","))
         body = {"stations": {}, "fetched_at": now}
     elif path == "/cta/follow":
         body = {"stops": [], "fetched_at": now}
@@ -92,7 +132,8 @@ def open_page(browser, port, phone=False, intro_hidden=True):
     pg = ctx.new_page()
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
-    pg.on("console", lambda m: errs.append(m.text) if m.type == "error" and "fonts.gstatic" not in str(m.location) else None)
+    pg.on("response", lambda r: errs.append(f"{r.status} {r.url}") if r.status >= 400 and "fonts.gstatic" not in r.url else None)
+    pg.on("console", lambda m: errs.append(m.text) if m.type == "error" and "Failed to load resource" not in m.text else None)
     pg.goto(f"http://127.0.0.1:{port}/index.html")
     return pg, errs
 
@@ -115,8 +156,16 @@ def main():
         pg, errs = open_page(br, port)
         pg.wait_for_function("window.__cta && __cta.trains.length > 0", timeout=20000)
         pg.wait_for_timeout(1500)
-        n = pg.evaluate("__cta.trains.length")
-        check("every fake train is placed on its line", n == N_TRAINS, f"{n} of {N_TRAINS}")
+        pg.wait_for_function(f"__cta.trains.length >= {N_TRAINS + N_METRA}", timeout=20000)
+        n = pg.evaluate("__cta.trains.filter(t=>t.L.sys!=='metra').length")
+        check("every fake CTA train is placed on its line", n == N_TRAINS, f"{n} of {N_TRAINS}")
+        nm = pg.evaluate("__cta.trains.filter(t=>t.L.sys==='metra').length")
+        check("every fake Metra train is placed on its real track", nm == N_METRA, f"{nm} of {N_METRA}")
+        far = pg.evaluate("""()=>{let worst=0;for(const t of __cta.trains.filter(t=>t.L.sys==='metra')){
+            const want=t.L.routes[t.ri];worst=Math.max(worst,Math.abs(t.lastObsS-Math.round(t.lastObsS)));}return worst}""")
+        check("Metra trains sit between stations, as reported (not snapped to one)", far > 0.3, f"{far:.2f} station")
+        dirs = pg.evaluate("__cta.trains.filter(t=>t.L.sys==='metra'&&t.dirSign!==0).length")
+        check("Metra direction comes from the trip's next stop", dirs == N_METRA, f"{dirs} of {N_METRA}")
         check("title says NITABot", pg.title() == "NITABot", pg.title())
         pg.screenshot(path=os.path.join(OUT, "desktop-map.png"))
 
@@ -132,6 +181,23 @@ def main():
             pg.evaluate("__cta.closeCard()")
         else:
             check("clicking a train opens its card", False, "no clickable train on screen")
+
+        # a Metra train's card: Metra's train number, trip predictions, GPS footer
+        txt = pg.evaluate("""()=>{const t=__cta.trains.find(t=>t.L.sys==='metra'&&t.run.no==='2200');__cta.selectTrain(t);
+            return document.getElementById('card').innerText}""")
+        pg.wait_for_timeout(600)
+        txt = pg.evaluate("document.getElementById('card').innerText")
+        check("Metra card: train number, next stops, running late", "Train 2200" in txt and "next stops" in txt.lower() and "+7" in txt and "7 min late" in txt, txt.replace("\n", " | ")[:160])
+        pg.screenshot(path=os.path.join(OUT, "desktop-metra-card.png"))
+        pg.evaluate("__cta.closeCard()")
+        # a Metra station's sheet: Metra's predicted times, and no CTA request for it
+        stop = METRA["trips"][0]["stops"][1]["id"]                 # a station that fake train still has ahead
+        pg.evaluate(f"__cta.openStationPop(__cta.STN.get('{stop}'))"); pg.wait_for_timeout(1200)
+        txt = pg.evaluate("document.getElementById('spop').innerText")
+        check("Metra station sheet shows Metra's predicted times", "Metra's live predictions" in txt and "2200" in txt, txt.replace("\n", " | ")[:160])
+        pg.screenshot(path=os.path.join(OUT, "desktop-metra-station.png"))
+        pg.evaluate("document.querySelector('#spop .x').click()")
+        check("no CTA arrival request ever names a Metra station", all(i.isdigit() for i in arrival_ids), ",".join(arrival_ids[:8]))
 
         # train of the moment
         pg.evaluate("__cta.startRide()"); pg.wait_for_timeout(4500)
@@ -151,10 +217,10 @@ def main():
         ats = pg.evaluate("window.__ats ? __ats.TR.length : -1")
         check("O'Hare airport trains exist (simulated)", ats > 0, f"{ats} trains")
         real = pg.evaluate("__cta.trains.length")
-        check("airport trains aren't counted as real trains", real == N_TRAINS, f"{real}")
+        check("airport trains aren't counted as real trains", real == N_TRAINS + N_METRA, f"{real}")
 
         # requests made, all to the mocked Worker
-        check("positions were polled", hits.get("/cta/positions", 0) >= 1, json.dumps(hits))
+        check("both feeds were polled", hits.get("/cta/positions", 0) >= 1 and hits.get("/", 0) >= 1, json.dumps(hits))
         check("no errors on desktop", not errs, "; ".join(errs[:3]))
         pg.context.close()
 
@@ -169,7 +235,8 @@ def main():
         pg, errs = open_page(br, port, phone=True)
         pg.wait_for_function("window.__cta && __cta.trains.length > 0", timeout=20000)
         pg.wait_for_timeout(1500)
-        check("phone: trains placed", pg.evaluate("__cta.trains.length") == N_TRAINS)
+        pg.wait_for_function(f"__cta.trains.length >= {N_TRAINS + N_METRA}", timeout=20000)
+        check("phone: trains placed", pg.evaluate("__cta.trains.length") == N_TRAINS + N_METRA)
         pg.screenshot(path=os.path.join(OUT, "phone-map.png"))
         box = pg.evaluate("""()=>{const t=__cta.trains.find(t=>{const r=t.g.getBoundingClientRect();
             return r.width&&r.x>40&&r.y>140&&r.x<innerWidth-40&&r.y<innerHeight-220});
