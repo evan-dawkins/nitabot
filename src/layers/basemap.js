@@ -21,6 +21,11 @@ for(const t of NET.base.towns)if(t.name!=="Chicago")el("path",{class:"town",d:ri
   for(let y=oy-Math.floor(oy/m)*m;y<=BOX.y1;y+=m)d+=`M${BOX.x0},${y.toFixed(1)}H${BOX.x1}`;
   el("path",{class:"grid",d,"clip-path":"url(#cityclip)"},borderG)}}
 for(const t of NET.base.towns.filter(t=>t.label).sort((a,b)=>a.rank-b.rank))SL(t.name.toUpperCase(),t.label[0],t.label[1],0,4,"middle");   // most important first
+// state lines (Census outlines, data/states.json). Drawn under the lake, so the parts that run out over the water are covered.
+const STATE_NM=[];
+if(NET.base.states&&NET.base.states.length){
+  el("path",{class:"stateline",d:NET.base.states.map(s=>"M"+s.pts.map(p=>p[0]+","+p[1]).join("L")).join("")},borderG);
+  for(const s of NET.base.state_names||[]){const t=el("text",{class:"stname","text-anchor":"middle"},borderG);t.textContent=s.name;STATE_NM.push({t,x:s.xy[0],y:s.xy[1]})}}
 // the lake runs on past the map's edges (north, east, south), so it never ends in a straight line
 const onEdge=p=>Math.abs(p[0]-BOX.x1)<.06||Math.abs(p[1]-BOX.y0)<.06||Math.abs(p[1]-BOX.y1)<.06;
 const LAKE_RINGS=NET.base.lake.map(r=>r.map(([x,y])=>[Math.abs(x-BOX.x1)<.06?x+5000:x,Math.abs(y-BOX.y0)<.06?y-4000:Math.abs(y-BOX.y1)<.06?y+4000:y]));
@@ -62,7 +67,7 @@ el("path",{class:"lake",d:LAKE},world);
 {const a=geo(42.04,-87.572),b=geo(41.845,-87.497),cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2,ang=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
  el("text",{class:"lakelbl",x:cx.toFixed(1),y:cy.toFixed(1),transform:`rotate(${ang.toFixed(1)} ${cx.toFixed(1)} ${cy.toFixed(1)})`,"text-anchor":"middle","dominant-baseline":"middle"},world).textContent="LAKE MICHIGAN"}
 
-const trackG=el("g",{},world),stnG=el("g",{},world),trailG=el("g",{},world),trainG=el("g",{},world);
+const trackG=el("g",{},world),xlinkG=el("g",{class:"xlinks","aria-hidden":"true"},world),stnG=el("g",{},world),trailG=el("g",{},world),trainG=el("g",{},world);
 const lineEls={};
 // every line's thin casing (in the land colour) goes in one layer UNDER all the colours, so a line drawn later
 // never paints over its neighbour's stripe: side by side, every colour shows in full (as on CTA's map)
@@ -72,10 +77,19 @@ for(const key of ORDER){const L=LINES[key],cg=el("g",{},caseG),g=el("g",{},track
     if(L.sys==="metra")r.sel=el("path",{class:"track stripe"},g)}         // Metra: a thin stripe down the middle, like a railroad on a map
   lineEls[key]={track:g,cases:cg,stns:[]};}
 const gRec=new WeakMap();
+/* transfers, as on a wayfinding map:
+     one station, several lines (same CTA station id / same Metra stop id): a white pill with a dark outline
+     two stations with a checked walk between them (data/transfers.json): both get a dark outline, joined by a link
+   A line crossing another isn't a transfer, and nothing else is drawn as one. */
+const XLINKS=[...(NET.transfers||[]).map(([a,b])=>[a,b,"cm"]),...(NET.walks||[]).map(([a,b])=>[a,b,"cc"])]
+  .map(([a,b,kind])=>({a:STN.get(a),b:STN.get(b),kind})).filter(x=>x.a&&x.b);
+const XEND=new Set();for(const x of XLINKS){XEND.add(x.a);XEND.add(x.b)}
+for(const x of XLINKS){x.g=el("g",{class:"xlink "+x.kind},xlinkG);x.c=el("path",{class:"xc"},x.g);x.i=el("path",{class:"xi"},x.g)}
 for(const rec of STATIONS){
-  const g=el("g",{class:"sg"},stnG);rec.g=g;
-  if(rec.multi){rec.kind="pill";rec.shape=el("rect",{class:"pill"},g)}
-  else{const q=rec.inst[0];rec.kind="dot";rec.shape=el("circle",{class:"stn",stroke:LINES[q.key].color},g)}
+  rec.inter=rec.lines.size>1||XEND.has(rec);                                // a real transfer point (several lines, or a checked walk)
+  const g=el("g",{class:"sg"+(rec.inter?" xfer":"")+(rec.terminus?" termn":"")},stnG);rec.g=g;
+  if(rec.multi){rec.kind="pill";rec.shape=el("rect",rec.lines.size>1?{class:"pill"}:{class:"pill one",style:`stroke:${LINES[rec.inst[0].key].color}`},g)}
+  else{const q=rec.inst[0];rec.kind="dot";rec.shape=el("circle",{class:"stn"+(XEND.has(rec)?" xend":""),stroke:LINES[q.key].color},g)}
   rec.hit=el("rect",{class:"stnhit",rx:4},g);gRec.set(g,rec);
   g.setAttribute("tabindex","0");g.setAttribute("role","button");
   g.setAttribute("aria-label",`${rec.full} station, ${ORDER.filter(k=>rec.lines.has(k)).map(k=>LINES[k].name).join(", ")}. Press Enter for arrivals.`);
@@ -102,7 +116,9 @@ function placeNetwork(){
 }
 // markers keep a steady on-screen size; only the track geometry scales with zoom
 function updateStateLabels(k){for(const q of STATE_LBL){q.t.style.fontSize=(11.5*k).toFixed(3)+"px";
-  q.t.setAttribute("y",(q.y+q.dy*k).toFixed(2));q.t.setAttribute("x",(q.x+q.dx*k).toFixed(2))}}
+  q.t.setAttribute("y",(q.y+q.dy*k).toFixed(2));q.t.setAttribute("x",(q.x+q.dx*k).toFixed(2))}
+  const far=vb.w>FIT_W*1.5;                                                  // the states' names only once you're out past Chicago
+  for(const q of STATE_NM){q.t.style.fontSize=(12*k).toFixed(3)+"px";q.t.setAttribute("x",q.x);q.t.setAttribute("y",q.y);q.t.style.display=far?"":"none"}}
 function updateMarkers(){
   placeNetwork();
   updateStateLabels(vb.w/cw());
@@ -115,6 +131,7 @@ function updateMarkers(){
       for(const q in a)rec.shape.setAttribute(q,a[q].toFixed(3));rec.half=[(b.x1-b.x0)/2+pad,(b.y1-b.y0)/2+pad]}
     rec.hit.setAttribute("x",(rec.xy[0]-rec.half[0]-7*k).toFixed(2));rec.hit.setAttribute("y",(rec.xy[1]-rec.half[1]-7*k).toFixed(2));
     rec.hit.setAttribute("width",(rec.half[0]*2+14*k).toFixed(2));rec.hit.setAttribute("height",(rec.half[1]*2+14*k).toFixed(2));}
+  for(const x of XLINKS){const d=`M${x.a.xy[0].toFixed(2)},${x.a.xy[1].toFixed(2)}L${x.b.xy[0].toFixed(2)},${x.b.xy[1].toFixed(2)}`;x.c.setAttribute("d",d);x.i.setAttribute("d",d)}
 }
 // segments used as label obstacles (they share the offset lines' points, so they follow every re-offset)
 const SEGMENTS=[];for(const key of ORDER)for(const r of LINES[key].routes)for(let i=1;i<r.off.length;i++)SEGMENTS.push({key,a:r.off[i-1],b:r.off[i]});

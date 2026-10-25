@@ -42,16 +42,54 @@ function mStationTimes(){if(!mTrips)return;const nowSec=Math.floor(serverNow()/1
         platform:inb?"Service toward downtown Chicago":"Service away from downtown"})})}
   for(const rec of STATIONS){if(rec.sys!=="metra")continue;
     const e=(by.get(rec.id)||[]).sort((a,b)=>a.arrives_at-b.arrives_at);ARR.set(rec.id,{at,etas:e,metra:true})}}
+/* ---- Metra feed health ----
+   Every answer is sorted into one of these, from what it actually contains:
+     ok         readable, with train positions whose own GPS times are recent
+     empty      readable, but no train positions at all (normal overnight; not counted as a failure)
+     stale      readable, but even the newest position is over 3 minutes older than the Worker's own clock
+                (Metra's feed has stopped moving, or an old copy is being passed on)
+     metra      the Worker answered, but says Metra's own feed failed (metra_error)
+     http / unreadable / timeout / network   the Worker didn't give a usable answer
+   ok and empty count as a usable update. Two stages when updates stop:
+     1. at the first missed update: a small "Metra" mark by the status, with when it was missed (nothing louder:
+        one miss is usually a blip, and the next try is 10 s later)
+     2. once there's been no usable update for 90 s (3 regular polls) and at least 2 misses in a row: a banner
+        that stays until Metra answers properly again, saying how long it's been. CTA's status is separate.
+   Why 90 s: Metra publishes positions about every 30 s, the Worker keeps a copy for 25 s, and NITABot asks every
+   30 s (sooner after a miss: 10, 20, 30 s). A healthy feed is never 90 s old; one or two blips never reach it. */
+const M_ESCALATE=90000,M_UPSTREAM_STALE=180000;
+const MH={kind:"",fails:0,lastUsable:0,lastTry:0,firstMissAt:0,lastMissAt:0,newestFix:0,vehicles:0,detail:""};
+function mClassify(resp,data){
+  if(!data||typeof data!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"Worker answered "+resp.status:"unreadable answer"};
+  if(data.metra_error)return{kind:"metra",detail:"Metra's feed: "+String(data.metra_error).slice(0,120)};
+  if(!data.metra_lines||typeof data.metra_lines!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"Worker answered "+resp.status:"no positions in the answer"};
+  let n=0,newest=0;for(const k in data.metra_lines){const vs=data.metra_lines[k];if(!Array.isArray(vs))continue;
+    for(const v of vs){if(!v||v.latitude==null)continue;n++;const f=+v.updated_at||0;if(f>newest)newest=f}}
+  const at=+data.fetched_at>0?+data.fetched_at:Date.now();
+  if(!n)return{kind:"empty",vehicles:0,detail:"no Metra trains reporting"};
+  if(newest&&at-newest*1000>M_UPSTREAM_STALE)return{kind:"stale",vehicles:n,newest:newest*1000,detail:"newest position is "+ago(at-newest*1000).replace(" ago","")+" old"};
+  return{kind:"ok",vehicles:n,newest:newest*1000}}
+// what the page says about Metra right now: "ok" | "empty" | "missed" (stage 1) | "down" (stage 2) | "waiting"
+function metraHealth(){if(mode==="sim")return"ok";
+  const usable=MH.kind==="ok"||MH.kind==="empty";
+  if(!MH.lastTry)return"waiting";
+  if(usable)return MH.kind;
+  const since=Date.now()-(MH.lastUsable||MH.firstMissAt);
+  return since>=M_ESCALATE&&MH.fails>=2?"down":"missed"}
 async function pollMetra(){clearTimeout(mTimer);
   if(mInflight)return;
   if(document.hidden&&mode==="live"&&!bgVoice()){mTimer=setTimeout(pollMetra,METRA_POLL);return}   // background tab: don't ask
-  mInflight=true;const ac=new AbortController(),to=setTimeout(()=>ac.abort(),FETCH_TIMEOUT);
+  mInflight=true;const ac=new AbortController(),to=setTimeout(()=>ac.abort(),FETCH_TIMEOUT);let c;
   try{const resp=await fetch(WORKER_URL+"/?trips=1",{cache:"no-store",signal:ac.signal});
     let data=null;try{data=await resp.json()}catch(_){}
-    if(!data||typeof data!=="object")throw new Error(resp.ok?"Metra's relay sent something unreadable":"Metra's relay answered "+resp.status);
-    if(data.metra_error)throw new Error("Metra's feed returned an error: "+data.metra_error);
-    if(mode!=="sim"){mTakeTrips(data);ingest({lines:mReports(data)},METRA_ORDER);mEverLoaded=true;takeAlerts(data,"metra")}
-    mFails=0;mLastOk=Date.now();mErr=""}
-  catch(e){mFails++;mErr=e&&e.name==="AbortError"?"Metra's feed took too long to answer":(e&&e.message)||"Network error"}
-  finally{clearTimeout(to);mInflight=false;mTimer=setTimeout(pollMetra,mFails?Math.min(METRA_POLL,10000*mFails):METRA_POLL);refreshStatus()}}
+    c=mClassify(resp,data);
+    if(data&&typeof data==="object"&&mode!=="sim"){
+      if("alerts" in data||"alerts_error" in data)takeAlerts(data,"metra");     // alerts are their own part of the answer
+      if(c.kind==="ok"||c.kind==="empty"||c.kind==="stale"){mTakeTrips(data);ingest({lines:mReports(data)},METRA_ORDER);mEverLoaded=true}}}
+  catch(e){c={kind:e&&e.name==="AbortError"?"timeout":"network",detail:e&&e.name==="AbortError"?"no answer within 15 s":(e&&e.message)||"network error"}}
+  finally{clearTimeout(to);mInflight=false;const now=Date.now();MH.lastTry=now;
+    MH.kind=c.kind;MH.detail=c.detail||"";if(c.vehicles!=null)MH.vehicles=c.vehicles;if(c.newest)MH.newestFix=c.newest;
+    if(c.kind==="ok"||c.kind==="empty"){MH.fails=0;MH.lastUsable=now;MH.firstMissAt=0;mFails=0;mLastOk=now;mErr=""}
+    else{MH.fails++;MH.lastMissAt=now;if(!MH.firstMissAt)MH.firstMissAt=now;mFails=MH.fails;mErr=MH.detail}
+    mTimer=setTimeout(pollMetra,MH.fails?Math.min(METRA_POLL,10000*MH.fails):METRA_POLL);refreshStatus()}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-mLastOk>METRA_POLL)pollMetra()});

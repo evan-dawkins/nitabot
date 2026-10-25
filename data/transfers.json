@@ -15,5 +15,11 @@
   {"metra": "CUS", "cta": "40430", "source": "https://www.transitchicago.com/station/clib/", "says": "Metra BNSF, HC, SWS, MD-N, MD-W, NCS (at Chicago-Union Station)"},
   {"metra": "CUS", "cta": "40040", "source": "https://www.transitchicago.com/station/quin/", "says": "Metra BNSF, HC, SWS, MD-N, MD-W, NCS (at Union Station)"},
   {"metra": "RAVENSWOOD", "cta": "40090", "source": "https://www.transitchicago.com/station/dmnb/", "says": "walk 2 blocks east to Ravenswood station on Metra UP-N"}
+ ],
+ "cta_note": "CTA-to-CTA transfers between two different stations (a walk or a pedway, free with the same farecard), each named on a CTA station page (checked 2026-10-25). Stations that serve several lines under one CTA station id (Clark/Lake, Howard, ...) are interchanges by CTA's own data and need no entry here. Left out: Lake (Red) to State/Lake, which Lake's page names, because State/Lake isn't in CTA's current timetable (not on the map); and any pair no CTA page names (e.g. Monroe Red/Blue, Washington/Wabash).",
+ "cta_pairs": [
+  {"a": "41660", "b": "40370", "source": "https://www.transitchicago.com/station/lake", "says": "To connect to Blue Line trains, exit station at Randolph-Washington exit ... use mezzanine-level pedway through Block 37 Center to Blue Line subway. Farecard required for free transfer to Blue Line."},
+  {"a": "40560", "b": "40850", "source": "https://www.transitchicago.com/station/jacr", "says": "For free transfer to elevated lines: (Orange, Brown, Pink, Purple Express), exit station south and walk to Harold Washington Library-State/Van Buren station."},
+  {"a": "40070", "b": "40850", "source": "https://www.transitchicago.com/station/jacb/", "says": "For free transfer to elevated lines: (Orange, Brown, Pink, Purple Express), exit station south and walk to Harold Washington Library-State/Van Buren station. Farecard required."}
  ]
 }

@@ -33,10 +33,14 @@ function renderStationPop(){const rec=spopRec;if(!rec)return;
   if(html===spopSig)return;spopSig=html;spop.innerHTML=html;labelsDirty=true;
   for(const b of spop.querySelectorAll(".xf button"))b.onclick=()=>{const r=STN.get(b.dataset.id);if(r){const z=Math.min(vb.w,FIT_W*.12),ra=cw()/ch();flyTo({x:r.xy[0]-z/2,y:r.xy[1]-z/ra/2,w:z,h:z/ra});openStationPop(r)}};
   spop.querySelector(".x").onclick=closeStationPop;spop.querySelector(".star").onclick=()=>toggleFav(rec)}
-// transfers to the other system, from the checked list only
-function xferHTML(rec){const xs=(XFER.get(rec.id)||[]).map(id=>STN.get(id)).filter(Boolean);if(!xs.length)return"";
-  return`<div class="xf"><span class="kick2">${rec.sys==="metra"?"Transfer to the L":"Transfer to Metra"}</span>`
-    +xs.map(r=>`<button data-id="${esc(r.id)}" title="Show ${esc(r.full)}">${ORDER.filter(k=>r.lines.has(k)).map(bullet).join("")}<span>${esc(r.label)}</span></button>`).join("")+`</div>`}
+// transfers: to the other system, and CTA walks between two stations, from the checked list only (data/transfers.json)
+function xferHTML(rec){const btn=r=>`<button data-id="${esc(r.id)}" title="Show ${esc(r.full)}">${ORDER.filter(k=>r.lines.has(k)).map(bullet).join("")}<span>${esc(r.label)}</span></button>`;
+  const xs=(XFER.get(rec.id)||[]).map(id=>STN.get(id)).filter(Boolean);
+  const ws=XLINKS.filter(x=>x.kind==="cc"&&(x.a===rec||x.b===rec)).map(x=>x.a===rec?x.b:x.a);
+  let h="";
+  if(xs.length)h+=`<div class="xf"><span class="kick2">${rec.sys==="metra"?"Transfer to the L":"Transfer to Metra"}</span>${xs.map(btn).join("")}</div>`;
+  if(ws.length)h+=`<div class="xf"><span class="kick2">Walk to (free with the same farecard)</span>${ws.map(btn).join("")}</div>`;
+  return h}
 function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transform="";return}
   const sx=cw()/vb.w,sy=ch()/vb.h,px=(spopRec.xy[0]-vb.x)*sx,py=(spopRec.xy[1]-vb.y)*sy,w=spop.offsetWidth,h=spop.offsetHeight,W=cw(),H=ch(),I=uiInsets();
   let x=px+18,y=py-24;if(x+w>W-12)x=px-18-w;if(ATS&&spopRec.id===ATS.hub&&atsAlpha>.5)x=12;   // at the airport: out of the way, on the leftx=Math.max(12,Math.min(W-w-12,x));y=Math.max(I.top,Math.min(H-I.bot-h-6,y));
