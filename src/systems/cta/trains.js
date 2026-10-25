@@ -98,7 +98,7 @@ function makeTrainVisual(L){
     el("stop",{offset:0,style:`stop-color:${col};stop-opacity:0`},gr);el("stop",{offset:1,style:`stop-color:${col};stop-opacity:${a}`},gr);return gr};
   const gh=mkGrad(uid+"h",L.color,.8),gc=mkGrad(uid+"c","#FFFFFF",.95);
   const band=el("path",{class:"tband",stroke:`url(#${uid}h)`},tg),core=el("path",{class:"tcore",stroke:`url(#${uid}c)`},tg);
-  return{g,inner,arrow,dot,carFlip,trail:{g:tg,band,core,grads:[gh,gc]},hist:[],histRi:-1}}
+  return{g,inner,arrow,dot,carFlip,cb,phase:Math.random()*6.3,trail:{g:tg,band,core,grads:[gh,gc]},hist:[],histRi:-1}}
 let trailUid=0;
 const TRAIL_MS=90000,TRAIL_MAX_PX=150;
 function drawTrail(t,r,p,now,k){

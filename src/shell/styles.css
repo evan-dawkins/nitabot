@@ -62,7 +62,8 @@ button{font-family:inherit;color:inherit;transition:background-color var(--t-fas
 *{-webkit-tap-highlight-color:transparent}
 button:focus-visible,.train:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
-#stage{position:absolute;inset:0;cursor:grab}
+#stage{position:absolute;inset:0;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#stage *{-webkit-user-select:none;user-select:none}   /* panning must never select the town names or labels; panels outside the map stay selectable */
 #stage.drag{cursor:grabbing}
 svg#map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 svg#labels{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
@@ -442,19 +443,21 @@ body.chasing .stlbl,body.chasing .lakelbl{display:none}
 /* lake water: slow drifting glints + a few soft ripples. They fade in and out as they drift, so nothing pops.
    Glints update ~12x a second (steps) because the motion is slow; that keeps the long-running cost low. */
 .water{pointer-events:none}
-.wv{fill:none;stroke:var(--wave);stroke-width:1.4px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;opacity:0;
-  animation:wv var(--dur,16s) steps(24) var(--dl,0s) infinite both}
+/* (geometry and fill/stroke opacity, not transform/opacity: see the ping note below; 360 glints used to sit in
+   360 compositor layers all the time) */
+.wv{fill:none;stroke:var(--wave);stroke-width:1.4px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;
+  fill-opacity:0;stroke-opacity:0;animation:wv var(--dur,16s) steps(24) var(--dl,0s) infinite both}
 .wv.dot{fill:var(--wave);stroke:none}
 .wv.ring{fill:none;stroke-width:1px}
 @keyframes wv{
-  0%{opacity:0;transform:translate(0,0)}
-  25%{opacity:calc(var(--a) * var(--wmul));transform:translate(9px,-1.6px)}
-  50%{opacity:calc(var(--a) * var(--wmul) * .7);transform:translate(18px,0)}
-  75%{opacity:calc(var(--a) * var(--wmul));transform:translate(27px,1.6px)}
-  100%{opacity:0;transform:translate(36px,0)}}
-.rp{fill:none;stroke:var(--wave);stroke-width:1.1px;vector-effect:non-scaling-stroke;opacity:0;transform-box:fill-box;transform-origin:center;
+  0%{fill-opacity:0;stroke-opacity:0;cx:0;cy:0}
+  25%{fill-opacity:calc(var(--a) * var(--wmul));stroke-opacity:calc(var(--a) * var(--wmul));cx:9px;cy:-1.6px}
+  50%{fill-opacity:calc(var(--a) * var(--wmul) * .7);stroke-opacity:calc(var(--a) * var(--wmul) * .7);cx:18px;cy:0}
+  75%{fill-opacity:calc(var(--a) * var(--wmul));stroke-opacity:calc(var(--a) * var(--wmul));cx:27px;cy:1.6px}
+  100%{fill-opacity:0;stroke-opacity:0;cx:36px;cy:0}}
+.rp{fill:none;stroke:var(--wave);stroke-width:1.1px;vector-effect:non-scaling-stroke;stroke-opacity:0;
   animation:rp var(--dur,14s) linear var(--dl,0s) infinite both}
-@keyframes rp{0%{opacity:0;transform:scale(.25)}18%{opacity:calc(.55 * var(--wmul))}100%{opacity:0;transform:scale(2.6)}}
+@keyframes rp{0%{stroke-opacity:0;r:1.5px}18%{stroke-opacity:calc(.55 * var(--wmul))}100%{stroke-opacity:0;r:15.6px}}
 .track{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;stroke-width:var(--tw);
   transition:opacity .35s}
 .stn{fill:var(--bg);stroke-width:1.4;vector-effect:non-scaling-stroke}
@@ -491,14 +494,15 @@ body.cute .train.known .car{display:inline} body.cute .train .body.arrow{display
 .car .wh{fill:#3A4652;stroke:var(--bg);stroke-width:.8;transform-box:fill-box;transform-origin:center}
 .car .wh line{stroke:#C9D1D9;stroke-width:.9}
 .train.roll .car .wh{animation:wheel .55s linear infinite}
-.train.roll .car .cb{animation:chug .28s ease-in-out infinite alternate}
 @keyframes wheel{to{transform:rotate(360deg)}}
-@keyframes chug{from{transform:translateY(-.25px)}to{transform:translateY(.25px)}}
 #styleBtn svg{width:16px;height:16px} #styleBtn svg path,#styleBtn svg circle{stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
 #styleBtn[aria-pressed="true"]{color:var(--ink);background:var(--pressed)}
-.train .ring{fill:none;stroke-width:1.4;opacity:0;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center}
+/* the ping grows its radius, not a CSS transform: a transform or opacity animation on an SVG element makes Chrome
+   lift it (and whatever it overlaps) into separate compositor layers, which were re-rasterised soft for the length
+   of the ping - that was the track blur on every update. r and stroke-opacity animate in the normal paint. */
+.train .ring{fill:none;stroke-width:1.4;stroke-opacity:0;vector-effect:non-scaling-stroke}
 .train.ping .ring{animation:ping 1.4s ease-out}
-@keyframes ping{0%{opacity:.75;transform:scale(1)}100%{opacity:0;transform:scale(3.15)}}
+@keyframes ping{0%{stroke-opacity:.75;r:7px}100%{stroke-opacity:0;r:22px}}
 .train .halo{fill:none;stroke:var(--ink);stroke-width:1.5;opacity:0}
 .train:hover .halo{opacity:.45}
 .train.sel .halo{opacity:.95}
@@ -589,7 +593,7 @@ button{touch-action:manipulation}
 @media (hover:none){ #tip{display:none} }
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.25s;animation-timing-function:ease}
 @media (prefers-reduced-motion:reduce){*,::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important;transition:none!important}}
-@media (prefers-reduced-motion:reduce){.wv{opacity:calc(.3 * var(--wmul))}}
+@media (prefers-reduced-motion:reduce){.wv{fill-opacity:calc(.3 * var(--wmul));stroke-opacity:calc(.3 * var(--wmul))}}
 @media (pointer:coarse){#helpBtn,.ibtn,#card .x,.fl{position:relative}
   #helpBtn::after,.ibtn::after{content:"";position:absolute;inset:-8px -3px}
   #card .x::after,#spop .x::after{content:"";position:absolute;inset:-11px}

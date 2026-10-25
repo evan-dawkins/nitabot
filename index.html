@@ -84,7 +84,8 @@ button{font-family:inherit;color:inherit;transition:background-color var(--t-fas
 *{-webkit-tap-highlight-color:transparent}
 button:focus-visible,.train:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
-#stage{position:absolute;inset:0;cursor:grab}
+#stage{position:absolute;inset:0;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#stage *{-webkit-user-select:none;user-select:none}   /* panning must never select the town names or labels; panels outside the map stay selectable */
 #stage.drag{cursor:grabbing}
 svg#map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 svg#labels{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
@@ -464,19 +465,21 @@ body.chasing .stlbl,body.chasing .lakelbl{display:none}
 /* lake water: slow drifting glints + a few soft ripples. They fade in and out as they drift, so nothing pops.
    Glints update ~12x a second (steps) because the motion is slow; that keeps the long-running cost low. */
 .water{pointer-events:none}
-.wv{fill:none;stroke:var(--wave);stroke-width:1.4px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;opacity:0;
-  animation:wv var(--dur,16s) steps(24) var(--dl,0s) infinite both}
+/* (geometry and fill/stroke opacity, not transform/opacity: see the ping note below; 360 glints used to sit in
+   360 compositor layers all the time) */
+.wv{fill:none;stroke:var(--wave);stroke-width:1.4px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;
+  fill-opacity:0;stroke-opacity:0;animation:wv var(--dur,16s) steps(24) var(--dl,0s) infinite both}
 .wv.dot{fill:var(--wave);stroke:none}
 .wv.ring{fill:none;stroke-width:1px}
 @keyframes wv{
-  0%{opacity:0;transform:translate(0,0)}
-  25%{opacity:calc(var(--a) * var(--wmul));transform:translate(9px,-1.6px)}
-  50%{opacity:calc(var(--a) * var(--wmul) * .7);transform:translate(18px,0)}
-  75%{opacity:calc(var(--a) * var(--wmul));transform:translate(27px,1.6px)}
-  100%{opacity:0;transform:translate(36px,0)}}
-.rp{fill:none;stroke:var(--wave);stroke-width:1.1px;vector-effect:non-scaling-stroke;opacity:0;transform-box:fill-box;transform-origin:center;
+  0%{fill-opacity:0;stroke-opacity:0;cx:0;cy:0}
+  25%{fill-opacity:calc(var(--a) * var(--wmul));stroke-opacity:calc(var(--a) * var(--wmul));cx:9px;cy:-1.6px}
+  50%{fill-opacity:calc(var(--a) * var(--wmul) * .7);stroke-opacity:calc(var(--a) * var(--wmul) * .7);cx:18px;cy:0}
+  75%{fill-opacity:calc(var(--a) * var(--wmul));stroke-opacity:calc(var(--a) * var(--wmul));cx:27px;cy:1.6px}
+  100%{fill-opacity:0;stroke-opacity:0;cx:36px;cy:0}}
+.rp{fill:none;stroke:var(--wave);stroke-width:1.1px;vector-effect:non-scaling-stroke;stroke-opacity:0;
   animation:rp var(--dur,14s) linear var(--dl,0s) infinite both}
-@keyframes rp{0%{opacity:0;transform:scale(.25)}18%{opacity:calc(.55 * var(--wmul))}100%{opacity:0;transform:scale(2.6)}}
+@keyframes rp{0%{stroke-opacity:0;r:1.5px}18%{stroke-opacity:calc(.55 * var(--wmul))}100%{stroke-opacity:0;r:15.6px}}
 .track{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;stroke-width:var(--tw);
   transition:opacity .35s}
 .stn{fill:var(--bg);stroke-width:1.4;vector-effect:non-scaling-stroke}
@@ -513,14 +516,15 @@ body.cute .train.known .car{display:inline} body.cute .train .body.arrow{display
 .car .wh{fill:#3A4652;stroke:var(--bg);stroke-width:.8;transform-box:fill-box;transform-origin:center}
 .car .wh line{stroke:#C9D1D9;stroke-width:.9}
 .train.roll .car .wh{animation:wheel .55s linear infinite}
-.train.roll .car .cb{animation:chug .28s ease-in-out infinite alternate}
 @keyframes wheel{to{transform:rotate(360deg)}}
-@keyframes chug{from{transform:translateY(-.25px)}to{transform:translateY(.25px)}}
 #styleBtn svg{width:16px;height:16px} #styleBtn svg path,#styleBtn svg circle{stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
 #styleBtn[aria-pressed="true"]{color:var(--ink);background:var(--pressed)}
-.train .ring{fill:none;stroke-width:1.4;opacity:0;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center}
+/* the ping grows its radius, not a CSS transform: a transform or opacity animation on an SVG element makes Chrome
+   lift it (and whatever it overlaps) into separate compositor layers, which were re-rasterised soft for the length
+   of the ping - that was the track blur on every update. r and stroke-opacity animate in the normal paint. */
+.train .ring{fill:none;stroke-width:1.4;stroke-opacity:0;vector-effect:non-scaling-stroke}
 .train.ping .ring{animation:ping 1.4s ease-out}
-@keyframes ping{0%{opacity:.75;transform:scale(1)}100%{opacity:0;transform:scale(3.15)}}
+@keyframes ping{0%{stroke-opacity:.75;r:7px}100%{stroke-opacity:0;r:22px}}
 .train .halo{fill:none;stroke:var(--ink);stroke-width:1.5;opacity:0}
 .train:hover .halo{opacity:.45}
 .train.sel .halo{opacity:.95}
@@ -611,7 +615,7 @@ button{touch-action:manipulation}
 @media (hover:none){ #tip{display:none} }
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.25s;animation-timing-function:ease}
 @media (prefers-reduced-motion:reduce){*,::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important;transition:none!important}}
-@media (prefers-reduced-motion:reduce){.wv{opacity:calc(.3 * var(--wmul))}}
+@media (prefers-reduced-motion:reduce){.wv{fill-opacity:calc(.3 * var(--wmul));stroke-opacity:calc(.3 * var(--wmul))}}
 @media (pointer:coarse){#helpBtn,.ibtn,#card .x,.fl{position:relative}
   #helpBtn::after,.ibtn::after{content:"";position:absolute;inset:-8px -3px}
   #card .x::after,#spop .x::after{content:"";position:absolute;inset:-11px}
@@ -1039,6 +1043,10 @@ function tapPick(tgt,e,touchy){
     flyTo({x:p[0]-(p[0]-vb.x)*k,y:p[1]-(p[1]-vb.y)*k,w:nw,h:vb.h*k},380);return true}
   const t=ownT||near[0][1];hideTip();if(selected===t){if(!rideCard())closeCard();return true}selectTrain(t);return true}
 svg.addEventListener("pointerup",endDrag);svg.addEventListener("pointercancel",endDrag);
+// a drag on the map is always a pan: never a text selection or a native image drag (the CSS stops most of it;
+// these catch a selection that starts on the map and would run on into the page)
+for(const ev of["selectstart","dragstart"])stage.addEventListener(ev,e=>e.preventDefault());
+document.addEventListener("selectstart",e=>{if(drag||pinch)e.preventDefault()});
 svg.addEventListener("wheel",e=>{e.preventDefault();
   const r=svg.getBoundingClientRect(),f=Math.exp(Math.max(-60,Math.min(60,e.deltaY))*0.0022);
   const mx=following?following.shown[0]:vb.x+(e.clientX-r.left)/r.width*vb.w;
@@ -1561,7 +1569,7 @@ function makeTrainVisual(L){
     el("stop",{offset:0,style:`stop-color:${col};stop-opacity:0`},gr);el("stop",{offset:1,style:`stop-color:${col};stop-opacity:${a}`},gr);return gr};
   const gh=mkGrad(uid+"h",L.color,.8),gc=mkGrad(uid+"c","#FFFFFF",.95);
   const band=el("path",{class:"tband",stroke:`url(#${uid}h)`},tg),core=el("path",{class:"tcore",stroke:`url(#${uid}c)`},tg);
-  return{g,inner,arrow,dot,carFlip,trail:{g:tg,band,core,grads:[gh,gc]},hist:[],histRi:-1}}
+  return{g,inner,arrow,dot,carFlip,cb,phase:Math.random()*6.3,trail:{g:tg,band,core,grads:[gh,gc]},hist:[],histRi:-1}}
 let trailUid=0;
 const TRAIL_MS=90000,TRAIL_MAX_PX=150;
 function drawTrail(t,r,p,now,k){
@@ -2816,8 +2824,9 @@ function frame(now){
     drawTrail(t,r,p,now,k);
     const known=t.dirSign!==0;
     if(t.known!==known){t.known=known;t.arrow.style.display=known?"":"none";t.dot.style.display=known?"none":"";t.g.classList.toggle("known",known)}
-    if(cuteTrains){const roll=known&&!stale&&now-t.segT0<t.segDur&&Math.abs(t.segTo-t.segFrom)>.01&&!t.dwell&&!reduceMotion();   // wheels turn only while it's really moving
-      if(roll!==t.roll){t.roll=roll;t.g.classList.toggle("roll",roll)}}
+    if(cuteTrains){const roll=known&&!stale&&now-t.segT0<t.segDur&&Math.abs(t.segTo-t.segFrom)>.01&&!t.dwell&&!reduceMotion();   // it sways only while it's really moving
+      if(roll!==t.roll){t.roll=roll;t.g.classList.toggle("roll",roll);if(!roll&&t.cb)t.cb.removeAttribute("transform")}
+      if(roll&&t.cb){const c=`translate(0 ${(.25*Math.sin(now/45+t.phase)).toFixed(2)})`;if(c!==t.cbt){t.cbt=c;t.cb.setAttribute("transform",c)}}}   // an attribute, not a CSS animation (see the ping note in styles.css)
     const tf=`translate(${p.x.toFixed(2)},${p.y.toFixed(2)}) scale(${ks.toFixed(4)})`;if(tf!==t.tf){t.tf=tf;t.g.setAttribute("transform",tf)}
     if(known){const want=(t.dirSign<0?p.ang+Math.PI:p.ang)*180/Math.PI;
       if(t.rot==null||reduceMotion())t.rot=want;else{let d=((want-t.rot)%360+540)%360-180;t.rot+=Math.abs(d)<.3?d:d*(1-Math.exp(-dt/.09))}  // turn at bends over ~0.15 s

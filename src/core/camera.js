@@ -82,6 +82,10 @@ function tapPick(tgt,e,touchy){
     flyTo({x:p[0]-(p[0]-vb.x)*k,y:p[1]-(p[1]-vb.y)*k,w:nw,h:vb.h*k},380);return true}
   const t=ownT||near[0][1];hideTip();if(selected===t){if(!rideCard())closeCard();return true}selectTrain(t);return true}
 svg.addEventListener("pointerup",endDrag);svg.addEventListener("pointercancel",endDrag);
+// a drag on the map is always a pan: never a text selection or a native image drag (the CSS stops most of it;
+// these catch a selection that starts on the map and would run on into the page)
+for(const ev of["selectstart","dragstart"])stage.addEventListener(ev,e=>e.preventDefault());
+document.addEventListener("selectstart",e=>{if(drag||pinch)e.preventDefault()});
 svg.addEventListener("wheel",e=>{e.preventDefault();
   const r=svg.getBoundingClientRect(),f=Math.exp(Math.max(-60,Math.min(60,e.deltaY))*0.0022);
   const mx=following?following.shown[0]:vb.x+(e.clientX-r.left)/r.width*vb.w;
