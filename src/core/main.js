@@ -4,11 +4,19 @@ applySat();
    ===================================================================== */
 FIT_W=fitAll().w;vb=fitAll();applyVB();syncZoom();
 let lastFrame=performance.now(),labelT=0,cardT=0,statusT=0,lastVB="",lastMarkW=-1;
-/* the L fades out between 1.5x and 2.8x the Chicago view's width: its track to a faint ghost (context), its trains,
-   stations, links and labels all the way (they stop taking clicks once mostly gone). A CTA line picked in the line
-   bar stays. */
-const CTA_FADE=[1.5,2.8],CTA_GHOST=.14;let ctaK=-1;
-function ctaFadeK(){if(focusKey&&!isMetra(focusKey))return 0;return Math.max(0,Math.min(1,(vb.w/FIT_W-CTA_FADE[0])/(CTA_FADE[1]-CTA_FADE[0])))}
+/* the L fades out as you zoom out: fully faded by the zoom where Elburn and Big Timber Rd (Metra's far west) are both
+   on screen from the Chicago view, starting at 70% of that zoom (never closer than the Chicago view itself). Its
+   track goes to a faint ghost (context); its trains, stations, links and labels all the way (they stop taking clicks
+   once mostly gone). Worked out per screen shape, so a phone and a wide monitor fade at the same place on the map.
+   A CTA line picked in the line bar stays. */
+const CTA_GHOST=.14;let ctaK=-1,ctaFadeAt=null;
+function ctaFadeRange(){const v=fitAll(),cx=v.x+v.w/2,cy=v.y+v.h/2,r=v.h/v.w;let done=FIT_W*1.6;
+  const need=STATIONS.filter(q=>q.id==="ELBURN"||q.id==="BIGTIMBER");
+  if(need.length)done=Math.max(...need.map(q=>Math.max(Math.abs(q.xy[0]-cx)*2,Math.abs(q.xy[1]-cy)*2/r)))*1.04;   // a little margin: on screen, not on the edge
+  return[Math.max(FIT_W*1.05,done*.7),done]}
+addEventListener("resize",()=>{ctaFadeAt=null;ctaK=-1});
+function ctaFadeK(){if(focusKey&&!isMetra(focusKey))return 0;if(!ctaFadeAt)ctaFadeAt=ctaFadeRange();
+  const[a,b]=ctaFadeAt;return Math.max(0,Math.min(1,(vb.w-a)/(b-a)))}
 function fadeCTA(){const k=+ctaFadeK().toFixed(3);if(k===ctaK)return;ctaK=k;const e=k*k*(3-2*k);
   const tr=(1-e*(1-CTA_GHOST)).toFixed(3),gone=(1-e).toFixed(3),off=e>.6;
   // fill-/stroke-opacity, inherited by everything inside: a group opacity below 1 would put each group in its own

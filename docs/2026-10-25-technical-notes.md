@@ -50,7 +50,7 @@ The tests run headless Chromium against a **mock** Worker with fake trains. They
 | `schedule.json` | Metra's timetable, trimmed for the departure boards | `tools/build_schedule.py`, nightly Action |
 | `data/network.json` | All of the above | `tools/build_layout.py` (+ `tools/layout_metra.py`) |
 | `data/transfers.json` | CTA's station pages: CTA-Metra pairs, and CTA walks between two stations (`cta_pairs`); each entry quotes its page (checked 2026-10-25) | by hand |
-| `data/states.json` | Illinois-Wisconsin and Illinois-Indiana lines from Census state outlines (cb_2023 500k from census.gov when reachable; otherwise the CC0 copy at github.com/unitedstates/districts), checked against the TIGER town edges in `geo.json` | `tools/build_states.py` |
+| `data/states.json` | Illinois-Wisconsin, Illinois-Indiana and Indiana-Michigan lines from Census state outlines (the CC0 copy at github.com/unitedstates/districts), checked against the TIGER town edges in `geo.json` and census.gov's cb_2023 500k file | `tools/build_states.py`, map outlines Action |
 | `voice/cta/` | Kokoro voice clips | `tools/build_voice.py` |
 | `voice/metra/` | Kokoro voice clips (recorded for MetraBot) | `tools/build_voice_metra.py` |
 
@@ -58,7 +58,7 @@ Data: Chicago Transit Authority; Metra; US Census Bureau TIGER/Line and cartogra
 
 ### Geography
 
-Everything is projected the same way (`tools/build_layout.py`): equirectangular around 42.25 N, 88.20 W, 30 map units per km, from WGS84 latitude/longitude. Nothing is moved to make the map tidier: lines that share track are drawn side by side (a few metres apart on the ground, a line width apart on screen), and that offset is the only change. State lines come from Census outlines (`data/states.json`); the build records how far they sit from Census TIGER town edges (with the census.gov 1:500k file the Action uses: median 13 m on the Indiana line, 91 m on the Wisconsin line). Where a state line runs into Lake Michigan, the lake is drawn over it. Attribution for all of it is in the line above; Census data is public domain, the @unitedstates copy is CC0, OpenStreetMap is ODbL.
+Everything is projected the same way (`tools/build_layout.py`): equirectangular around 42.25 N, 88.20 W, 30 map units per km, from WGS84 latitude/longitude. Nothing is moved to make the map tidier: lines that share track are drawn side by side (a few metres apart on the ground, a line width apart on screen), and that offset is the only change. State lines come from Census outlines (`data/states.json`); the build records how far they sit from Census TIGER town edges (median 27 m on the Indiana line, 52 m on the Wisconsin line; the Action also measures them against census.gov's 1:500k file, saved as vs_census_m. That file isn't the source because it cuts Wolf Lake out of both states, leaving a gap in the Illinois-Indiana line). Where a state line runs into Lake Michigan, the lake is drawn over it. Attribution for all of it is in the line above; Census data is public domain, the @unitedstates copy is CC0, OpenStreetMap is ODbL.
 
 ### Transfers
 

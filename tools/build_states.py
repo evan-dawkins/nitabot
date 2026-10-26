@@ -1,11 +1,10 @@
 """Builds data/states.json: the Illinois-Wisconsin and Illinois-Indiana state lines for the NITABot base map.
 
-Sources, in order of preference:
-  1. US Census Bureau cartographic boundary file cb_2023_us_state_500k (public domain), straight from census.gov.
-     This is what the GitHub Action uses (census.gov answers there; it doesn't from every machine).
-  2. If census.gov can't be reached: the state shapes the @unitedstates project publishes
-     (github.com/unitedstates/districts, states/IL, IN, WI shape.geojson, CC0). That project doesn't say which
-     Census edition they come from, so the check below is what vouches for them.
+Source: the Census state shapes the @unitedstates project publishes (github.com/unitedstates/districts,
+  states/IL, IN, WI, MI shape.geojson, CC0). That project doesn't say which Census edition they are, so two checks
+  vouch for them: Census TIGER 2023 town edges (below), and, where census.gov answers (the GitHub Action), Census's
+  own cartographic file cb_2023_us_state_500k (saved as vs_census_m). That file isn't the source itself because it
+  cuts inland water out of both states, which leaves a gap in the Illinois-Indiana line at Wolf Lake.
 Where a state line runs out into Lake Michigan, the map's lake (drawn on top) covers it.
 
 How: a state line is the stretch of Illinois's outline that runs along the neighbouring state's outline
@@ -143,21 +142,29 @@ def check(parts):
 
 def main():
     d = sys.argv[1] if len(sys.argv) > 1 else None
-    st = None
+    # The lines come from the @unitedstates copy: its outlines run straight through inland water (Wolf Lake on the
+    # Illinois-Indiana line), where Census's cartographic file cuts the water out of both states and leaves a 6 km
+    # gap before Lake Michigan. When census.gov answers (the GitHub Action), its file is the cross-check.
+    st = from_unitedstates(d)
+    src = ("US Census state shapes (public domain) as published by github.com/unitedstates/districts (states/IL, IN, WI, MI "
+           "shape.geojson; CC0; Census edition not stated by the publisher). Built by tools/build_states.py.")
+    cb = None
     if not d:
         try:
-            st, src = from_census(), "US Census Bureau cartographic boundary file cb_2023_us_state_500k (public domain). Built by tools/build_states.py."
+            cb = from_census(); src += " Cross-checked against census.gov cb_2023_us_state_500k (vs_census_m)."
         except Exception as e:
-            print(f"census.gov not reachable ({e}); using the @unitedstates copy", file=sys.stderr)
-    if st is None:
-        st, src = from_unitedstates(d), ("US Census state shapes (public domain) as published by github.com/unitedstates/districts "
-                                         "(states/IL, IN, WI shape.geojson; CC0; Census edition not stated by the publisher). Built by tools/build_states.py.")
+            print(f"census.gov not reachable ({e}); no cross-check this time", file=sys.stderr)
     lines = []
     for a, b in PAIRS:
         parts = [rdp(p, SIMPLIFY_M) for p in shared(st[a], Segs(st[b]))]
-        lines.append({"between": [a, b], "parts": parts, "check_m": check(parts)})
+        L = {"between": [a, b], "parts": parts, "check_m": check(parts)}
+        if cb:                                      # how far these lines sit from Census's own (where Census has one)
+            ref = Segs(shared(cb[a], Segs(cb[b])))
+            ds = sorted(x for p in parts for q in p for x in [ref.dist(xy(*q))] if x < 2000)
+            L["vs_census_m"] = {"points": len(ds), "median_m": round(ds[len(ds) // 2], 1), "max_m": round(ds[-1], 1)} if ds else None
+        lines.append(L)
     out = {"source": src,
-           "lines": [{"between": L["between"], "check_m": L["check_m"],
+           "lines": [{"between": L["between"], "check_m": L["check_m"], **({"vs_census_m": L["vs_census_m"]} if "vs_census_m" in L else {}),
                       "parts": [[[round(lat, 5), round(lon, 5)] for lon, lat in p] for p in L["parts"]]} for L in lines]}
     json.dump(out, open(os.path.join(ROOT, "data", "states.json"), "w"), separators=(",", ":"))
     for L in out["lines"]:

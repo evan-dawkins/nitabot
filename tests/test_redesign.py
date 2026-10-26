@@ -136,18 +136,18 @@ def main():
             const xAt=(seg,y)=>{for(let i=1;i<seg.length;i++){const a=seg[i-1],b=seg[i];if((a[1]-y)*(b[1]-y)<=0&&a[1]!==b[1])return a[0]+(b[0]-a[0])*(y-a[1])/(b[1]-a[1])}return null};
             const ken=P.get('KENOSHA'),wh=P.get('WINTHROP'),wi=d[0];
             const out={parts:d.length,ken:ken&&[ken.xy[1],yAt(wi,ken.xy[0])],wh:wh&&[wh.xy[1],yAt(wi,wh.xy[0])]};
-            const hm=__cta.STN.get('93RD-SC');out.sc=hm&&[hm.xy[0],xAt(d[1],hm.xy[1])];return out}""")
+            const hm=__cta.STN.get('93RD-SC');out.sc=hm&&[hm.xy[0],d.map(seg=>xAt(seg,hm.xy[1])).filter(x=>x!=null&&x>hm.xy[0]).sort((a,b)=>a-b)[0]??null];return out}""")
         check("state lines drawn (Illinois-Wisconsin, Illinois-Indiana)", st and st["parts"] >= 2, json.dumps(st)[:120])
         if st and st["ken"] and st["wh"] and st["ken"][1] is not None:
             km = (st["ken"][1] - st["ken"][0]) / 30; wm = (st["wh"][0] - st["wh"][1]) / 30
             check("Kenosha (Wisconsin) is north of the state line, Winthrop Harbor (Illinois) south", km > 0 and wm > 0, f"Kenosha {km:.1f} km north, Winthrop Harbor {wm:.1f} km south")
         else:
             check("Kenosha / Winthrop Harbor reference check", False, json.dumps(st))
-        if st and st["sc"] and st["sc"][1] is not None:
-            check("South Chicago (93rd St, Illinois) is west of the Indiana line", st["sc"][1] - st["sc"][0] > 0, f"{(st['sc'][1]-st['sc'][0])/30:.1f} km west")
+        if True:
+            check("South Chicago (93rd St, Illinois) is west of the Indiana line", bool(st and st["sc"] and st["sc"][1] is not None and st["sc"][1] - st["sc"][0] > 0), str(st and st["sc"]))
         sj = json.load(open(os.path.join(ROOT, "data", "states.json")))
         med = [L["check_m"]["median_m"] for L in sj["lines"] if L.get("check_m")]
-        check("state lines agree with Census TIGER town edges (median under 150 m)", med and max(med) < 150, f"medians {med} m")   # Census 1:500k outlines vs TIGER
+        check("state lines agree with Census TIGER town edges (median under 75 m)", med and max(med) < 75, f"medians {med} m")
         c = E("__cta.STN.get('40380').xy")
         E(f"()=>{{const w=__cta.FIT_W*3.4,h=w*innerHeight/innerWidth;__cta.vb={{x:{c[0]}-w/2,y:{c[1]}-h/2,w,h}}}}"); pg.wait_for_timeout(900)
         nm = E("[...document.querySelectorAll('.stname')].filter(t=>t.style.display!=='none').map(t=>t.textContent)")
