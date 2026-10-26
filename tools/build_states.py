@@ -104,7 +104,9 @@ def rdp(pts, eps):
 
 
 def inbox(p, m=0.2):
-    return S - m <= p[1] <= N + m and W - m <= p[0] <= E + m
+    # the lines run on well past the base map: zoomed out and panned on a wide screen you can see that far, and a
+    # state line on land needs no shoreline to be right
+    return 40.6 <= p[1] <= 43.2 and -90.0 <= p[0] <= -85.0   # (all four sides: past anything a zoomed-out, panned view shows)
 
 
 def shared(a_rings, b_segs):

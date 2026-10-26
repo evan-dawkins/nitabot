@@ -58,7 +58,7 @@ Data: Chicago Transit Authority; Metra; US Census Bureau TIGER/Line and cartogra
 
 ### Geography
 
-Everything is projected the same way (`tools/build_layout.py`): equirectangular around 42.25 N, 88.20 W, 30 map units per km, from WGS84 latitude/longitude. Nothing is moved to make the map tidier: lines that share track are drawn side by side (a few metres apart on the ground, a line width apart on screen), and that offset is the only change. State lines come from Census outlines (`data/states.json`); the build records how far they sit from Census TIGER town edges (median 27 m on the Indiana line, 52 m on the Wisconsin line). Where a state line runs into Lake Michigan, the lake is drawn over it. Attribution for all of it is in the line above; Census data is public domain, the @unitedstates copy is CC0, OpenStreetMap is ODbL.
+Everything is projected the same way (`tools/build_layout.py`): equirectangular around 42.25 N, 88.20 W, 30 map units per km, from WGS84 latitude/longitude. Nothing is moved to make the map tidier: lines that share track are drawn side by side (a few metres apart on the ground, a line width apart on screen), and that offset is the only change. State lines come from Census outlines (`data/states.json`); the build records how far they sit from Census TIGER town edges (with the census.gov 1:500k file the Action uses: median 13 m on the Indiana line, 91 m on the Wisconsin line). Where a state line runs into Lake Michigan, the lake is drawn over it. Attribution for all of it is in the line above; Census data is public domain, the @unitedstates copy is CC0, OpenStreetMap is ODbL.
 
 ### Transfers
 

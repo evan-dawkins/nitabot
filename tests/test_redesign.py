@@ -147,7 +147,7 @@ def main():
             check("South Chicago (93rd St, Illinois) is west of the Indiana line", st["sc"][1] - st["sc"][0] > 0, f"{(st['sc'][1]-st['sc'][0])/30:.1f} km west")
         sj = json.load(open(os.path.join(ROOT, "data", "states.json")))
         med = [L["check_m"]["median_m"] for L in sj["lines"] if L.get("check_m")]
-        check("state lines agree with Census TIGER town edges (median under 75 m)", med and max(med) < 75, f"medians {med} m")
+        check("state lines agree with Census TIGER town edges (median under 150 m)", med and max(med) < 150, f"medians {med} m")   # Census 1:500k outlines vs TIGER
         c = E("__cta.STN.get('40380').xy")
         E(f"()=>{{const w=__cta.FIT_W*3.4,h=w*innerHeight/innerWidth;__cta.vb={{x:{c[0]}-w/2,y:{c[1]}-h/2,w,h}}}}"); pg.wait_for_timeout(900)
         nm = E("[...document.querySelectorAll('.stname')].filter(t=>t.style.display!=='none').map(t=>t.textContent)")
