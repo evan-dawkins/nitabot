@@ -5,8 +5,8 @@
 const chips={};
 const consoleEl=$("console");
 const allChip=document.createElement("button");allChip.className="chip all";allChip.textContent="All lines";
-allChip.setAttribute("aria-pressed","true");allChip.title="Show all lines and fold this bar";
-allChip.onclick=()=>{if(focusKey)setFocus(null);if(!linesMin)ctog.onclick()};consoleEl.appendChild(allChip);   // All lines: back to every line, and fold the bar (the folded "All lines" opens it again)
+allChip.setAttribute("aria-pressed","true");allChip.title="Show all lines";
+allChip.onclick=()=>{if(focusKey)setFocus(null)};consoleEl.appendChild(allChip);   // All lines: back to every line (folding the bar is the arrow's job)
 /* two groups of line buttons, the L and Metra: one shows at a time (remembered in this browser); both systems stay on the map */
 const GROUP_KEY="nitabot.lineGroup",grpWrap=document.createElement("span"),gtabs={};
 grpWrap.className="grp";grpWrap.setAttribute("role","group");grpWrap.setAttribute("aria-label","Which line buttons to show");
@@ -32,6 +32,8 @@ function syncLineBar(){consoleEl.classList.toggle("min",linesMin);
   ctog.innerHTML=`<span class="cur">${cur}</span><span aria-hidden="true">${linesMin?"▸":"◂"}</span>`;
   ctog.setAttribute("aria-expanded",String(!linesMin));
   ctog.setAttribute("aria-label",linesMin?"Show all the line buttons":"Fold the line buttons away");ctog.title=linesMin?"Show lines":"Hide lines";labelsDirty=true}
+const moreHint=()=>{const m=consoleEl.scrollWidth-consoleEl.clientWidth-consoleEl.scrollLeft>6;consoleEl.classList.toggle("more",m&&isNarrow())};
+consoleEl.addEventListener("scroll",moreHint,{passive:true});addEventListener("resize",moreHint);setTimeout(moreHint,300);   // phone: fade the right edge while more lines are off-screen
 let foldT=0;
 ctog.onclick=()=>{linesMin=!linesMin;try{linesMin?localStorage.setItem(LINES_MIN_KEY,"1"):localStorage.removeItem(LINES_MIN_KEY)}catch(_){}
   const el=consoleEl;clearTimeout(foldT);el.classList.remove("folding","shut");el.style.width="";

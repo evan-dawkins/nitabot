@@ -75,7 +75,7 @@
   --stnfill:#FFFFFF;--xfill:#FFFFFF;--xedge:#1A2630;
   --stateline:#8796A3;--statelbl:#9AA9B5;
   --live:#157346;
-  --warn:#A96E12;
+  --warn:#8A5A0C;
   --err:#C23E36;
   --fade:rgba(238,242,245,0);
   --lakelbl:#3E86BD;
@@ -179,7 +179,10 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .state.sim i{background:none;border:2px solid #A98BF0;width:10px;height:10px} .state.sim{color:#A98BF0}
 :root[data-theme="light"] .state.sim{color:#6D4FC4} :root[data-theme="light"] .state.sim i{border-color:#6D4FC4}
 @keyframes beat{0%,100%{opacity:1}50%{opacity:.3}}
-.clock{font-variant-numeric:tabular-nums;color:var(--ink)}
+.asof{display:inline-flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums;color:var(--ink);font-size:13.5px}
+.asof .lbl{color:var(--muted)} .asof i{font-style:normal;color:var(--faint)} .asof .day{color:var(--muted)}
+.asof .late{color:var(--warn)}
+.snote{margin:8px 0 2px;padding:6px 9px;border-radius:7px;font-size:13px;line-height:1.35;background:color-mix(in srgb,var(--warn) 13%,transparent)}
 #updated{display:none} body.trouble #updated{display:inline}
 .mh{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 7px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:default;
   color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
@@ -196,6 +199,22 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 #mbanner span{color:var(--muted);flex:1 1 240px}
 #mbanner button{height:28px;padding:0 12px;border-radius:7px;border:1px solid var(--edge);background:var(--panel2);cursor:pointer;font-size:13.5px;font-weight:600}
 #mbanner button:hover{background:var(--pressed)}
+#searchBtn svg *{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+#searchBtn[aria-expanded="true"]{color:var(--ink);background:var(--pressed)}
+#search{position:fixed;z-index:8;width:340px;padding:8px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);box-shadow:var(--shadow)}
+#search.pnl{translate:0 -6px} #search.pnl.on{translate:0 0}
+#sq{width:100%;height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--edge);background:var(--panel2);color:var(--ink);font:inherit;font-size:15px}
+#sq:focus{outline:2px solid var(--ink);outline-offset:1px}
+#sq::placeholder{color:var(--muted)}
+#sres{list-style:none;margin:6px 0 0;padding:0;max-height:min(50vh,340px);overflow-y:auto}
+#sres li{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:14px;cursor:pointer}
+#sres li .sn{flex:1 1 auto;min-width:6em}
+#sres li .sb{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px;flex:0 1 auto}
+#sres li[aria-selected="true"],#sres li[role=option]:hover{background:var(--hover)}
+#sres .sh-hint{color:var(--muted);cursor:default;font-size:13.5px}
+#card:focus,#spop:focus{outline:none}
+#card:focus-visible,#spop:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+::selection{background:color-mix(in srgb,var(--live) 35%,transparent)}
 .state{cursor:default}
 
 /* ---------- line console ---------- */
@@ -241,17 +260,17 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 #apanel .ahd{display:flex;align-items:baseline;gap:8px;padding:11px 12px 9px 14px;border-bottom:1px solid var(--edge)}
 #apanel .ahd b{font-size:15px;font-weight:700}
 #apanel .ahd span{font-size:13px;color:var(--muted)}
-#apanel .ahd button{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px 4px;border-radius:5px}
+#apanel .ahd button{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;min-width:32px;min-height:32px;margin:-6px -6px -6px auto;border-radius:7px}
 #apanel .ahd button:hover{color:var(--ink);background:var(--hover)}
 #apanel .alist{overflow-y:auto;overscroll-behavior:contain}
 #afilt{padding:8px 12px 9px;border-bottom:1px solid var(--edge);display:grid;gap:7px;background:var(--panel2)}
 .aseg{display:flex;gap:2px;padding:2px;border-radius:8px;background:var(--hover);justify-self:start}
 .aseg button{height:26px;padding:0 10px;border:0;border-radius:6px;background:none;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;display:inline-flex;gap:5px;align-items:center}
-.aseg button span{font-weight:500;font-size:12px;opacity:.75}
+.aseg button span{font-weight:500;font-size:12px}
 .aseg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
 .acats{display:flex;flex-wrap:wrap;gap:5px}
 .acats button{height:26px;padding:0 9px;border-radius:13px;border:1px solid var(--edge);background:transparent;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
-.acats button span{font-weight:500;opacity:.75;margin-left:2px}
+.acats button span{font-weight:500;margin-left:2px}
 .acats button:hover{color:var(--ink);background:var(--hover)}
 .acats button[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
 .aitem .tags .asys{font-weight:700;color:var(--ink);letter-spacing:.04em}
@@ -259,7 +278,7 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .aitem .tags .amaj{color:var(--err);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px}
 .aitem.major{background:color-mix(in srgb,var(--err) 6%,transparent)}
 .aitem .alines{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:5px}
-.aitem .alines .bullet{height:17px;font-size:10.5px;padding:0 4px}
+.aitem .alines .bullet{height:18px;font-size:11px;padding:0 4px}
 .aitem .alines .aall,.aitem .alines .awh{font-size:12.5px;color:var(--muted)}
 .aitem .awhere{margin:0 0 6px;color:var(--ink)}
 .aitem .more p{margin:6px 0 0}
@@ -297,7 +316,7 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .xf .kick2{width:100%}
 .xf button{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--faint);background:none;color:var(--ink);font:inherit;font-size:13px;font-weight:600;border-radius:7px;padding:4px 8px;cursor:pointer}
 .xf button:hover{background:var(--hover)}
-.xf .bullet{font-size:10px}
+.xf .bullet{font-size:11px}
 .bmsg .imp{border:1px solid var(--faint);background:none;color:var(--ink);font:inherit;font-size:13px;font-weight:600;border-radius:7px;padding:6px 10px;cursor:pointer;text-align:left}
 .bmsg .imp:hover{background:var(--hover)}
 .focusnote b{color:var(--ink);font-weight:600}
@@ -344,6 +363,22 @@ body.sonar .radar{opacity:1}
 .console,.zoom,#fstrip{transition:opacity var(--t-base) ease}
 body.idle .console,body.idle .zoom{transition:opacity 1.2s ease}
 body.idle .console,body.idle .zoom,body.idle #helpBtn,body.idle .ibtn{opacity:.32}
+/* ambient mode: the controls leave; the map, the name, Live and the data-as-of stamp stay */
+.mark .tools,.abtn,#mood,#board,#fstrip,.ops>span:has(#count){transition:opacity 1.2s ease}
+body.ambient .console,body.ambient .zoom,body.ambient .mark .tools,body.ambient .abtn,body.ambient #mood,body.ambient #board,body.ambient #fstrip,
+body.ambient .ops>span:has(#count),body.ambient #satcred,body.ambient #tip{opacity:0!important;pointer-events:none}
+body.ambient .top{border-bottom-color:transparent;transition:border-color 1.2s ease}
+/* the train of the moment's caption */
+#ridecap{position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));translate:-50% 8px;z-index:4;display:flex;align-items:center;gap:9px;
+  max-width:min(620px,calc(100vw - 24px));padding:7px 6px 7px 13px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);box-shadow:var(--shadow);font-size:14px}
+#ridecap.pnl.on{translate:-50% 0}
+#ridecap .rc-k{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+#ridecap .rc-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ridecap .rc-t b{font-weight:700}
+#ridecap button{height:28px;padding:0 11px;border-radius:7px;border:1px solid var(--edge);background:var(--panel2);font-size:13px;font-weight:600;cursor:pointer;flex:none}
+#ridecap button:hover{background:var(--pressed)}
+#ridecap .rc-x{width:28px;padding:0;font-size:17px;color:var(--muted)}
+body:not(.ambient) #ridecap{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
 
 /* ---------- line bullet (sign-style line code) ---------- */
 .bullet{display:inline-flex;align-items:center;justify-content:center;height:19px;padding:0 5px;border-radius:4px;font-size:11.5px;
@@ -506,8 +541,8 @@ body.chasing .stlbl,body.chasing .lakelbl{display:none}
 .stateline{fill:none;stroke:var(--stateline);stroke-width:1.3px;stroke-dasharray:9 4 2 4;stroke-linecap:butt;vector-effect:non-scaling-stroke;opacity:.8}
 .stname{font-family:var(--sans);font-weight:600;fill:var(--statelbl);letter-spacing:.55em;pointer-events:none}
 body.satmode .stateline{stroke:#fff;opacity:.75} body.satmode .stname{fill:#fff;opacity:.8}
-.stlbl{font-family:var(--sans);font-size:13px;font-weight:600;fill:var(--lakelbl);letter-spacing:.32em}
-:root[data-theme="light"] .stlbl{fill:#97A8B6}
+.stlbl{font-family:var(--sans);font-size:13px;font-weight:600;fill:#5E93BB;letter-spacing:.32em}   /* town names: >= 4.5:1 on the town plates */
+:root[data-theme="light"] .stlbl{fill:#56677A}
 .shore{fill:none;stroke:var(--shore);stroke-width:1.8;vector-effect:non-scaling-stroke}
 .lakelbl{font-family:var(--sans);font-size:30px;font-weight:600;fill:var(--lakelbl);letter-spacing:.42em}
 /* lake water: slow drifting glints + a few soft ripples. They fade in and out as they drift, so nothing pops.
@@ -604,7 +639,14 @@ button{touch-action:manipulation}
   #apanel{left:8px;right:8px;width:auto;top:calc(50px + env(safe-area-inset-top,0px));max-height:64vh}
   .top{height:auto;min-height:calc(46px + env(safe-area-inset-top,0px));padding-left:calc(12px + env(safe-area-inset-left,0px));
     padding-right:calc(12px + env(safe-area-inset-right,0px));gap:10px}
-  .mark span,.clock,#nextText,.ops .cnt-word{display:none}
+  .mark span,#nextText,.ops .cnt-word{display:none}
+  /* phone: the data-as-of stamp moves to a quiet line over the map's bottom-left corner */
+  .asof{position:fixed;left:calc(10px + env(safe-area-inset-left,0px));bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:1;font-size:11.5px;gap:4px;
+    padding:2px 7px;border-radius:6px;background:var(--panel);border:1px solid var(--edge)}
+  body.hasfav .asof{bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  body.sheet .asof,body.pop .asof,body.boardsheet .asof{display:none}
+  body:has(#ridecap.on) .asof{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .asof .day,.asof i:last-of-type{display:none}
   .mark b{font-size:19px}
   #helpBtn,.ibtn{width:30px;height:30px}   /* bigger targets for fingers */
   .ops{gap:11px;font-size:13px}
@@ -649,7 +691,10 @@ button{touch-action:manipulation}
   #fstrip .n{font-size:12px;color:var(--muted);flex:none}
   body.hasfav .zoom{bottom:calc(102px + env(safe-area-inset-bottom,0px))}
 }
-@media (max-width:760px){.mark .tools{padding-left:0;margin-left:0;border-left:0}.mark{gap:7px}}
+@media (max-width:760px){.mark .tools{padding-left:0;margin-left:0;border-left:0}.mark{gap:7px}
+  .gtab{height:34px}.aseg button,.acats button{height:34px}.aitem .amap{height:36px}#mbanner button{height:34px}
+  .console.more{-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
+  #ridecap{left:8px;right:8px;translate:0 8px;max-width:none}#ridecap.pnl.on{translate:0 0}#ridecap .rc-k{display:none}}
 @media (max-width:480px){ .mark .logo{display:none} #updated{display:none}
   #helpBtn,.ibtn{width:28px;height:28px} .state{border:0;padding:0 4px;height:28px} .abtn{height:28px}
   .ops>span:has(#count){display:none} .state.live #stateText{display:none}
@@ -723,6 +768,7 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
 <div class="top">
   <div class="mark"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#12212E"/><path d="M4 50H14L50 14H60" fill="none" stroke="#EF4B3C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 4V60" fill="none" stroke="#3E9BF2" stroke-width="9" stroke-linecap="round"/><circle cx="32" cy="32" r="8.5" fill="#fff" stroke="#12212E" stroke-width="4"/></svg><b>NITABot</b><span>Unofficial CTA &lsquo;L&rsquo; and Metra live map</span>
     <div class="tools">
+      <button id="searchBtn" class="ibtn" aria-label="Find a station" title="Find a station (/)" aria-haspopup="dialog" aria-expanded="false" aria-controls="search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.6" cy="8.6" r="5.2"/><path d="M12.5 12.5l4.6 4.6"/></svg></button>
       <button id="helpBtn" class="ibtn" aria-label="Help: open the welcome guide" title="Help and about (?)" aria-controls="intro">?</button>
       <button id="snd" class="ibtn snd" aria-pressed="true" aria-label="Sound" aria-haspopup="menu" aria-expanded="false" aria-controls="sndmenu" title="Sound (M mutes)"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="sp" d="M3 7.6h3.1L10.4 4v12l-4.3-3.6H3z"/><path class="w1" d="M13.2 7.6c.9.6 1.4 1.4 1.4 2.4s-.5 1.8-1.4 2.4"/><path class="w2" d="M15.5 5.2c1.7 1.2 2.6 2.9 2.6 4.8s-.9 3.6-2.6 4.8"/><path class="x" d="M13.2 7.8l4.6 4.4M17.8 7.8l-4.6 4.4"/></svg></button>
       <button id="styleBtn" class="ibtn" aria-pressed="false" aria-label="Show trains as cute little trains" title="Cute trains (C)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 12.5V8a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v4.5z"/><path d="M6 8h2.2M11.8 8H14"/><circle cx="6.5" cy="14.6" r="1.4"/><circle cx="13.5" cy="14.6" r="1.4"/></svg></button>
@@ -737,7 +783,7 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
     <span id="mhealth" class="mh" role="status" tabindex="0" hidden><i></i><span>Metra</span></span>
     <span id="updated">Waiting for first report</span>
     <span><b id="count">–</b> <span class="cnt-word">trains reporting</span><span class="short">trains</span></span>
-    <span class="clock" id="clock"></span>
+    <span class="asof" id="asof" role="status" aria-live="off" title="When NITABot last received fresh data from each feed (Chicago time)"></span>
   </div>
 </div>
 
@@ -751,13 +797,13 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
 </div>
 
 <div id="stage">
-  <svg id="map" role="group" aria-label="Map of the CTA L and Metra with live train positions"></svg>
+  <svg id="map" role="group" aria-label="Map of the CTA L and Metra with live train positions. Arrow keys move between stations and trains; Tab leaves the map."></svg>
   <svg id="labels" aria-hidden="true"></svg>
 </div>
 <div id="horizon"></div>
 <div id="satcred" hidden>Imagery: USDA, USGS The National Map</div>
-<div id="card" class="pnl" role="dialog" aria-label="Train details"></div>
-<div id="spop" class="pnl" role="dialog" aria-label="Station"></div>
+<div id="card" class="pnl" role="dialog" aria-label="Train details" tabindex="-1"></div>
+<div id="spop" class="pnl" role="dialog" aria-label="Station" tabindex="-1"></div>
 <section id="board" aria-label="Your stations"></section>
 <button id="fstrip" aria-label="Open your stations"></button>
 <div id="sndmenu" class="pnl" role="menu" aria-label="Sound">
@@ -771,6 +817,11 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
 <div id="apanel" class="pnl" role="dialog" aria-label="Service alerts"><div class="ahd"><b>Service alerts</b><span id="ascope"></span><button id="aclose" aria-label="Close alerts">×</button></div><div id="afilt"></div><div class="alist" id="alist"></div></div>
 <div id="notice" class="pnl" role="status"></div>
 <div id="mbanner" role="alert" hidden></div>
+<div id="ridecap" class="pnl" role="status" aria-live="polite"></div>
+<div id="search" class="pnl" role="dialog" aria-label="Find a station">
+  <input id="sq" type="search" placeholder="Find a station" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="sres" aria-autocomplete="list" aria-label="Station name">
+  <ul id="sres" role="listbox" aria-label="Stations"></ul>
+</div>
 <div id="tip"></div>
 <div id="introVeil"></div>
 <div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" aria-describedby="introLede" hidden>
@@ -1136,9 +1187,25 @@ svg.addEventListener("wheel",e=>{e.preventDefault();
   const mx=following?following.shown[0]:vb.x+(e.clientX-r.left)/r.width*vb.w;
   const my=following?following.shown[1]:vb.y+(e.clientY-r.top)/r.height*vb.h;
   zoomAround(f,mx,my)},{passive:false});
+/* keyboard in the map: it counts as one stop in the Tab order (Tab / Shift+Tab leave it), and the arrow keys move
+   to the nearest station or train in that direction */
+const visibleCtl=x=>{if(svg.contains(x)||x.disabled||x.closest("[hidden],.pnl:not(.on)"))return false;const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(x).visibility!=="hidden"};
+svg.addEventListener("keydown",e=>{const here=e.target.closest&&e.target.closest(".sg,.train");if(!here)return;
+  if(e.key==="Tab"){const all=[...document.querySelectorAll('button,a[href],input,[tabindex]:not([tabindex="-1"])')].filter(visibleCtl);
+    const after=all.filter(x=>svg.compareDocumentPosition(x)&Node.DOCUMENT_POSITION_FOLLOWING),before=all.filter(x=>svg.compareDocumentPosition(x)&Node.DOCUMENT_POSITION_PRECEDING);
+    const to=e.shiftKey?(before[before.length-1]||all[all.length-1]):(after[0]||all[0]);if(to){e.preventDefault();to.focus()}return}
+  const D={ArrowRight:[1,0],ArrowLeft:[-1,0],ArrowDown:[0,1],ArrowUp:[0,-1]}[e.key];if(!D)return;e.preventDefault();
+  const r0=here.getBoundingClientRect(),c0=[r0.x+r0.width/2,r0.y+r0.height/2];let best=null,bs=Infinity;
+  for(const g of svg.querySelectorAll(".sg,.train")){if(g===here||g.classList.contains("dim")||g.style.display==="none")continue;const r=g.getBoundingClientRect();if(!r.width)continue;
+    const dx=r.x+r.width/2-c0[0],dy=r.y+r.height/2-c0[1],along=dx*D[0]+dy*D[1];if(along<=2)continue;
+    if(r.right<0||r.bottom<0||r.left>innerWidth||r.top>innerHeight)continue;
+    const s=along+2.2*Math.abs(dx*D[1]-dy*D[0]);if(s<bs){bs=s;best=g}}
+  if(best)best.focus()});
 addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest('input:not([type="checkbox"]),textarea'))return;
+  if(e.key==="/"&&!e.ctrlKey&&!e.metaKey&&!introOpen){e.preventDefault();openSearch();return}
   if(e.key==="?"){e.preventDefault();introOpen?closeIntro():openIntro();return}
   if(introOpen){if(e.key==="Escape")closeIntro();return}
+  if(e.key==="Escape"&&chase&&chase.cap&&!selected){closeCard();return}
   if(e.key==="Escape"){if(sndMenu.classList.contains("on")){closeSndMenu();sndBtn.focus({preventScroll:true})}else if($("apanel").classList.contains("on"))closeAlerts();else if(spopRec)closeStationPop();else if(document.body.classList.contains("boardsheet"))closeBoardSheet();
     else if(selected){if(!rideCard())closeCard()}else if(focusKey)setFocus(null)}
   if(e.key==="+"||e.key==="=")zoomBy(1/1.35);
@@ -1507,8 +1574,8 @@ function positionLabels(){
 const chips={};
 const consoleEl=$("console");
 const allChip=document.createElement("button");allChip.className="chip all";allChip.textContent="All lines";
-allChip.setAttribute("aria-pressed","true");allChip.title="Show all lines and fold this bar";
-allChip.onclick=()=>{if(focusKey)setFocus(null);if(!linesMin)ctog.onclick()};consoleEl.appendChild(allChip);   // All lines: back to every line, and fold the bar (the folded "All lines" opens it again)
+allChip.setAttribute("aria-pressed","true");allChip.title="Show all lines";
+allChip.onclick=()=>{if(focusKey)setFocus(null)};consoleEl.appendChild(allChip);   // All lines: back to every line (folding the bar is the arrow's job)
 /* two groups of line buttons, the L and Metra: one shows at a time (remembered in this browser); both systems stay on the map */
 const GROUP_KEY="nitabot.lineGroup",grpWrap=document.createElement("span"),gtabs={};
 grpWrap.className="grp";grpWrap.setAttribute("role","group");grpWrap.setAttribute("aria-label","Which line buttons to show");
@@ -1534,6 +1601,8 @@ function syncLineBar(){consoleEl.classList.toggle("min",linesMin);
   ctog.innerHTML=`<span class="cur">${cur}</span><span aria-hidden="true">${linesMin?"▸":"◂"}</span>`;
   ctog.setAttribute("aria-expanded",String(!linesMin));
   ctog.setAttribute("aria-label",linesMin?"Show all the line buttons":"Fold the line buttons away");ctog.title=linesMin?"Show lines":"Hide lines";labelsDirty=true}
+const moreHint=()=>{const m=consoleEl.scrollWidth-consoleEl.clientWidth-consoleEl.scrollLeft>6;consoleEl.classList.toggle("more",m&&isNarrow())};
+consoleEl.addEventListener("scroll",moreHint,{passive:true});addEventListener("resize",moreHint);setTimeout(moreHint,300);   // phone: fade the right edge while more lines are off-screen
 let foldT=0;
 ctog.onclick=()=>{linesMin=!linesMin;try{linesMin?localStorage.setItem(LINES_MIN_KEY,"1"):localStorage.removeItem(LINES_MIN_KEY)}catch(_){}
   const el=consoleEl;clearTimeout(foldT);el.classList.remove("folding","shut");el.style.width="";
@@ -2083,8 +2152,17 @@ function metraUI(mh,banner){const m=$("mhealth"),b=$("mbanner");
   if(on!==!b.hidden){b.hidden=!on;labelsDirty=true}
 }
 $("mbanner").addEventListener("click",e=>{if(e.target.closest("[data-act=mretry]"))pollMetra()});
+/* when each feed last delivered fresh data, always on screen: Metra's license asks for the date and time the data
+   was last updated, and it's the honest answer to "is this live?" from across the room. A feed more than 90 s
+   behind turns amber. */
+function tickAsOf(){const el=$("asof");if(mode==="sim"){el.innerHTML="Simulated, not live data";el.className="asof";return}
+  const t=ms=>fmtHM(ms).replace(/\s?[AP]M$/i,""),now=Date.now(),day=new Date(Math.max(lastOkAt,MH.lastUsable)||now).toLocaleDateString([],{month:"short",day:"numeric",timeZone:"America/Chicago"});
+  const part=(name,ms)=>ms?`<span class="${now-ms>90000?"late":""}">${name} ${t(ms)}</span>`:`<span class="late">${name} waiting</span>`;
+  const h=`<span class="lbl">Data as of</span> ${part("CTA",everLoaded?lastOkAt:0)}<i aria-hidden="true">·</i>${part("Metra",MH.lastUsable)}<i aria-hidden="true">·</i><span class="day">${day}</span>`;
+  if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h;el.className="asof"}
+  el.title=`Last fresh data, Chicago time. CTA: ${everLoaded?new Date(lastOkAt).toLocaleString([],{timeZone:"America/Chicago"}):"none yet"}. Metra: ${MH.lastUsable?new Date(MH.lastUsable).toLocaleString([],{timeZone:"America/Chicago"}):"none yet"}.`}
 function tickHeader(){
-  const now=new Date();$("clock").textContent=now.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",second:"2-digit",timeZone:"America/Chicago"});$("clock").title="Chicago time";
+  tickAsOf();
   const left=Math.max(0,nextPollAt-Date.now());
   $("state").title=mode==="sim"?"Simulated trains, not real positions":
     (everLoaded?"Updated "+ago(Date.now()-lastOkAt)+". ":"")+(inflight?"Checking now.":nextPollAt?"Next check in about "+Math.max(5,Math.ceil(left/5000)*5)+" s.":"")
@@ -2118,16 +2196,21 @@ function bindTrain(t){
   t.g.addEventListener("click",e=>{e.stopPropagation();if(performance.now()-lastPick>500)pick()});   // the map already handled a real tap
   t.g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}});
 }
+let cardBack=null;
 function selectTrain(t){
   closeStationPop();closeBoardSheet();
+  if(!card.classList.contains("on"))cardBack=document.activeElement;   // before re-stacking the train, which drops its focus
   if(selected)selected.g.classList.remove("sel");
   selected=t;t.g.classList.add("sel");t.g.parentNode.appendChild(t.g);
-  following=t;card.classList.add("on");document.body.classList.add("sheet");renderCard();
+  following=t;card.classList.add("on");document.body.classList.add("sheet");renderCard();card.focus({preventScroll:true});
   const r=cw()/ch(),tw=vb.w>FIT_W*0.2?Math.max(MIN_W,FIT_W/9):vb.w;    // zoom in to the neighbourhood only if we're far out
   flyTo({x:t.shown[0]-tw/2,y:t.shown[1]-(tw/r)/2,w:tw,h:tw/r});labelsDirty=true}
 function stopFollowing(){if(!following)return;following=null;if(selected)renderCard()}
-function closeCard(){if(chase&&(chase.manual||chase.card)&&selected===chase.t){if(!chase.manual)chase.stop=true;endChase(performance.now(),false)}   // back to the whole network
-  if(selected)selected.g.classList.remove("sel");selected=null;following=null;card.classList.remove("on");document.body.classList.remove("sheet");labelsDirty=true}
+function closeCard(){if(chase&&chase.cap&&!selected){hideRideCap(true);chase.stop=true;endChase(performance.now(),false);return}   // the train of the moment's caption: stop riding
+  if(chase&&(chase.manual||chase.card)&&selected===chase.t){if(!chase.manual)chase.stop=true;endChase(performance.now(),false)}   // back to the whole network
+  const back=card.contains(document.activeElement);
+  if(selected)selected.g.classList.remove("sel");selected=null;following=null;card.classList.remove("on");document.body.classList.remove("sheet");labelsDirty=true;
+  if(back&&cardBack&&cardBack.isConnected&&cardBack.focus)cardBack.focus({preventScroll:true})}
 function stationAt(t,i){const r=t.L.routes[t.ri];i=Math.max(0,Math.min(r.st.length-1,i));return STN.get(r.ids[i])}
 const fmtClock=sec=>new Date(sec*1000).toLocaleTimeString([],{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
 function minsTo(sec,nowSec){const m=Math.round((sec-nowSec)/60);return m<=0?"Due":m+" min"}
@@ -2164,7 +2247,7 @@ function renderCard(){
     const list=tr&&Array.isArray(tr.stops)?tr.stops.filter(x=>(x.arr||x.dep)&&(x.arr||x.dep)>nowSec-45).slice(0,4):[];   // Metra's trip predictions: the next 4
     if(list.length)upRows=`<div class="ups"><span class="kick2 uh">Next stops</span>`+list.map((x,i)=>{
       const rec=STN.get(x.id),nm=rec?stnName(rec):x.id,tm=x.arr||x.dep,m=Math.round((tm-nowSec)/60);
-      const late=x.delay>=60?` <span class="st${x.delay>=360?" late":""}" title="${Math.round(x.delay/60)} minutes late, per Metra">+${Math.round(x.delay/60)}</span>`:"";   // short: the station name keeps its room
+      const late=x.delay>=60?` <span class="st${x.delay>=360?" late":""}" title="${Math.round(x.delay/60)} minutes late, per Metra">+${Math.round(x.delay/60)} min</span>`:"";   // short: the station name keeps its room
       return`<div class="row"><span class="kick2">${i===0?"Next":""}</span><span class="v">${esc(nm)}</span>`
         +`<span class="t"><b>${m<=1?"Due":m+" min"}</b> ${fmtClock(tm)}${late}</span></div>`}).join("")+`</div>`}
   else if(mode!=="sim"&&t.run&&t.run.no){const f=FOLLOW.get(t.id);
@@ -2215,22 +2298,26 @@ function placeCard(){
    "scheduled" when it comes from the timetable and no train is reporting for it yet: those are shown faded.
    ===================================================================== */
 const stnName=rec=>rec.label;
-function inkOn(hex){const h=hex.replace("#",""),v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:((c+.055)/1.055)**2.4);
-  return .2126*v[0]+.7152*v[1]+.0722*v[2]>.38?"#0B1620":"#FFFFFF"}
+// line badge text: white when it reaches WCAG AA (4.5:1) on the line colour, else whichever of white / near-black reads better
+function lumOf(hex){const h=hex.replace("#",""),v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:((c+.055)/1.055)**2.4);
+  return .2126*v[0]+.7152*v[1]+.0722*v[2]}
+function inkOn(hex){const L=lumOf(hex),w=1.05/(L+.05),d=(L+.05)/(lumOf("#0B1620")+.05);return w>=4.5||w>=d?"#FFFFFF":"#0B1620"}
 const bullet=k=>`<span class="bullet" style="background:${LINES[k].color};color:${inkOn(LINES[k].color)}">${LINES[k].code}</span>`;
 function feedHealthy(){return everLoaded&&Date.now()-lastOkAt<3*POLL}
 const ARR=new Map();let arrBusy=false;                                  // station id -> {at, etas} or {at, err}
+// a failed refresh keeps the last good times (marked with their age) instead of wiping them; retried every 15 s
+function failArr(id,err){const p=ARR.get(id);ARR.set(id,p&&p.etas?{...p,err,errAt:Date.now()}:{at:Date.now(),err})}
 async function fetchArrivals(ids){arrBusy=true;
   try{for(let i=0;i<ids.length;i+=4){const chunk=ids.slice(i,i+4);         // CTA answers up to 4 stations per request
       try{const r=await fetch(WORKER_URL+"/cta/arrivals?mapid="+chunk.join(","),{cache:"no-store"});let d=null;try{d=await r.json()}catch(_){}
         for(const id of chunk){const s=d&&d.stations&&d.stations[id];
-          ARR.set(id,s&&Array.isArray(s.etas)?{at:Date.now(),etas:s.etas}:{at:Date.now(),err:(s&&s.error)||(d&&d.error)||"No answer"})}}
-      catch(e){for(const id of chunk)ARR.set(id,{at:Date.now(),err:"Network error"})}}}
+          if(s&&Array.isArray(s.etas))ARR.set(id,{at:Date.now(),etas:s.etas});else failArr(id,(s&&s.error)||(d&&d.error)||"No answer")}}
+      catch(e){for(const id of chunk)failArr(id,"Network error")}}}
   finally{arrBusy=false;spopSig="";boardSig="";if(spopRec)renderStationPop();renderBoard()}}
 function arrivalsTick(){if(arrBusy||mode==="sim"||document.hidden)return;
   const want=new Set(FAV.ids);if(spopRec&&!spopRec.ats)want.add(spopRec.id);
   const due=[...want].filter(id=>/^4\d{4}$/.test(id)).filter(id=>{   // CTA stations only: Metra's times come with its feed
-    const a=ARR.get(id);return!a||Date.now()-a.at>(a.err?15000:30000)});
+    const a=ARR.get(id);return!a||Date.now()-(a.errAt||a.at)>(a.err?15000:30000)});
   if(due.length)fetchArrivals(due)}
 // CTA names each platform: "Service toward Howard", "Subway service toward O'Hare",
 // "Service at Outer Loop platform", "Dempster-Skokie (Arrival)" (trains ending their run here)
@@ -2247,18 +2334,19 @@ function etaRow(e,nowMs){const k=API_KEY[e.line]||METRA_KEY[e.line];if(!k)return
     +`<span class="to">${trainNo(e.run)?`<span class="no">${trainNo(e.run)}</span>`:""}to ${esc(e.dest||"?")}</span>`
     +`<span class="when"><b>${etaWhen(e,nowMs)}</b>${e.arrives_at?fmtClock(e.arrives_at/1000):""}${flag}</span></div>`}
 function upcoming(rec){const a=ARR.get(rec.id),nowMs=serverNow();
-  if(!a||a.err)return a;return{...a,etas:a.etas.filter(e=>!e.arrives_at||e.arrives_at>nowMs-45000)}}
+  if(!a||(a.err&&!a.etas))return a;return{...a,etas:a.etas.filter(e=>!e.arrives_at||e.arrives_at>nowMs-45000)}}
 function arrivalSections(rec,per){
   if(mode==="sim")return{msg:"Arrival times show for live trains only."};
   if(rec.sys==="metra"&&M_DOWNTOWN.has(rec.id))return mBoardSections(rec,per);   // downtown terminal: the departure board
   const a=upcoming(rec);
   if(!a)return{msg:"Getting arrival times…"};
-  if(a.err)return{msg:"CTA's arrival times aren't answering right now."};
+  if(a.err&&!a.etas)return{msg:"CTA's arrival times aren't answering. Trying again every 15 seconds."};
+  const paused=a.err?`<div class="snote">Live times paused: these are CTA's times from ${ago(Date.now()-a.at)}. Trying again.</div>`:"";
   if(a.metra&&!mTrips)return{msg:"Metra's predicted times aren't available right now."};
-  if(!a.etas.length)return{msg:"No trains on the way right now."};
+  if(!a.etas.length)return{msg:a.err?"CTA's arrival times aren't answering. Trying again every 15 seconds.":"No trains on the way right now."};
   const nowMs=serverNow(),groups=new Map();
   for(const e of a.etas){const h=platformHead(e.platform);if(!groups.has(h))groups.set(h,[]);groups.get(h).push(e)}
-  let html="";for(const[h,es]of groups)html+=`<div class="sdir"><span class="kick2">${esc(h)}</span>${es.slice(0,per).map(e=>etaRow(e,nowMs)).join("")}</div>`;
+  let html=paused;for(const[h,es]of groups)html+=`<div class="sdir"><span class="kick2">${esc(h)}</span>${es.slice(0,per).map(e=>etaRow(e,nowMs)).join("")}</div>`;
   return{html,src:"pred"}}
 function stationSchedule(rec,per){const r=arrivalSections(rec,per);
   if(r.msg)return`<div class="fav none" style="padding:0;border:0">${r.msg}</div>`;
@@ -2425,18 +2513,22 @@ function refit(){FIT_W=fitAll().w;syncZoom();labelsDirty=true}
 
 /* ---- station popover ---- */
 const spop=$("spop");let spopRec=null;
+let spopBack=null;
 function openStationPop(rec){if(spopRec===rec){closeStationPop();return}
+  if(!spopRec)spopBack=document.activeElement;
   hideTip();closeAlerts();closeBoardSheet();if(selected)closeCard();
-  spopRec=rec;spop.classList.add("on");document.body.classList.add("pop");renderStationPop();placeStationPop();labelsDirty=true;arrivalsTick();atsOnStation(rec)}
-function closeStationPop(){if(!spopRec)return;spopRec=null;spop.classList.remove("on");document.body.classList.remove("pop");labelsDirty=true}
+  spopRec=rec;spop.classList.add("on");document.body.classList.add("pop");renderStationPop();placeStationPop();labelsDirty=true;arrivalsTick();atsOnStation(rec);
+  spop.setAttribute("aria-labelledby","spopName");spop.focus({preventScroll:true})}       // keyboard and screen-reader users land in the sheet
+function closeStationPop(){if(!spopRec)return;const back=spop.contains(document.activeElement);spopRec=null;spop.classList.remove("on");document.body.classList.remove("pop");labelsDirty=true;
+  if(back&&spopBack&&spopBack.isConnected&&spopBack.focus)spopBack.focus({preventScroll:true})}
 let spopSig="";
 function renderStationPop(){const rec=spopRec;if(!rec)return;
   if(rec.ats){const html=atsPopHTML(rec);if(html!==spopSig){spopSig=html;spop.innerHTML=html;labelsDirty=true;spop.querySelector(".x").onclick=closeStationPop}return}
   const lines=ORDER.filter(k=>rec.lines.has(k)),on=isFav(rec.id),full=!on&&FAV.ids.length>=FAV_MAX;   // CTA's full station name in the title
-  const html=`<button class="x" aria-label="Close station">×</button><div class="nm">${esc(rec.full)}</div><div class="ln">${lines.map(bullet).join("")}</div>`
+  const html=`<button class="x" aria-label="Close station">×</button><div class="nm" id="spopName">${esc(rec.full)}</div><div class="ln">${lines.map(bullet).join("")}</div>`
+    +stationSchedule(rec,3)+xferHTML(rec)
     +`<button class="star" aria-pressed="${on}" ${full?"disabled":""}>${on?"★ On your board":"☆ Add to your board"}</button>`
-    +(full?`<div class="note">Your board holds ${FAV_MAX} stations. Remove one to add this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"")
-    +xferHTML(rec)+stationSchedule(rec,3);
+    +(full?`<div class="note">Your board holds ${FAV_MAX} stations. Remove one to add this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"");
   if(html===spopSig)return;spopSig=html;spop.innerHTML=html;labelsDirty=true;
   for(const b of spop.querySelectorAll(".xf button"))b.onclick=()=>{const r=STN.get(b.dataset.id);if(r){const z=Math.min(vb.w,FIT_W*.12),ra=cw()/ch();flyTo({x:r.xy[0]-z/2,y:r.xy[1]-z/ra/2,w:z,h:z/ra});openStationPop(r)}};
   spop.querySelector(".x").onclick=closeStationPop;spop.querySelector(".star").onclick=()=>toggleFav(rec)}
@@ -2446,7 +2538,7 @@ function xferHTML(rec){const btn=r=>`<button data-id="${esc(r.id)}" title="Show 
   const ws=XLINKS.filter(x=>x.kind==="cc"&&(x.a===rec||x.b===rec)).map(x=>x.a===rec?x.b:x.a);
   let h="";
   if(xs.length)h+=`<div class="xf"><span class="kick2">${rec.sys==="metra"?"Transfer to the L":"Transfer to Metra"}</span>${xs.map(btn).join("")}</div>`;
-  if(ws.length)h+=`<div class="xf"><span class="kick2">Walk to (free with the same farecard)</span>${ws.map(btn).join("")}</div>`;
+  if(ws.length)h+=`<div class="xf"><span class="kick2">Walk to · free transfer</span>${ws.map(btn).join("")}</div>`;
   return h}
 function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transform="";return}
   const sx=cw()/vb.w,sy=ch()/vb.h,px=(spopRec.xy[0]-vb.x)*sx,py=(spopRec.xy[1]-vb.y)*sy,w=spop.offsetWidth,h=spop.offsetHeight,W=cw(),H=ch(),I=uiInsets();
@@ -2455,15 +2547,49 @@ function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transfor
 spop.addEventListener("pointerdown",e=>e.stopPropagation());
 for(const q of document.querySelectorAll(".pnl"))q.addEventListener("transitionend",e=>{if(e.target===q&&(e.propertyName==="scale"||e.propertyName==="translate"))labelsDirty=true});   // re-place labels once a panel settles
 
+/* ---- find a station: / or the magnifier. Matches the start of a name first, then anywhere in it ---- */
+const search=$("search"),sInput=$("sq"),sList=$("sres"),searchBtn=$("searchBtn");
+const normQ=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
+let sHits=[],sIdx=0,searchBack=null;
+function runSearch(){const q=normQ(sInput.value);sIdx=0;
+  if(!q){sHits=[];sList.innerHTML=`<li class="sh-hint">Type a station name, like Belmont or Ogilvie</li>`;sInput.removeAttribute("aria-activedescendant");return}
+  const sc=r=>{const a=normQ(r.label),f=normQ(r.full);return a.startsWith(q)?0:f.startsWith(q)?1:(" "+f).includes(" "+q)?2:f.includes(q)?3:9};
+  sHits=STATIONS.map(r=>[sc(r),r]).filter(x=>x[0]<9).sort((a,b)=>a[0]-b[0]||a[1].label.localeCompare(b[1].label)).slice(0,8).map(x=>x[1]);
+  sList.innerHTML=sHits.length?sHits.map((r,i)=>`<li role="option" id="sr${i}" data-i="${i}" aria-selected="${i===0}">`
+      +`<span class="sn">${esc(r.full)}</span><span class="sb">${ORDER.filter(k=>r.lines.has(k)).map(bullet).join("")}</span></li>`).join("")
+    :`<li class="sh-hint">No station matches “${esc(sInput.value.trim())}”</li>`;
+  if(sHits.length)sInput.setAttribute("aria-activedescendant","sr0");else sInput.removeAttribute("aria-activedescendant")}
+function markSearch(){[...sList.querySelectorAll("[role=option]")].forEach((li,i)=>li.setAttribute("aria-selected",String(i===sIdx)));
+  sInput.setAttribute("aria-activedescendant","sr"+sIdx);const li=$("sr"+sIdx);if(li)li.scrollIntoView({block:"nearest"})}
+function pickSearch(i){const r=sHits[i];if(!r)return;closeSearch(false);closeAlerts();if(selected)closeCard();stopFollowing();
+  const z=Math.min(vb.w,FIT_W*.22),ra=cw()/ch();flyTo({x:r.xy[0]-z/2,y:r.xy[1]-z/ra/2,w:z,h:z/ra});
+  setTimeout(()=>{if(spopRec!==r){openStationPop(r);spopBack=searchBtn}},reduceMotion()?0:680)}
+function openSearch(){searchBack=document.activeElement;closeAlerts();closeSndMenu();
+  if(isNarrow()){search.style.left="8px";search.style.right="8px";search.style.top=(document.querySelector(".top").getBoundingClientRect().bottom+6)+"px"}
+  else{const b=searchBtn.getBoundingClientRect();search.style.right="";search.style.left=Math.max(8,b.left-6)+"px";search.style.top=(b.bottom+8)+"px"}
+  search.classList.add("on");searchBtn.setAttribute("aria-expanded","true");sInput.value="";runSearch();sInput.focus({preventScroll:true})}
+function closeSearch(refocus){if(!search.classList.contains("on"))return;search.classList.remove("on");searchBtn.setAttribute("aria-expanded","false");
+  if(refocus!==false&&searchBack&&searchBack.focus)searchBack.focus({preventScroll:true})}
+searchBtn.onclick=e=>{e.stopPropagation();search.classList.contains("on")?closeSearch():openSearch()};
+sInput.addEventListener("input",runSearch);
+sInput.addEventListener("keydown",e=>{
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!sHits.length)return;sIdx=(sIdx+(e.key==="ArrowDown"?1:sHits.length-1))%sHits.length;markSearch()}
+  else if(e.key==="Enter"){e.preventDefault();pickSearch(sIdx)}
+  else if(e.key==="Escape"){e.preventDefault();e.stopPropagation();closeSearch()}});
+sList.addEventListener("click",e=>{const li=e.target.closest("[data-i]");if(li)pickSearch(+li.dataset.i)});
+search.addEventListener("pointerdown",e=>e.stopPropagation());
+document.addEventListener("pointerdown",e=>{if(search.classList.contains("on")&&!e.target.closest("#search,#searchBtn"))closeSearch(false)});
+
 /* ---- the board ---- */
 const board=$("board"),fstrip=$("fstrip");let boardSig="";
 function closeBoardSheet(){if(document.body.classList.contains("boardsheet")){document.body.classList.remove("boardsheet");labelsDirty=true}}
 function boardRows(rec){return arrivalSections(rec,2)}
+let boardOpenEmpty=false;                                                  // an empty board stays tucked into the ★ until you open it
 function renderBoard(){
-  const favs=FAV.ids.map(id=>STN.get(id)).filter(Boolean),narrow=isNarrow();
+  const favs=FAV.ids.map(id=>STN.get(id)).filter(Boolean),narrow=isNarrow(),min=(FAV.min||(!favs.length&&!boardOpenEmpty))&&!narrow;
   document.body.classList.toggle("hasfav",favs.length>0);
-  if(!board.classList.contains("fly"))board.classList.toggle("min",FAV.min&&!narrow);
-  document.body.classList.toggle("favmin",FAV.min&&!narrow);
+  if(!board.classList.contains("fly"))board.classList.toggle("min",min);
+  document.body.classList.toggle("favmin",min);
   let src="",body;
   if(!favs.length){const old=oldFavs();body=`<p class="bmsg">Click any station on the map, then ☆, to pin it here. Up to ${FAV_MAX}.</p>`
     +(old.length?`<p class="bmsg"><button class="imp">Bring in ${old.length===1?"your station":"your "+old.length+" stations"} from CTABot and MetraBot</button></p>`:"")}
@@ -2481,7 +2607,7 @@ function renderBoard(){
 board.addEventListener("pointerdown",e=>e.stopPropagation());
 board.addEventListener("click",e=>{
   if(e.target.closest(".imp")){FAV.ids=oldFavs();saveFav();boardSig="";renderBoard();refit();arrivalsTick();return}   // copies only: CTABot's and MetraBot's own lists stay as they are
-  if(e.target.closest(".col")){if(isNarrow()){closeBoardSheet();return}setBoardMin(true);return}
+  if(e.target.closest(".col")){if(isNarrow()){closeBoardSheet();return}if(!FAV.ids.length){boardOpenEmpty=false;boardSig="";renderBoard();refit();favBtn.focus({preventScroll:true});return}setBoardMin(true);return}
   const f=e.target.closest(".fav");if(!f)return;const rec=STN.get(f.dataset.id);if(!rec)return;
   if(e.target.closest(".rm")){toggleFav(rec);return}
   if(e.target.closest(".go")){closeBoardSheet();const z=Math.min(vb.w,FIT_W*.45),r=cw()/ch();stopFollowing();
@@ -2501,7 +2627,8 @@ function setBoardMin(min){clearTimeout(boardAnim);
     board.classList.add("fly");requestAnimationFrame(()=>{board.style.transform="";board.style.opacity=""});
     boardAnim=setTimeout(()=>{board.classList.remove("fly");refit()},350)}
 }
-favBtn.onclick=e=>{e.stopPropagation();if(isNarrow()){closeStationPop();if(selected)closeCard();document.body.classList.add("boardsheet");boardSig="";renderBoard();return}setBoardMin(!FAV.min)};
+favBtn.onclick=e=>{e.stopPropagation();if(isNarrow()){closeStationPop();if(selected)closeCard();document.body.classList.add("boardsheet");boardSig="";renderBoard();return}
+  if(!FAV.ids.length){boardOpenEmpty=!boardOpenEmpty;if(boardOpenEmpty&&FAV.min){FAV.min=false;saveFav()}boardSig="";renderBoard();refit();return}setBoardMin(!FAV.min)};
 
 /* phone: one favorite at a time on a strip; tap for the whole board */
 let stripIdx=0,stripT=0;
@@ -2517,12 +2644,18 @@ function tickStrip(){if(!isNarrow())return;const favs=FAV.ids.map(id=>STN.get(id
 fstrip.addEventListener("pointerdown",e=>e.stopPropagation());
 fstrip.onclick=()=>{closeStationPop();if(selected)closeCard();document.body.classList.add("boardsheet");boardSig="";renderBoard()};
 
-/* ---- ambient: after 10 s with no input, the controls step back ---- */
+/* ---- ambient: after 10 s with no input the controls step back (idle); after 90 s (15 s on a phone) they go away
+   altogether (ambient mode): what stays is the map, the trains, the name, Live and the data-as-of stamp, plus the train
+   of the moment's caption. Any touch, click, scroll or key brings everything straight back. ---- */
 let lastInput=Date.now();
+const AMBIENT_MS=90000,AMBIENT_PHONE_MS=15000;
 for(const ev of["pointermove","pointerdown","keydown","wheel","touchstart"])addEventListener(ev,()=>{lastInput=Date.now();
-  if(document.body.classList.contains("idle"))document.body.classList.remove("idle")},{passive:true,capture:true});
-function tickIdle(){const busy=introOpen||$("apanel").classList.contains("on")||sndMenu.classList.contains("on")||spopRec||document.body.classList.contains("boardsheet");
-  document.body.classList.toggle("idle",!busy&&Date.now()-lastInput>10000)}
+  if(document.body.classList.contains("idle")||document.body.classList.contains("ambient")){document.body.classList.remove("idle","ambient");labelsDirty=true}},{passive:true,capture:true});
+function tickIdle(){const busy=introOpen||$("apanel").classList.contains("on")||sndMenu.classList.contains("on")||$("search").classList.contains("on")||spopRec||document.body.classList.contains("boardsheet")||(selected&&!(chase&&selected===chase.t));
+  const quiet=Date.now()-lastInput;
+  document.body.classList.toggle("idle",!busy&&quiet>10000);
+  const amb=!busy&&quiet>(matchMedia("(pointer:coarse)").matches?AMBIENT_PHONE_MS:AMBIENT_MS);
+  if(amb!==document.body.classList.contains("ambient")){document.body.classList.toggle("ambient",amb);labelsDirty=true}}
 renderBoard();
 
 /* ---- the line under the title: what the L is doing right now (Chicago time) ----
@@ -2646,7 +2779,7 @@ function chaseHeading(t,now){const r=t.L.routes[t.ri],p=poseAt(r,curS(t,now)),L=
   const d1=Math.max(0,Math.min(tot,p.d+t.dirSign*L)),d0=Math.max(0,Math.min(tot,p.d-t.dirSign*L*.25));
   if(!(Math.abs(d1-d0)>L*.3))return headingOf(t);
   const a=along(r.anc,r.ac,d0),b=along(r.anc,r.ac,d1);return angDiff(0,-Math.PI/2-Math.atan2(b[1]-a[1],b[0]-a[0]))}   // the short way round
-function rideVB(t){const W=cw(),H=ch(),w=Math.max(MIN_W,Math.min(maxW(),Math.max(MIN_W*3,FIT_W/14)*(chase&&chase.zf||1))),h=w*H/W,k=w/W;let sx=W/2,sy=H*.62;
+function rideVB(t){const W=cw(),H=ch(),w=Math.max(MIN_W,Math.min(maxW(),Math.max(MIN_W*3,FIT_W*.24)*(chase&&chase.zf||1))),h=w*H/W,k=w/W;let sx=W/2,sy=H*.62;   // wide enough to keep the neighbouring stations and streets in view
   if(isNarrow()){const I=uiInsets();                                 // phone: keep the train in the open map, clear of its card
     if(sideSheet()){const cwid=(card.offsetWidth||Math.min(340,W*.46))+16;sx=cwid+(W-cwid)/2;sy=I.top+(H-I.top-I.bot)*.58}
     else{const sh=card.classList.contains("on")&&card.offsetHeight?card.offsetHeight:220,bot=66+sh;sy=I.top+Math.max(40,H-I.top-bot)*.62}}
@@ -2670,12 +2803,22 @@ function endChase(now,quick){if(!chase||chase.phase==="exit"||chase.phase==="out
   if(chase.phase==="rest"&&quick){finishChase();return}
   hideChaseCard();
   chase={...chase,phase:quick?"exit":"out",t0:now,from:{...vb},fromA:ROT.a,fromTilt:chaseTilt}}
+// the train of the moment is introduced by a slim caption, not the rider's data card; "Details" opens the full card
+const ridecap=$("ridecap");
 function showChaseCard(t){if(selected&&selected!==t)return;                     // you picked a train yourself: leave it alone
+  chase.cap=true;t.g.classList.add("sel");renderRideCap(t);ridecap.classList.add("on");labelsDirty=true}
+function renderRideCap(t){const v=t.cta||{},no=trainLabel(t);
+  ridecap.innerHTML=`<span class="rc-k">Train of the moment</span>${bullet(t.L.key)}<span class="rc-t">${no?esc(no):esc(t.L.name)}${v.dest?` <b>to ${esc(v.dest)}</b>`:""}</span>`
+    +`<button class="rc-d">Details</button><button class="rc-x" aria-label="Stop riding along">×</button>`}
+function openRideCard(){if(!chase||!chase.t)return;const t=chase.t;hideRideCap(false);
   selected=t;t.g.classList.add("sel");card.classList.add("on");if(isNarrow())document.body.classList.add("sheet");
   chase.card=true;renderCard();placeCard();labelsDirty=true}
+function hideRideCap(unsel){if(!chase||!chase.cap)return;chase.cap=false;ridecap.classList.remove("on");if(unsel&&chase.t&&selected!==chase.t)chase.t.g.classList.remove("sel")}
+ridecap.addEventListener("pointerdown",e=>e.stopPropagation());
+ridecap.addEventListener("click",e=>{if(e.target.closest(".rc-d"))openRideCard();else if(e.target.closest(".rc-x")&&chase){hideRideCap(true);endChase(performance.now(),false)}});
 // the card of the train being ridden right now: only its × closes it
 function rideCard(){return!!(chase&&(chase.manual||chase.card)&&selected===chase.t&&(chase.phase==="in"||chase.phase==="ride"))}
-function hideChaseCard(){if(!chase||!chase.card)return;chase.card=false;if(selected===chase.t)closeCard()}
+function hideChaseCard(){if(!chase)return;hideRideCap(true);if(!chase.card)return;chase.card=false;if(selected===chase.t)closeCard()}
 function finishChase(){hideChaseCard();ciStop();wakeOff();chase=null;ROT.a=0;setTilt(0);worldRotKey="";world.removeAttribute("transform");document.body.classList.remove("chasing");labelsDirty=true}
 function setTilt(k){chaseTilt=k;
   if(k<=.001){if(stage.classList.contains("tilt")){stage.classList.remove("tilt","moving");stage.style.transform="";horizon.style.opacity=0}return}
@@ -3153,7 +3296,7 @@ function frame(now){
 if(GEO_ISSUES.length)console.warn("Map ordering issues:",GEO_ISSUES);
 window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,renderBoard,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,get ctaFade(){return ctaK},glidePlan,curS,posDiag,posState,
   llAt:(key,ri,s,off=0)=>{const r=LINES[key].routes[ri],d=trackD(r,s),p=along(r.anc,r.ac,d),a=angAt(r,segAt(r.ac,d));return ungeo(p[0]-Math.sin(a)*off,p[1]+Math.cos(a)*off)},
-  trackD,sharedPrefix,MH,metraHealth,pollAlerts,get spopRec(){return spopRec},get focusKey(){return focusKey},get STALE_AFTER(){return STALE_AFTER},get HIDE_UNRESOLVED(){return HIDE_UNRESOLVED}};
+  trackD,sharedPrefix,idleFor:ms=>{lastInput=Date.now()-ms;tickIdle()},get chaseCap(){return!!(chase&&chase.cap)},ARR,inkOn,MH,metraHealth,pollAlerts,get spopRec(){return spopRec},get focusKey(){return focusKey},get STALE_AFTER(){return STALE_AFTER},get HIDE_UNRESOLVED(){return HIDE_UNRESOLVED}};
 applyStyle();tickHeader();poll();pollAlerts();pollMetra();loadTimetable();setInterval(loadTimetable,6*3600e3);requestAnimationFrame(frame);
 })();
 </script>

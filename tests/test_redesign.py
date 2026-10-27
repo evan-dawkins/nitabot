@@ -67,7 +67,7 @@ def main():
             check(f"{theme}: dragging from a train, station, label, town name or land pans and selects nothing",
                   all(v[0] == 0 and v[1] for v in sel.values()) and len(sel) >= 4, json.dumps(sel))
             # text outside the map is still selectable
-            ok = E("""()=>{const e=document.querySelector('#board .bmsg')||document.querySelector('#board');const r=document.createRange();r.selectNodeContents(e);
+            ok = E("""()=>{const e=document.querySelector('.mark > span');const r=document.createRange();r.selectNodeContents(e);
                 const s=getSelection();s.removeAllRanges();s.addRange(r);const n=s.toString().length;s.removeAllRanges();return n>0&&getComputedStyle(e).userSelect!=='none'}""")
             check(f"{theme}: panel text off the map can still be selected", ok)
             # ---- a click (no drag) on a train still opens it; on a station opens the sheet

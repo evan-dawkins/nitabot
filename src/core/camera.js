@@ -91,9 +91,25 @@ svg.addEventListener("wheel",e=>{e.preventDefault();
   const mx=following?following.shown[0]:vb.x+(e.clientX-r.left)/r.width*vb.w;
   const my=following?following.shown[1]:vb.y+(e.clientY-r.top)/r.height*vb.h;
   zoomAround(f,mx,my)},{passive:false});
+/* keyboard in the map: it counts as one stop in the Tab order (Tab / Shift+Tab leave it), and the arrow keys move
+   to the nearest station or train in that direction */
+const visibleCtl=x=>{if(svg.contains(x)||x.disabled||x.closest("[hidden],.pnl:not(.on)"))return false;const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(x).visibility!=="hidden"};
+svg.addEventListener("keydown",e=>{const here=e.target.closest&&e.target.closest(".sg,.train");if(!here)return;
+  if(e.key==="Tab"){const all=[...document.querySelectorAll('button,a[href],input,[tabindex]:not([tabindex="-1"])')].filter(visibleCtl);
+    const after=all.filter(x=>svg.compareDocumentPosition(x)&Node.DOCUMENT_POSITION_FOLLOWING),before=all.filter(x=>svg.compareDocumentPosition(x)&Node.DOCUMENT_POSITION_PRECEDING);
+    const to=e.shiftKey?(before[before.length-1]||all[all.length-1]):(after[0]||all[0]);if(to){e.preventDefault();to.focus()}return}
+  const D={ArrowRight:[1,0],ArrowLeft:[-1,0],ArrowDown:[0,1],ArrowUp:[0,-1]}[e.key];if(!D)return;e.preventDefault();
+  const r0=here.getBoundingClientRect(),c0=[r0.x+r0.width/2,r0.y+r0.height/2];let best=null,bs=Infinity;
+  for(const g of svg.querySelectorAll(".sg,.train")){if(g===here||g.classList.contains("dim")||g.style.display==="none")continue;const r=g.getBoundingClientRect();if(!r.width)continue;
+    const dx=r.x+r.width/2-c0[0],dy=r.y+r.height/2-c0[1],along=dx*D[0]+dy*D[1];if(along<=2)continue;
+    if(r.right<0||r.bottom<0||r.left>innerWidth||r.top>innerHeight)continue;
+    const s=along+2.2*Math.abs(dx*D[1]-dy*D[0]);if(s<bs){bs=s;best=g}}
+  if(best)best.focus()});
 addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest('input:not([type="checkbox"]),textarea'))return;
+  if(e.key==="/"&&!e.ctrlKey&&!e.metaKey&&!introOpen){e.preventDefault();openSearch();return}
   if(e.key==="?"){e.preventDefault();introOpen?closeIntro():openIntro();return}
   if(introOpen){if(e.key==="Escape")closeIntro();return}
+  if(e.key==="Escape"&&chase&&chase.cap&&!selected){closeCard();return}
   if(e.key==="Escape"){if(sndMenu.classList.contains("on")){closeSndMenu();sndBtn.focus({preventScroll:true})}else if($("apanel").classList.contains("on"))closeAlerts();else if(spopRec)closeStationPop();else if(document.body.classList.contains("boardsheet"))closeBoardSheet();
     else if(selected){if(!rideCard())closeCard()}else if(focusKey)setFocus(null)}
   if(e.key==="+"||e.key==="=")zoomBy(1/1.35);

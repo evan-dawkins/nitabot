@@ -241,8 +241,17 @@ function metraUI(mh,banner){const m=$("mhealth"),b=$("mbanner");
   if(on!==!b.hidden){b.hidden=!on;labelsDirty=true}
 }
 $("mbanner").addEventListener("click",e=>{if(e.target.closest("[data-act=mretry]"))pollMetra()});
+/* when each feed last delivered fresh data, always on screen: Metra's license asks for the date and time the data
+   was last updated, and it's the honest answer to "is this live?" from across the room. A feed more than 90 s
+   behind turns amber. */
+function tickAsOf(){const el=$("asof");if(mode==="sim"){el.innerHTML="Simulated, not live data";el.className="asof";return}
+  const t=ms=>fmtHM(ms).replace(/\s?[AP]M$/i,""),now=Date.now(),day=new Date(Math.max(lastOkAt,MH.lastUsable)||now).toLocaleDateString([],{month:"short",day:"numeric",timeZone:"America/Chicago"});
+  const part=(name,ms)=>ms?`<span class="${now-ms>90000?"late":""}">${name} ${t(ms)}</span>`:`<span class="late">${name} waiting</span>`;
+  const h=`<span class="lbl">Data as of</span> ${part("CTA",everLoaded?lastOkAt:0)}<i aria-hidden="true">·</i>${part("Metra",MH.lastUsable)}<i aria-hidden="true">·</i><span class="day">${day}</span>`;
+  if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h;el.className="asof"}
+  el.title=`Last fresh data, Chicago time. CTA: ${everLoaded?new Date(lastOkAt).toLocaleString([],{timeZone:"America/Chicago"}):"none yet"}. Metra: ${MH.lastUsable?new Date(MH.lastUsable).toLocaleString([],{timeZone:"America/Chicago"}):"none yet"}.`}
 function tickHeader(){
-  const now=new Date();$("clock").textContent=now.toLocaleTimeString([],{hour:"numeric",minute:"2-digit",second:"2-digit",timeZone:"America/Chicago"});$("clock").title="Chicago time";
+  tickAsOf();
   const left=Math.max(0,nextPollAt-Date.now());
   $("state").title=mode==="sim"?"Simulated trains, not real positions":
     (everLoaded?"Updated "+ago(Date.now()-lastOkAt)+". ":"")+(inflight?"Checking now.":nextPollAt?"Next check in about "+Math.max(5,Math.ceil(left/5000)*5)+" s.":"")
@@ -276,16 +285,21 @@ function bindTrain(t){
   t.g.addEventListener("click",e=>{e.stopPropagation();if(performance.now()-lastPick>500)pick()});   // the map already handled a real tap
   t.g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}});
 }
+let cardBack=null;
 function selectTrain(t){
   closeStationPop();closeBoardSheet();
+  if(!card.classList.contains("on"))cardBack=document.activeElement;   // before re-stacking the train, which drops its focus
   if(selected)selected.g.classList.remove("sel");
   selected=t;t.g.classList.add("sel");t.g.parentNode.appendChild(t.g);
-  following=t;card.classList.add("on");document.body.classList.add("sheet");renderCard();
+  following=t;card.classList.add("on");document.body.classList.add("sheet");renderCard();card.focus({preventScroll:true});
   const r=cw()/ch(),tw=vb.w>FIT_W*0.2?Math.max(MIN_W,FIT_W/9):vb.w;    // zoom in to the neighbourhood only if we're far out
   flyTo({x:t.shown[0]-tw/2,y:t.shown[1]-(tw/r)/2,w:tw,h:tw/r});labelsDirty=true}
 function stopFollowing(){if(!following)return;following=null;if(selected)renderCard()}
-function closeCard(){if(chase&&(chase.manual||chase.card)&&selected===chase.t){if(!chase.manual)chase.stop=true;endChase(performance.now(),false)}   // back to the whole network
-  if(selected)selected.g.classList.remove("sel");selected=null;following=null;card.classList.remove("on");document.body.classList.remove("sheet");labelsDirty=true}
+function closeCard(){if(chase&&chase.cap&&!selected){hideRideCap(true);chase.stop=true;endChase(performance.now(),false);return}   // the train of the moment's caption: stop riding
+  if(chase&&(chase.manual||chase.card)&&selected===chase.t){if(!chase.manual)chase.stop=true;endChase(performance.now(),false)}   // back to the whole network
+  const back=card.contains(document.activeElement);
+  if(selected)selected.g.classList.remove("sel");selected=null;following=null;card.classList.remove("on");document.body.classList.remove("sheet");labelsDirty=true;
+  if(back&&cardBack&&cardBack.isConnected&&cardBack.focus)cardBack.focus({preventScroll:true})}
 function stationAt(t,i){const r=t.L.routes[t.ri];i=Math.max(0,Math.min(r.st.length-1,i));return STN.get(r.ids[i])}
 const fmtClock=sec=>new Date(sec*1000).toLocaleTimeString([],{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
 function minsTo(sec,nowSec){const m=Math.round((sec-nowSec)/60);return m<=0?"Due":m+" min"}
@@ -322,7 +336,7 @@ function renderCard(){
     const list=tr&&Array.isArray(tr.stops)?tr.stops.filter(x=>(x.arr||x.dep)&&(x.arr||x.dep)>nowSec-45).slice(0,4):[];   // Metra's trip predictions: the next 4
     if(list.length)upRows=`<div class="ups"><span class="kick2 uh">Next stops</span>`+list.map((x,i)=>{
       const rec=STN.get(x.id),nm=rec?stnName(rec):x.id,tm=x.arr||x.dep,m=Math.round((tm-nowSec)/60);
-      const late=x.delay>=60?` <span class="st${x.delay>=360?" late":""}" title="${Math.round(x.delay/60)} minutes late, per Metra">+${Math.round(x.delay/60)}</span>`:"";   // short: the station name keeps its room
+      const late=x.delay>=60?` <span class="st${x.delay>=360?" late":""}" title="${Math.round(x.delay/60)} minutes late, per Metra">+${Math.round(x.delay/60)} min</span>`:"";   // short: the station name keeps its room
       return`<div class="row"><span class="kick2">${i===0?"Next":""}</span><span class="v">${esc(nm)}</span>`
         +`<span class="t"><b>${m<=1?"Due":m+" min"}</b> ${fmtClock(tm)}${late}</span></div>`}).join("")+`</div>`}
   else if(mode!=="sim"&&t.run&&t.run.no){const f=FOLLOW.get(t.id);

@@ -6,22 +6,26 @@
    "scheduled" when it comes from the timetable and no train is reporting for it yet: those are shown faded.
    ===================================================================== */
 const stnName=rec=>rec.label;
-function inkOn(hex){const h=hex.replace("#",""),v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:((c+.055)/1.055)**2.4);
-  return .2126*v[0]+.7152*v[1]+.0722*v[2]>.38?"#0B1620":"#FFFFFF"}
+// line badge text: white when it reaches WCAG AA (4.5:1) on the line colour, else whichever of white / near-black reads better
+function lumOf(hex){const h=hex.replace("#",""),v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:((c+.055)/1.055)**2.4);
+  return .2126*v[0]+.7152*v[1]+.0722*v[2]}
+function inkOn(hex){const L=lumOf(hex),w=1.05/(L+.05),d=(L+.05)/(lumOf("#0B1620")+.05);return w>=4.5||w>=d?"#FFFFFF":"#0B1620"}
 const bullet=k=>`<span class="bullet" style="background:${LINES[k].color};color:${inkOn(LINES[k].color)}">${LINES[k].code}</span>`;
 function feedHealthy(){return everLoaded&&Date.now()-lastOkAt<3*POLL}
 const ARR=new Map();let arrBusy=false;                                  // station id -> {at, etas} or {at, err}
+// a failed refresh keeps the last good times (marked with their age) instead of wiping them; retried every 15 s
+function failArr(id,err){const p=ARR.get(id);ARR.set(id,p&&p.etas?{...p,err,errAt:Date.now()}:{at:Date.now(),err})}
 async function fetchArrivals(ids){arrBusy=true;
   try{for(let i=0;i<ids.length;i+=4){const chunk=ids.slice(i,i+4);         // CTA answers up to 4 stations per request
       try{const r=await fetch(WORKER_URL+"/cta/arrivals?mapid="+chunk.join(","),{cache:"no-store"});let d=null;try{d=await r.json()}catch(_){}
         for(const id of chunk){const s=d&&d.stations&&d.stations[id];
-          ARR.set(id,s&&Array.isArray(s.etas)?{at:Date.now(),etas:s.etas}:{at:Date.now(),err:(s&&s.error)||(d&&d.error)||"No answer"})}}
-      catch(e){for(const id of chunk)ARR.set(id,{at:Date.now(),err:"Network error"})}}}
+          if(s&&Array.isArray(s.etas))ARR.set(id,{at:Date.now(),etas:s.etas});else failArr(id,(s&&s.error)||(d&&d.error)||"No answer")}}
+      catch(e){for(const id of chunk)failArr(id,"Network error")}}}
   finally{arrBusy=false;spopSig="";boardSig="";if(spopRec)renderStationPop();renderBoard()}}
 function arrivalsTick(){if(arrBusy||mode==="sim"||document.hidden)return;
   const want=new Set(FAV.ids);if(spopRec&&!spopRec.ats)want.add(spopRec.id);
   const due=[...want].filter(id=>/^4\d{4}$/.test(id)).filter(id=>{   // CTA stations only: Metra's times come with its feed
-    const a=ARR.get(id);return!a||Date.now()-a.at>(a.err?15000:30000)});
+    const a=ARR.get(id);return!a||Date.now()-(a.errAt||a.at)>(a.err?15000:30000)});
   if(due.length)fetchArrivals(due)}
 // CTA names each platform: "Service toward Howard", "Subway service toward O'Hare",
 // "Service at Outer Loop platform", "Dempster-Skokie (Arrival)" (trains ending their run here)
@@ -38,18 +42,19 @@ function etaRow(e,nowMs){const k=API_KEY[e.line]||METRA_KEY[e.line];if(!k)return
     +`<span class="to">${trainNo(e.run)?`<span class="no">${trainNo(e.run)}</span>`:""}to ${esc(e.dest||"?")}</span>`
     +`<span class="when"><b>${etaWhen(e,nowMs)}</b>${e.arrives_at?fmtClock(e.arrives_at/1000):""}${flag}</span></div>`}
 function upcoming(rec){const a=ARR.get(rec.id),nowMs=serverNow();
-  if(!a||a.err)return a;return{...a,etas:a.etas.filter(e=>!e.arrives_at||e.arrives_at>nowMs-45000)}}
+  if(!a||(a.err&&!a.etas))return a;return{...a,etas:a.etas.filter(e=>!e.arrives_at||e.arrives_at>nowMs-45000)}}
 function arrivalSections(rec,per){
   if(mode==="sim")return{msg:"Arrival times show for live trains only."};
   if(rec.sys==="metra"&&M_DOWNTOWN.has(rec.id))return mBoardSections(rec,per);   // downtown terminal: the departure board
   const a=upcoming(rec);
   if(!a)return{msg:"Getting arrival times…"};
-  if(a.err)return{msg:"CTA's arrival times aren't answering right now."};
+  if(a.err&&!a.etas)return{msg:"CTA's arrival times aren't answering. Trying again every 15 seconds."};
+  const paused=a.err?`<div class="snote">Live times paused: these are CTA's times from ${ago(Date.now()-a.at)}. Trying again.</div>`:"";
   if(a.metra&&!mTrips)return{msg:"Metra's predicted times aren't available right now."};
-  if(!a.etas.length)return{msg:"No trains on the way right now."};
+  if(!a.etas.length)return{msg:a.err?"CTA's arrival times aren't answering. Trying again every 15 seconds.":"No trains on the way right now."};
   const nowMs=serverNow(),groups=new Map();
   for(const e of a.etas){const h=platformHead(e.platform);if(!groups.has(h))groups.set(h,[]);groups.get(h).push(e)}
-  let html="";for(const[h,es]of groups)html+=`<div class="sdir"><span class="kick2">${esc(h)}</span>${es.slice(0,per).map(e=>etaRow(e,nowMs)).join("")}</div>`;
+  let html=paused;for(const[h,es]of groups)html+=`<div class="sdir"><span class="kick2">${esc(h)}</span>${es.slice(0,per).map(e=>etaRow(e,nowMs)).join("")}</div>`;
   return{html,src:"pred"}}
 function stationSchedule(rec,per){const r=arrivalSections(rec,per);
   if(r.msg)return`<div class="fav none" style="padding:0;border:0">${r.msg}</div>`;

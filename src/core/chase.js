@@ -28,7 +28,7 @@ function chaseHeading(t,now){const r=t.L.routes[t.ri],p=poseAt(r,curS(t,now)),L=
   const d1=Math.max(0,Math.min(tot,p.d+t.dirSign*L)),d0=Math.max(0,Math.min(tot,p.d-t.dirSign*L*.25));
   if(!(Math.abs(d1-d0)>L*.3))return headingOf(t);
   const a=along(r.anc,r.ac,d0),b=along(r.anc,r.ac,d1);return angDiff(0,-Math.PI/2-Math.atan2(b[1]-a[1],b[0]-a[0]))}   // the short way round
-function rideVB(t){const W=cw(),H=ch(),w=Math.max(MIN_W,Math.min(maxW(),Math.max(MIN_W*3,FIT_W/14)*(chase&&chase.zf||1))),h=w*H/W,k=w/W;let sx=W/2,sy=H*.62;
+function rideVB(t){const W=cw(),H=ch(),w=Math.max(MIN_W,Math.min(maxW(),Math.max(MIN_W*3,FIT_W*.24)*(chase&&chase.zf||1))),h=w*H/W,k=w/W;let sx=W/2,sy=H*.62;   // wide enough to keep the neighbouring stations and streets in view
   if(isNarrow()){const I=uiInsets();                                 // phone: keep the train in the open map, clear of its card
     if(sideSheet()){const cwid=(card.offsetWidth||Math.min(340,W*.46))+16;sx=cwid+(W-cwid)/2;sy=I.top+(H-I.top-I.bot)*.58}
     else{const sh=card.classList.contains("on")&&card.offsetHeight?card.offsetHeight:220,bot=66+sh;sy=I.top+Math.max(40,H-I.top-bot)*.62}}
@@ -52,12 +52,22 @@ function endChase(now,quick){if(!chase||chase.phase==="exit"||chase.phase==="out
   if(chase.phase==="rest"&&quick){finishChase();return}
   hideChaseCard();
   chase={...chase,phase:quick?"exit":"out",t0:now,from:{...vb},fromA:ROT.a,fromTilt:chaseTilt}}
+// the train of the moment is introduced by a slim caption, not the rider's data card; "Details" opens the full card
+const ridecap=$("ridecap");
 function showChaseCard(t){if(selected&&selected!==t)return;                     // you picked a train yourself: leave it alone
+  chase.cap=true;t.g.classList.add("sel");renderRideCap(t);ridecap.classList.add("on");labelsDirty=true}
+function renderRideCap(t){const v=t.cta||{},no=trainLabel(t);
+  ridecap.innerHTML=`<span class="rc-k">Train of the moment</span>${bullet(t.L.key)}<span class="rc-t">${no?esc(no):esc(t.L.name)}${v.dest?` <b>to ${esc(v.dest)}</b>`:""}</span>`
+    +`<button class="rc-d">Details</button><button class="rc-x" aria-label="Stop riding along">×</button>`}
+function openRideCard(){if(!chase||!chase.t)return;const t=chase.t;hideRideCap(false);
   selected=t;t.g.classList.add("sel");card.classList.add("on");if(isNarrow())document.body.classList.add("sheet");
   chase.card=true;renderCard();placeCard();labelsDirty=true}
+function hideRideCap(unsel){if(!chase||!chase.cap)return;chase.cap=false;ridecap.classList.remove("on");if(unsel&&chase.t&&selected!==chase.t)chase.t.g.classList.remove("sel")}
+ridecap.addEventListener("pointerdown",e=>e.stopPropagation());
+ridecap.addEventListener("click",e=>{if(e.target.closest(".rc-d"))openRideCard();else if(e.target.closest(".rc-x")&&chase){hideRideCap(true);endChase(performance.now(),false)}});
 // the card of the train being ridden right now: only its × closes it
 function rideCard(){return!!(chase&&(chase.manual||chase.card)&&selected===chase.t&&(chase.phase==="in"||chase.phase==="ride"))}
-function hideChaseCard(){if(!chase||!chase.card)return;chase.card=false;if(selected===chase.t)closeCard()}
+function hideChaseCard(){if(!chase)return;hideRideCap(true);if(!chase.card)return;chase.card=false;if(selected===chase.t)closeCard()}
 function finishChase(){hideChaseCard();ciStop();wakeOff();chase=null;ROT.a=0;setTilt(0);worldRotKey="";world.removeAttribute("transform");document.body.classList.remove("chasing");labelsDirty=true}
 function setTilt(k){chaseTilt=k;
   if(k<=.001){if(stage.classList.contains("tilt")){stage.classList.remove("tilt","moving");stage.style.transform="";horizon.style.opacity=0}return}

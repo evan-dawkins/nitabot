@@ -52,7 +52,7 @@
   --stnfill:#FFFFFF;--xfill:#FFFFFF;--xedge:#1A2630;
   --stateline:#8796A3;--statelbl:#9AA9B5;
   --live:#157346;
-  --warn:#A96E12;
+  --warn:#8A5A0C;
   --err:#C23E36;
   --fade:rgba(238,242,245,0);
   --lakelbl:#3E86BD;
@@ -156,7 +156,10 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .state.sim i{background:none;border:2px solid #A98BF0;width:10px;height:10px} .state.sim{color:#A98BF0}
 :root[data-theme="light"] .state.sim{color:#6D4FC4} :root[data-theme="light"] .state.sim i{border-color:#6D4FC4}
 @keyframes beat{0%,100%{opacity:1}50%{opacity:.3}}
-.clock{font-variant-numeric:tabular-nums;color:var(--ink)}
+.asof{display:inline-flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums;color:var(--ink);font-size:13.5px}
+.asof .lbl{color:var(--muted)} .asof i{font-style:normal;color:var(--faint)} .asof .day{color:var(--muted)}
+.asof .late{color:var(--warn)}
+.snote{margin:8px 0 2px;padding:6px 9px;border-radius:7px;font-size:13px;line-height:1.35;background:color-mix(in srgb,var(--warn) 13%,transparent)}
 #updated{display:none} body.trouble #updated{display:inline}
 .mh{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 7px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:default;
   color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
@@ -173,6 +176,22 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 #mbanner span{color:var(--muted);flex:1 1 240px}
 #mbanner button{height:28px;padding:0 12px;border-radius:7px;border:1px solid var(--edge);background:var(--panel2);cursor:pointer;font-size:13.5px;font-weight:600}
 #mbanner button:hover{background:var(--pressed)}
+#searchBtn svg *{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+#searchBtn[aria-expanded="true"]{color:var(--ink);background:var(--pressed)}
+#search{position:fixed;z-index:8;width:340px;padding:8px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);box-shadow:var(--shadow)}
+#search.pnl{translate:0 -6px} #search.pnl.on{translate:0 0}
+#sq{width:100%;height:38px;padding:0 11px;border-radius:8px;border:1px solid var(--edge);background:var(--panel2);color:var(--ink);font:inherit;font-size:15px}
+#sq:focus{outline:2px solid var(--ink);outline-offset:1px}
+#sq::placeholder{color:var(--muted)}
+#sres{list-style:none;margin:6px 0 0;padding:0;max-height:min(50vh,340px);overflow-y:auto}
+#sres li{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:14px;cursor:pointer}
+#sres li .sn{flex:1 1 auto;min-width:6em}
+#sres li .sb{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px;flex:0 1 auto}
+#sres li[aria-selected="true"],#sres li[role=option]:hover{background:var(--hover)}
+#sres .sh-hint{color:var(--muted);cursor:default;font-size:13.5px}
+#card:focus,#spop:focus{outline:none}
+#card:focus-visible,#spop:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+::selection{background:color-mix(in srgb,var(--live) 35%,transparent)}
 .state{cursor:default}
 
 /* ---------- line console ---------- */
@@ -218,17 +237,17 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 #apanel .ahd{display:flex;align-items:baseline;gap:8px;padding:11px 12px 9px 14px;border-bottom:1px solid var(--edge)}
 #apanel .ahd b{font-size:15px;font-weight:700}
 #apanel .ahd span{font-size:13px;color:var(--muted)}
-#apanel .ahd button{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px 4px;border-radius:5px}
+#apanel .ahd button{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;min-width:32px;min-height:32px;margin:-6px -6px -6px auto;border-radius:7px}
 #apanel .ahd button:hover{color:var(--ink);background:var(--hover)}
 #apanel .alist{overflow-y:auto;overscroll-behavior:contain}
 #afilt{padding:8px 12px 9px;border-bottom:1px solid var(--edge);display:grid;gap:7px;background:var(--panel2)}
 .aseg{display:flex;gap:2px;padding:2px;border-radius:8px;background:var(--hover);justify-self:start}
 .aseg button{height:26px;padding:0 10px;border:0;border-radius:6px;background:none;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;display:inline-flex;gap:5px;align-items:center}
-.aseg button span{font-weight:500;font-size:12px;opacity:.75}
+.aseg button span{font-weight:500;font-size:12px}
 .aseg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
 .acats{display:flex;flex-wrap:wrap;gap:5px}
 .acats button{height:26px;padding:0 9px;border-radius:13px;border:1px solid var(--edge);background:transparent;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
-.acats button span{font-weight:500;opacity:.75;margin-left:2px}
+.acats button span{font-weight:500;margin-left:2px}
 .acats button:hover{color:var(--ink);background:var(--hover)}
 .acats button[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
 .aitem .tags .asys{font-weight:700;color:var(--ink);letter-spacing:.04em}
@@ -236,7 +255,7 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .aitem .tags .amaj{color:var(--err);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px}
 .aitem.major{background:color-mix(in srgb,var(--err) 6%,transparent)}
 .aitem .alines{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:5px}
-.aitem .alines .bullet{height:17px;font-size:10.5px;padding:0 4px}
+.aitem .alines .bullet{height:18px;font-size:11px;padding:0 4px}
 .aitem .alines .aall,.aitem .alines .awh{font-size:12.5px;color:var(--muted)}
 .aitem .awhere{margin:0 0 6px;color:var(--ink)}
 .aitem .more p{margin:6px 0 0}
@@ -274,7 +293,7 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .xf .kick2{width:100%}
 .xf button{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--faint);background:none;color:var(--ink);font:inherit;font-size:13px;font-weight:600;border-radius:7px;padding:4px 8px;cursor:pointer}
 .xf button:hover{background:var(--hover)}
-.xf .bullet{font-size:10px}
+.xf .bullet{font-size:11px}
 .bmsg .imp{border:1px solid var(--faint);background:none;color:var(--ink);font:inherit;font-size:13px;font-weight:600;border-radius:7px;padding:6px 10px;cursor:pointer;text-align:left}
 .bmsg .imp:hover{background:var(--hover)}
 .focusnote b{color:var(--ink);font-weight:600}
@@ -321,6 +340,22 @@ body.sonar .radar{opacity:1}
 .console,.zoom,#fstrip{transition:opacity var(--t-base) ease}
 body.idle .console,body.idle .zoom{transition:opacity 1.2s ease}
 body.idle .console,body.idle .zoom,body.idle #helpBtn,body.idle .ibtn{opacity:.32}
+/* ambient mode: the controls leave; the map, the name, Live and the data-as-of stamp stay */
+.mark .tools,.abtn,#mood,#board,#fstrip,.ops>span:has(#count){transition:opacity 1.2s ease}
+body.ambient .console,body.ambient .zoom,body.ambient .mark .tools,body.ambient .abtn,body.ambient #mood,body.ambient #board,body.ambient #fstrip,
+body.ambient .ops>span:has(#count),body.ambient #satcred,body.ambient #tip{opacity:0!important;pointer-events:none}
+body.ambient .top{border-bottom-color:transparent;transition:border-color 1.2s ease}
+/* the train of the moment's caption */
+#ridecap{position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));translate:-50% 8px;z-index:4;display:flex;align-items:center;gap:9px;
+  max-width:min(620px,calc(100vw - 24px));padding:7px 6px 7px 13px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);box-shadow:var(--shadow);font-size:14px}
+#ridecap.pnl.on{translate:-50% 0}
+#ridecap .rc-k{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+#ridecap .rc-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ridecap .rc-t b{font-weight:700}
+#ridecap button{height:28px;padding:0 11px;border-radius:7px;border:1px solid var(--edge);background:var(--panel2);font-size:13px;font-weight:600;cursor:pointer;flex:none}
+#ridecap button:hover{background:var(--pressed)}
+#ridecap .rc-x{width:28px;padding:0;font-size:17px;color:var(--muted)}
+body:not(.ambient) #ridecap{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
 
 /* ---------- line bullet (sign-style line code) ---------- */
 .bullet{display:inline-flex;align-items:center;justify-content:center;height:19px;padding:0 5px;border-radius:4px;font-size:11.5px;
@@ -483,8 +518,8 @@ body.chasing .stlbl,body.chasing .lakelbl{display:none}
 .stateline{fill:none;stroke:var(--stateline);stroke-width:1.3px;stroke-dasharray:9 4 2 4;stroke-linecap:butt;vector-effect:non-scaling-stroke;opacity:.8}
 .stname{font-family:var(--sans);font-weight:600;fill:var(--statelbl);letter-spacing:.55em;pointer-events:none}
 body.satmode .stateline{stroke:#fff;opacity:.75} body.satmode .stname{fill:#fff;opacity:.8}
-.stlbl{font-family:var(--sans);font-size:13px;font-weight:600;fill:var(--lakelbl);letter-spacing:.32em}
-:root[data-theme="light"] .stlbl{fill:#97A8B6}
+.stlbl{font-family:var(--sans);font-size:13px;font-weight:600;fill:#5E93BB;letter-spacing:.32em}   /* town names: >= 4.5:1 on the town plates */
+:root[data-theme="light"] .stlbl{fill:#56677A}
 .shore{fill:none;stroke:var(--shore);stroke-width:1.8;vector-effect:non-scaling-stroke}
 .lakelbl{font-family:var(--sans);font-size:30px;font-weight:600;fill:var(--lakelbl);letter-spacing:.42em}
 /* lake water: slow drifting glints + a few soft ripples. They fade in and out as they drift, so nothing pops.
@@ -581,7 +616,14 @@ button{touch-action:manipulation}
   #apanel{left:8px;right:8px;width:auto;top:calc(50px + env(safe-area-inset-top,0px));max-height:64vh}
   .top{height:auto;min-height:calc(46px + env(safe-area-inset-top,0px));padding-left:calc(12px + env(safe-area-inset-left,0px));
     padding-right:calc(12px + env(safe-area-inset-right,0px));gap:10px}
-  .mark span,.clock,#nextText,.ops .cnt-word{display:none}
+  .mark span,#nextText,.ops .cnt-word{display:none}
+  /* phone: the data-as-of stamp moves to a quiet line over the map's bottom-left corner */
+  .asof{position:fixed;left:calc(10px + env(safe-area-inset-left,0px));bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:1;font-size:11.5px;gap:4px;
+    padding:2px 7px;border-radius:6px;background:var(--panel);border:1px solid var(--edge)}
+  body.hasfav .asof{bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  body.sheet .asof,body.pop .asof,body.boardsheet .asof{display:none}
+  body:has(#ridecap.on) .asof{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .asof .day,.asof i:last-of-type{display:none}
   .mark b{font-size:19px}
   #helpBtn,.ibtn{width:30px;height:30px}   /* bigger targets for fingers */
   .ops{gap:11px;font-size:13px}
@@ -626,7 +668,10 @@ button{touch-action:manipulation}
   #fstrip .n{font-size:12px;color:var(--muted);flex:none}
   body.hasfav .zoom{bottom:calc(102px + env(safe-area-inset-bottom,0px))}
 }
-@media (max-width:760px){.mark .tools{padding-left:0;margin-left:0;border-left:0}.mark{gap:7px}}
+@media (max-width:760px){.mark .tools{padding-left:0;margin-left:0;border-left:0}.mark{gap:7px}
+  .gtab{height:34px}.aseg button,.acats button{height:34px}.aitem .amap{height:36px}#mbanner button{height:34px}
+  .console.more{-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
+  #ridecap{left:8px;right:8px;translate:0 8px;max-width:none}#ridecap.pnl.on{translate:0 0}#ridecap .rc-k{display:none}}
 @media (max-width:480px){ .mark .logo{display:none} #updated{display:none}
   #helpBtn,.ibtn{width:28px;height:28px} .state{border:0;padding:0 4px;height:28px} .abtn{height:28px}
   .ops>span:has(#count){display:none} .state.live #stateText{display:none}

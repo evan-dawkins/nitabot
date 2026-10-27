@@ -62,6 +62,8 @@ def main():
         # which also counts as input, so the next ride waits another 2 minutes
         if pg.evaluate("!!document.querySelector('#card.on .x')"):
             pg.click("#card .x")
+        elif pg.evaluate("!!document.querySelector('#ridecap.on .rc-x')"):      # the ride's caption (its full card is one tap away)
+            pg.click("#ridecap .rc-x")
         pg.wait_for_timeout(4000)
         pg.mouse.click(5, 300)
         pg.keyboard.press("-"); pg.wait_for_timeout(500); pg.keyboard.press("-"); pg.wait_for_timeout(700)

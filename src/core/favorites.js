@@ -18,18 +18,22 @@ function refit(){FIT_W=fitAll().w;syncZoom();labelsDirty=true}
 
 /* ---- station popover ---- */
 const spop=$("spop");let spopRec=null;
+let spopBack=null;
 function openStationPop(rec){if(spopRec===rec){closeStationPop();return}
+  if(!spopRec)spopBack=document.activeElement;
   hideTip();closeAlerts();closeBoardSheet();if(selected)closeCard();
-  spopRec=rec;spop.classList.add("on");document.body.classList.add("pop");renderStationPop();placeStationPop();labelsDirty=true;arrivalsTick();atsOnStation(rec)}
-function closeStationPop(){if(!spopRec)return;spopRec=null;spop.classList.remove("on");document.body.classList.remove("pop");labelsDirty=true}
+  spopRec=rec;spop.classList.add("on");document.body.classList.add("pop");renderStationPop();placeStationPop();labelsDirty=true;arrivalsTick();atsOnStation(rec);
+  spop.setAttribute("aria-labelledby","spopName");spop.focus({preventScroll:true})}       // keyboard and screen-reader users land in the sheet
+function closeStationPop(){if(!spopRec)return;const back=spop.contains(document.activeElement);spopRec=null;spop.classList.remove("on");document.body.classList.remove("pop");labelsDirty=true;
+  if(back&&spopBack&&spopBack.isConnected&&spopBack.focus)spopBack.focus({preventScroll:true})}
 let spopSig="";
 function renderStationPop(){const rec=spopRec;if(!rec)return;
   if(rec.ats){const html=atsPopHTML(rec);if(html!==spopSig){spopSig=html;spop.innerHTML=html;labelsDirty=true;spop.querySelector(".x").onclick=closeStationPop}return}
   const lines=ORDER.filter(k=>rec.lines.has(k)),on=isFav(rec.id),full=!on&&FAV.ids.length>=FAV_MAX;   // CTA's full station name in the title
-  const html=`<button class="x" aria-label="Close station">×</button><div class="nm">${esc(rec.full)}</div><div class="ln">${lines.map(bullet).join("")}</div>`
+  const html=`<button class="x" aria-label="Close station">×</button><div class="nm" id="spopName">${esc(rec.full)}</div><div class="ln">${lines.map(bullet).join("")}</div>`
+    +stationSchedule(rec,3)+xferHTML(rec)
     +`<button class="star" aria-pressed="${on}" ${full?"disabled":""}>${on?"★ On your board":"☆ Add to your board"}</button>`
-    +(full?`<div class="note">Your board holds ${FAV_MAX} stations. Remove one to add this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"")
-    +xferHTML(rec)+stationSchedule(rec,3);
+    +(full?`<div class="note">Your board holds ${FAV_MAX} stations. Remove one to add this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"");
   if(html===spopSig)return;spopSig=html;spop.innerHTML=html;labelsDirty=true;
   for(const b of spop.querySelectorAll(".xf button"))b.onclick=()=>{const r=STN.get(b.dataset.id);if(r){const z=Math.min(vb.w,FIT_W*.12),ra=cw()/ch();flyTo({x:r.xy[0]-z/2,y:r.xy[1]-z/ra/2,w:z,h:z/ra});openStationPop(r)}};
   spop.querySelector(".x").onclick=closeStationPop;spop.querySelector(".star").onclick=()=>toggleFav(rec)}
@@ -39,7 +43,7 @@ function xferHTML(rec){const btn=r=>`<button data-id="${esc(r.id)}" title="Show 
   const ws=XLINKS.filter(x=>x.kind==="cc"&&(x.a===rec||x.b===rec)).map(x=>x.a===rec?x.b:x.a);
   let h="";
   if(xs.length)h+=`<div class="xf"><span class="kick2">${rec.sys==="metra"?"Transfer to the L":"Transfer to Metra"}</span>${xs.map(btn).join("")}</div>`;
-  if(ws.length)h+=`<div class="xf"><span class="kick2">Walk to (free with the same farecard)</span>${ws.map(btn).join("")}</div>`;
+  if(ws.length)h+=`<div class="xf"><span class="kick2">Walk to · free transfer</span>${ws.map(btn).join("")}</div>`;
   return h}
 function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transform="";return}
   const sx=cw()/vb.w,sy=ch()/vb.h,px=(spopRec.xy[0]-vb.x)*sx,py=(spopRec.xy[1]-vb.y)*sy,w=spop.offsetWidth,h=spop.offsetHeight,W=cw(),H=ch(),I=uiInsets();
@@ -48,15 +52,49 @@ function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transfor
 spop.addEventListener("pointerdown",e=>e.stopPropagation());
 for(const q of document.querySelectorAll(".pnl"))q.addEventListener("transitionend",e=>{if(e.target===q&&(e.propertyName==="scale"||e.propertyName==="translate"))labelsDirty=true});   // re-place labels once a panel settles
 
+/* ---- find a station: / or the magnifier. Matches the start of a name first, then anywhere in it ---- */
+const search=$("search"),sInput=$("sq"),sList=$("sres"),searchBtn=$("searchBtn");
+const normQ=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
+let sHits=[],sIdx=0,searchBack=null;
+function runSearch(){const q=normQ(sInput.value);sIdx=0;
+  if(!q){sHits=[];sList.innerHTML=`<li class="sh-hint">Type a station name, like Belmont or Ogilvie</li>`;sInput.removeAttribute("aria-activedescendant");return}
+  const sc=r=>{const a=normQ(r.label),f=normQ(r.full);return a.startsWith(q)?0:f.startsWith(q)?1:(" "+f).includes(" "+q)?2:f.includes(q)?3:9};
+  sHits=STATIONS.map(r=>[sc(r),r]).filter(x=>x[0]<9).sort((a,b)=>a[0]-b[0]||a[1].label.localeCompare(b[1].label)).slice(0,8).map(x=>x[1]);
+  sList.innerHTML=sHits.length?sHits.map((r,i)=>`<li role="option" id="sr${i}" data-i="${i}" aria-selected="${i===0}">`
+      +`<span class="sn">${esc(r.full)}</span><span class="sb">${ORDER.filter(k=>r.lines.has(k)).map(bullet).join("")}</span></li>`).join("")
+    :`<li class="sh-hint">No station matches “${esc(sInput.value.trim())}”</li>`;
+  if(sHits.length)sInput.setAttribute("aria-activedescendant","sr0");else sInput.removeAttribute("aria-activedescendant")}
+function markSearch(){[...sList.querySelectorAll("[role=option]")].forEach((li,i)=>li.setAttribute("aria-selected",String(i===sIdx)));
+  sInput.setAttribute("aria-activedescendant","sr"+sIdx);const li=$("sr"+sIdx);if(li)li.scrollIntoView({block:"nearest"})}
+function pickSearch(i){const r=sHits[i];if(!r)return;closeSearch(false);closeAlerts();if(selected)closeCard();stopFollowing();
+  const z=Math.min(vb.w,FIT_W*.22),ra=cw()/ch();flyTo({x:r.xy[0]-z/2,y:r.xy[1]-z/ra/2,w:z,h:z/ra});
+  setTimeout(()=>{if(spopRec!==r){openStationPop(r);spopBack=searchBtn}},reduceMotion()?0:680)}
+function openSearch(){searchBack=document.activeElement;closeAlerts();closeSndMenu();
+  if(isNarrow()){search.style.left="8px";search.style.right="8px";search.style.top=(document.querySelector(".top").getBoundingClientRect().bottom+6)+"px"}
+  else{const b=searchBtn.getBoundingClientRect();search.style.right="";search.style.left=Math.max(8,b.left-6)+"px";search.style.top=(b.bottom+8)+"px"}
+  search.classList.add("on");searchBtn.setAttribute("aria-expanded","true");sInput.value="";runSearch();sInput.focus({preventScroll:true})}
+function closeSearch(refocus){if(!search.classList.contains("on"))return;search.classList.remove("on");searchBtn.setAttribute("aria-expanded","false");
+  if(refocus!==false&&searchBack&&searchBack.focus)searchBack.focus({preventScroll:true})}
+searchBtn.onclick=e=>{e.stopPropagation();search.classList.contains("on")?closeSearch():openSearch()};
+sInput.addEventListener("input",runSearch);
+sInput.addEventListener("keydown",e=>{
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!sHits.length)return;sIdx=(sIdx+(e.key==="ArrowDown"?1:sHits.length-1))%sHits.length;markSearch()}
+  else if(e.key==="Enter"){e.preventDefault();pickSearch(sIdx)}
+  else if(e.key==="Escape"){e.preventDefault();e.stopPropagation();closeSearch()}});
+sList.addEventListener("click",e=>{const li=e.target.closest("[data-i]");if(li)pickSearch(+li.dataset.i)});
+search.addEventListener("pointerdown",e=>e.stopPropagation());
+document.addEventListener("pointerdown",e=>{if(search.classList.contains("on")&&!e.target.closest("#search,#searchBtn"))closeSearch(false)});
+
 /* ---- the board ---- */
 const board=$("board"),fstrip=$("fstrip");let boardSig="";
 function closeBoardSheet(){if(document.body.classList.contains("boardsheet")){document.body.classList.remove("boardsheet");labelsDirty=true}}
 function boardRows(rec){return arrivalSections(rec,2)}
+let boardOpenEmpty=false;                                                  // an empty board stays tucked into the ★ until you open it
 function renderBoard(){
-  const favs=FAV.ids.map(id=>STN.get(id)).filter(Boolean),narrow=isNarrow();
+  const favs=FAV.ids.map(id=>STN.get(id)).filter(Boolean),narrow=isNarrow(),min=(FAV.min||(!favs.length&&!boardOpenEmpty))&&!narrow;
   document.body.classList.toggle("hasfav",favs.length>0);
-  if(!board.classList.contains("fly"))board.classList.toggle("min",FAV.min&&!narrow);
-  document.body.classList.toggle("favmin",FAV.min&&!narrow);
+  if(!board.classList.contains("fly"))board.classList.toggle("min",min);
+  document.body.classList.toggle("favmin",min);
   let src="",body;
   if(!favs.length){const old=oldFavs();body=`<p class="bmsg">Click any station on the map, then ☆, to pin it here. Up to ${FAV_MAX}.</p>`
     +(old.length?`<p class="bmsg"><button class="imp">Bring in ${old.length===1?"your station":"your "+old.length+" stations"} from CTABot and MetraBot</button></p>`:"")}
@@ -74,7 +112,7 @@ function renderBoard(){
 board.addEventListener("pointerdown",e=>e.stopPropagation());
 board.addEventListener("click",e=>{
   if(e.target.closest(".imp")){FAV.ids=oldFavs();saveFav();boardSig="";renderBoard();refit();arrivalsTick();return}   // copies only: CTABot's and MetraBot's own lists stay as they are
-  if(e.target.closest(".col")){if(isNarrow()){closeBoardSheet();return}setBoardMin(true);return}
+  if(e.target.closest(".col")){if(isNarrow()){closeBoardSheet();return}if(!FAV.ids.length){boardOpenEmpty=false;boardSig="";renderBoard();refit();favBtn.focus({preventScroll:true});return}setBoardMin(true);return}
   const f=e.target.closest(".fav");if(!f)return;const rec=STN.get(f.dataset.id);if(!rec)return;
   if(e.target.closest(".rm")){toggleFav(rec);return}
   if(e.target.closest(".go")){closeBoardSheet();const z=Math.min(vb.w,FIT_W*.45),r=cw()/ch();stopFollowing();
@@ -94,7 +132,8 @@ function setBoardMin(min){clearTimeout(boardAnim);
     board.classList.add("fly");requestAnimationFrame(()=>{board.style.transform="";board.style.opacity=""});
     boardAnim=setTimeout(()=>{board.classList.remove("fly");refit()},350)}
 }
-favBtn.onclick=e=>{e.stopPropagation();if(isNarrow()){closeStationPop();if(selected)closeCard();document.body.classList.add("boardsheet");boardSig="";renderBoard();return}setBoardMin(!FAV.min)};
+favBtn.onclick=e=>{e.stopPropagation();if(isNarrow()){closeStationPop();if(selected)closeCard();document.body.classList.add("boardsheet");boardSig="";renderBoard();return}
+  if(!FAV.ids.length){boardOpenEmpty=!boardOpenEmpty;if(boardOpenEmpty&&FAV.min){FAV.min=false;saveFav()}boardSig="";renderBoard();refit();return}setBoardMin(!FAV.min)};
 
 /* phone: one favorite at a time on a strip; tap for the whole board */
 let stripIdx=0,stripT=0;
@@ -110,12 +149,18 @@ function tickStrip(){if(!isNarrow())return;const favs=FAV.ids.map(id=>STN.get(id
 fstrip.addEventListener("pointerdown",e=>e.stopPropagation());
 fstrip.onclick=()=>{closeStationPop();if(selected)closeCard();document.body.classList.add("boardsheet");boardSig="";renderBoard()};
 
-/* ---- ambient: after 10 s with no input, the controls step back ---- */
+/* ---- ambient: after 10 s with no input the controls step back (idle); after 90 s (15 s on a phone) they go away
+   altogether (ambient mode): what stays is the map, the trains, the name, Live and the data-as-of stamp, plus the train
+   of the moment's caption. Any touch, click, scroll or key brings everything straight back. ---- */
 let lastInput=Date.now();
+const AMBIENT_MS=90000,AMBIENT_PHONE_MS=15000;
 for(const ev of["pointermove","pointerdown","keydown","wheel","touchstart"])addEventListener(ev,()=>{lastInput=Date.now();
-  if(document.body.classList.contains("idle"))document.body.classList.remove("idle")},{passive:true,capture:true});
-function tickIdle(){const busy=introOpen||$("apanel").classList.contains("on")||sndMenu.classList.contains("on")||spopRec||document.body.classList.contains("boardsheet");
-  document.body.classList.toggle("idle",!busy&&Date.now()-lastInput>10000)}
+  if(document.body.classList.contains("idle")||document.body.classList.contains("ambient")){document.body.classList.remove("idle","ambient");labelsDirty=true}},{passive:true,capture:true});
+function tickIdle(){const busy=introOpen||$("apanel").classList.contains("on")||sndMenu.classList.contains("on")||$("search").classList.contains("on")||spopRec||document.body.classList.contains("boardsheet")||(selected&&!(chase&&selected===chase.t));
+  const quiet=Date.now()-lastInput;
+  document.body.classList.toggle("idle",!busy&&quiet>10000);
+  const amb=!busy&&quiet>(matchMedia("(pointer:coarse)").matches?AMBIENT_PHONE_MS:AMBIENT_MS);
+  if(amb!==document.body.classList.contains("ambient")){document.body.classList.toggle("ambient",amb);labelsDirty=true}}
 renderBoard();
 
 /* ---- the line under the title: what the L is doing right now (Chicago time) ----
