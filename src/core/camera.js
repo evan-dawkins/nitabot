@@ -107,7 +107,8 @@ svg.addEventListener("keydown",e=>{const here=e.target.closest&&e.target.closest
   if(best)best.focus()});
 addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest('input:not([type="checkbox"]),textarea'))return;
   if(e.key==="/"&&!e.ctrlKey&&!e.metaKey&&!introOpen){e.preventDefault();openSearch();return}
-  if(e.key==="?"){e.preventDefault();introOpen?closeIntro():openIntro();return}
+  if(e.key==="?"){e.preventDefault();if(welcomeOpen){closeWelcome("tour");return}introOpen?closeIntro():openIntro();return}
+  if(welcomeOpen&&e.key==="Escape"){closeWelcome("watch");return}
   if(introOpen){if(e.key==="Escape")closeIntro();return}
   if(e.key==="Escape"&&chase&&chase.cap&&!selected){closeCard();return}
   if(e.key==="Escape"){if(sndMenu.classList.contains("on")){closeSndMenu();sndBtn.focus({preventScroll:true})}else if($("apanel").classList.contains("on"))closeAlerts();else if(spopRec)closeStationPop();else if(document.body.classList.contains("boardsheet"))closeBoardSheet();
@@ -242,7 +243,8 @@ const firstGesture=e=>{removeEventListener("pointerdown",firstGesture,true);remo
 const SND_NOTE_KEY="nitabot.soundNoted",sndNote=$("sndnote");let sndNoteT=0;
 function hideSoundNote(){clearTimeout(sndNoteT);sndNote.classList.remove("on")}
 function soundNote(){let seen=false;try{seen=localStorage.getItem(SND_NOTE_KEY)==="1"}catch(_){}
-  if(seen||!(sndOn||ciOn))return;try{localStorage.setItem(SND_NOTE_KEY,"1")}catch(_){}
+  if(seen||!(sndOn||ciOn))return;
+  if(welcomeOpen||hintNow){setTimeout(soundNote,1200);return}   // one message at a time: after the welcome and the first traintry{localStorage.setItem(SND_NOTE_KEY,"1")}catch(_){}
   const what=[sndOn&&SND_NAME[sndMode],ciOn&&"spoken train check-ins"].filter(Boolean).join(" and "),touch=matchMedia("(pointer:coarse)").matches;
   sndNote.innerHTML=`<span>Sound is on: ${what}.${touch?" Change it any time with the speaker button.":" Press M to mute, or use the speaker button."}</span>`
     +`<button class="sn-m">Mute</button><button class="sn-x" aria-label="Close">×</button>`;
@@ -317,7 +319,7 @@ function openIntro(){
 function closeIntro(){
   if(!introOpen||introBusy)return;introOpen=false;introBusy=true;
   store.set();introVeil.classList.remove("on");helpBtn.setAttribute("aria-expanded","false");
-  const done=()=>{intro.hidden=true;intro.classList.remove("anim");introBusy=false;
+  const done=()=>{intro.hidden=true;intro.classList.remove("anim");introBusy=false;if(ahaPending){ahaPending=false;setTimeout(()=>showAha(0),300)}
     helpBtn.classList.add("catch");setTimeout(()=>helpBtn.classList.remove("catch"),700);
     if(introBack&&introBack!==document.body&&introBack.focus)introBack.focus({preventScroll:true});else helpBtn.focus({preventScroll:true})};
   if(reduceMotion()){done();return}
@@ -330,8 +332,59 @@ introVeil.addEventListener("pointerdown",e=>{e.stopPropagation();closeIntro()});
 intro.addEventListener("keydown",e=>{if(e.key!=="Tab")return;const f=[...intro.querySelectorAll("button,a[href]")].filter(x=>!x.disabled);
   if(!f.length)return;const i=f.indexOf(document.activeElement);
   if(e.shiftKey&&(i<=0)){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus()}});
-helpBtn.onclick=e=>{e.stopPropagation();introOpen?closeIntro():openIntro()};
-if(!store.get())setTimeout(openIntro,350);
+helpBtn.onclick=e=>{e.stopPropagation();if(welcomeOpen){closeWelcome("tour");return}introOpen?closeIntro():openIntro()};
+/* ---- first visit: a small welcome card low on the screen (the full guide is one tap away), then one real train
+   pointed out, then a few one-time hints the first time each thing comes up. Returning visitors (anyone who has
+   closed the guide or the card in this browser) see none of it. */
+const welcome=$("welcome"),ONBOARD_KEY="nitabot.onboard";let welcomeOpen=false,ahaDone=false,ahaPending=false;
+const onboarding=()=>{try{return localStorage.getItem(ONBOARD_KEY)==="1"}catch(_){return false}};
+function openWelcome(){welcomeOpen=true;try{localStorage.setItem(ONBOARD_KEY,"1")}catch(_){}
+  welcome.hidden=false;welcome.classList.remove("out");welcome.classList.add("in");hideTip();
+  setTimeout(()=>{if(welcomeOpen)welcome.querySelector(".go").focus({preventScroll:true})},60)}
+function closeWelcome(next){if(!welcomeOpen)return;welcomeOpen=false;store.set();
+  const done=()=>{welcome.hidden=true;welcome.classList.remove("in","out")};
+  if(reduceMotion())done();else{welcome.classList.remove("in");welcome.classList.add("out");setTimeout(done,330)}
+  if(next==="tour"){ahaPending=true;openIntro()}else if(next==="watch")setTimeout(()=>showAha(0),reduceMotion()?0:250)}
+welcome.querySelector(".go").onclick=e=>{e.stopPropagation();closeWelcome("watch")};
+welcome.querySelector(".tour").onclick=e=>{e.stopPropagation();closeWelcome("tour")};
+welcome.addEventListener("pointerdown",e=>e.stopPropagation());
+addEventListener("pointerdown",e=>{if(welcomeOpen&&!e.target.closest("#welcome"))closeWelcome("explore")},true);   // they've started exploring on their own
+// the one live train: nearest the middle of the screen, an 'L' train if there is one, reporting and not in doubt
+function showAha(tries){if(ahaDone||introOpen||document.body.classList.contains("ambient"))return;
+  const W=cw(),H=ch(),I=uiInsets();let best=null,bd=1e9;
+  for(const t of trains){if(t.stale||t.held||t.hidden||!t.known||!t.shown)continue;
+    const px=(t.shown[0]-vb.x)*W/vb.w,py=(t.shown[1]-vb.y)*H/vb.h;
+    if(px<70||px>W-70||py<I.top+90||py>H-I.bot-50)continue;
+    const d=Math.hypot(px-W/2,py-H*.45)+(t.L.sys==="metra"?160:0);if(d<bd){bd=d;best=t}}
+  if(!best){if(tries<20)setTimeout(()=>showAha(tries+1),500);return}
+  ahaDone=true;const t=best,dest=(t.cta||{}).dest||"";t.g.classList.add("aha");
+  showHint(`That&rsquo;s a ${esc(t.L.name)} train, live${dest?`, headed to ${esc(dest)}`:""}. Tap it.`,
+    ()=>{if(t.hidden||!t.g.isConnected)return null;const r=t.arrow.getBoundingClientRect();return r.width?{x:r.left+r.width/2,y:r.top-4,yb:r.bottom+4}:null},
+    {ms:10000,force:true,onHide:()=>t.g.classList.remove("aha"),onClick:()=>selectTrain(t),tag:"aha"})}
+/* one-time hints: a dark note pointing at the thing it's about; each shows once per browser, never in ambient
+   mode or during a ride, and only for visitors who started with the welcome card */
+const HINT_KEY="nitabot.hints",hintEl=$("hint");let hintNow=null;
+const hintList=()=>{try{return JSON.parse(localStorage.getItem(HINT_KEY)||"[]")}catch(_){return[]}};
+function hintMark(k){try{const a=hintList();if(!a.includes(k)){a.push(k);localStorage.setItem(HINT_KEY,JSON.stringify(a))}}catch(_){}}
+function hideHint(){if(!hintNow)return;const h=hintNow;hintNow=null;clearTimeout(h.t);clearInterval(h.iv);hintEl.classList.remove("on");if(h.onHide)h.onHide()}
+function showHint(html,at,o={}){
+  if(!o.force&&(!onboarding()||(o.key&&hintList().includes(o.key))))return;
+  if(welcomeOpen||introOpen||document.body.classList.contains("ambient")||document.body.classList.contains("chasing"))return;
+  if(o.key)hintMark(o.key);hideHint();
+  hintEl.querySelector(".ht").innerHTML=html;hintEl.style.cursor=o.onClick?"pointer":"";
+  const place=()=>{const p=at&&at(),w=hintEl.offsetWidth,h=hintEl.offsetHeight,tb=document.querySelector(".top").getBoundingClientRect().bottom;
+    if(at&&!p){hideHint();return}
+    if(!p){hintEl.classList.add("free");hintEl.classList.remove("below");hintEl.style.left=Math.round((innerWidth-w)/2)+"px";hintEl.style.top=Math.round(tb+12)+"px";return}
+    hintEl.classList.remove("free");const left=Math.max(8,Math.min(innerWidth-w-8,p.x-26));let top=p.y-h-10;
+    const roomBelow=(p.yb||p.y)+10+h<innerHeight-70,below=(o.below&&roomBelow)||top<tb+6;if(below)top=(p.yb||p.y)+10;   // below when asked and there's room: it then covers the map, not the panelhintEl.classList.toggle("below",below);
+    hintEl.style.left=Math.round(left)+"px";hintEl.style.top=Math.round(top)+"px";hintEl.style.setProperty("--hx",Math.max(12,Math.min(w-22,p.x-left-5))+"px")};
+  hintNow={onHide:o.onHide,onClick:o.onClick,tag:o.tag||o.key};place();hintEl.classList.add("on");
+  hintNow.iv=setInterval(place,250);hintNow.t=setTimeout(hideHint,o.ms||8000)}
+hintEl.querySelector(".hx").onclick=e=>{e.stopPropagation();hideHint()};
+hintEl.addEventListener("click",e=>{if(e.target.closest(".hx"))return;const h=hintNow;if(h&&h.onClick){hideHint();h.onClick()}});
+hintEl.addEventListener("pointerdown",e=>e.stopPropagation());
+addEventListener("pointerdown",e=>{if(hintNow&&!e.target.closest("#hint"))hideHint()},true);   // any tap elsewhere: they've moved on
+if(!store.get())setTimeout(openWelcome,350);
 $("zin").onclick=()=>zoomBy(1/1.4);$("zout").onclick=()=>zoomBy(1.4);$("fit").onclick=resetView;
 let resizeT=0;
 addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{

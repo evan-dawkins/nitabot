@@ -163,6 +163,41 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 #intro .go{height:38px;padding:0 20px;border-radius:9px;border:0;background:var(--ink);color:var(--panel);font-size:15px;font-weight:700;cursor:pointer}
 #intro .go:hover{opacity:.9}
 #intro .hint{font-size:13px;color:var(--muted)}
+#intro .keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:5px 14px;margin:0 0 12px;font-size:13px;color:var(--muted)}
+#intro .keys span{display:flex;align-items:center;gap:4px}
+#intro kbd,#hint kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;border:1px solid var(--edge);box-shadow:inset 0 -1px 0 var(--edge);
+  background:var(--panel2);color:var(--ink);font:600 12px/1 var(--sans);margin-right:2px}
+@media (pointer:coarse){#intro .keys{display:none}}   /* no keyboard, no shortcut list */
+/* first visit: a small card low on the screen, so the live map keeps moving above it */
+#welcome{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:21;width:min(430px,calc(100vw - 24px));
+  translate:-50% 0;padding:18px 20px 14px;background:var(--panel);border:1px solid var(--edge);border-radius:14px;box-shadow:var(--shadow);color:var(--ink)}
+#welcome[hidden]{display:none}
+#welcome.in{animation:welIn .7s cubic-bezier(.16,1,.3,1) both}
+#welcome.out{animation:welOut .32s ease-in both}
+@keyframes welIn{from{opacity:0;translate:-50% 24px}to{opacity:1;translate:-50% 0}}
+@keyframes welOut{to{opacity:0;translate:-50% 12px}}
+#welcome h2{margin:0 0 6px;font-size:21px;line-height:1.15;font-weight:700;text-wrap:balance}
+#welcome p{margin:0 0 14px;font-size:15.5px;line-height:1.4;color:var(--ink)}
+#welcome .wbtns{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#welcome button{height:40px;padding:0 18px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer}
+#welcome .go{border:0;background:var(--ink);color:var(--panel)}
+#welcome .go:hover{opacity:.9}
+#welcome .tour{border:1px solid var(--edge);background:var(--panel2);color:var(--ink)}
+#welcome .tour:hover{background:var(--pressed)}
+#welcome .about{margin:0;padding-top:10px;border-top:1px solid var(--edge);font-size:12.5px;line-height:1.4;color:var(--muted)}
+@media (max-width:760px),(max-height:500px){#welcome{left:8px;right:8px;width:auto;translate:0 0;bottom:calc(var(--bst,60px) + 8px + env(safe-area-inset-bottom,0px));padding:16px 16px 12px}
+  @keyframes welIn{from{opacity:0;translate:0 24px}to{opacity:1;translate:0 0}} @keyframes welOut{to{opacity:0;translate:0 12px}}}
+/* one-time hints: a small note pointing at the thing it's about */
+#hint{position:fixed;z-index:9;display:flex;align-items:flex-start;gap:8px;max-width:min(290px,calc(100vw - 16px));padding:9px 8px 9px 12px;
+  background:var(--ink);color:var(--panel);border-radius:10px;box-shadow:var(--shadow);font-size:13.5px;line-height:1.35}
+#hint .ht{flex:1 1 auto}
+#hint .hx{flex:none;width:26px;height:26px;margin:-3px -2px -3px 0;border:0;border-radius:6px;background:transparent;color:inherit;opacity:.75;font-size:16px;cursor:pointer}
+#hint .hx:hover{opacity:1;background:color-mix(in srgb,var(--panel) 16%,transparent)}
+#hint::after{content:"";position:absolute;left:var(--hx,24px);width:10px;height:10px;background:inherit;rotate:45deg;bottom:-5px}
+#hint.below::after{bottom:auto;top:-5px}
+#hint.free::after{display:none}
+/* the first live train a visitor is shown: its signal ring keeps pulsing until it's tapped */
+.train.aha .ring{animation:ping 1.6s ease-out infinite}
 #intro .x{position:absolute;right:10px;top:10px;background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:3px 7px;border-radius:6px}
 #intro .x:hover{color:var(--ink);background:var(--hover)}
 @media (max-width:760px),(max-height:500px){#intro{padding:18px 18px 14px}#intro h2{font-size:21px}#intro ol.steps li{font-size:14.5px}}
@@ -747,10 +782,10 @@ button{touch-action:manipulation}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.25s;animation-timing-function:ease}
 @media (prefers-reduced-motion:reduce){*,::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important;transition:none!important}}
 @media (prefers-reduced-motion:reduce){.wv{fill-opacity:calc(.3 * var(--wmul));stroke-opacity:calc(.3 * var(--wmul))}}
-@media (pointer:coarse){#helpBtn,.ibtn,#card .x,.fl,#intro .x,.ctog,#sndnote .sn-x{position:relative}
+@media (pointer:coarse){#helpBtn,.ibtn,#card .x,.fl,#intro .x,.ctog,#sndnote .sn-x,#hint .hx{position:relative}
   #helpBtn::after,.ibtn::after{content:"";position:absolute;inset:-8px -3px}
   #card .x::after,#spop .x::after,#intro .x::after{content:"";position:absolute;inset:-11px}
-  .ctog::after,#sndnote .sn-x::after{content:"";position:absolute;inset:-6px -8px}
+  .ctog::after,#sndnote .sn-x::after,#hint .hx::after{content:"";position:absolute;inset:-8px}
   .fl::after{content:"";position:absolute;inset:-10px -4px}}
 .top,.console,.zoom{z-index:1}
 .sg:focus{outline:none}.sg:focus-visible .stnhit{fill:none;stroke:var(--ink);stroke-width:2px;vector-effect:non-scaling-stroke}
@@ -855,29 +890,42 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
 <div id="tip"></div>
 <div id="introVeil"></div>
 <div id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" aria-describedby="introLede" hidden>
-  <button class="x" aria-label="Close the welcome guide">×</button>
+  <button class="x" aria-label="Close the guide">×</button>
   <h2 id="introTitle">Every CTA &lsquo;L&rsquo; and Metra train, on one map</h2>
   <p class="lede" id="introLede">Each arrow is a real train, drawn where it last reported. Leave it running like a fish tank, or dig in.</p>
   <ol class="steps">
-    <li><span class="n">1</span><span><b>Drag to move, scroll or pinch to zoom.</b> Zoom out for the suburbs and every Metra line.</span></li>
-    <li><span class="n">2</span><span><b>Tap a train</b> to see where it&rsquo;s headed, then <b>Follow</b> to ride along.</span></li>
-    <li><span class="n">3</span><span><b>Tap a station</b> for its next trains. <b>☆ Save station</b> keeps it in Your stations.</span></li>
-    <li><span class="n">4</span><span><b>Alerts</b> (top right) has CTA and Metra service notices. The <b>line bar</b> (bottom) shows one line at a time.</span></li>
+    <li><span class="n">1</span><span><b>Drag, scroll or pinch</b> to move and zoom. Zoom out for all of Metra.</span></li>
+    <li><span class="n">2</span><span><b>Tap a train</b> for where it&rsquo;s headed. <b>Follow</b> rides along.</span></li>
+    <li><span class="n">3</span><span><b>Tap a station</b> for its next trains. <b>☆ Save station</b> keeps it.</span></li>
+    <li><span class="n">4</span><span><b>Alerts</b> (top right) has service notices. The <b>line bar</b> (bottom) shows one line at a time.</span></li>
   </ol>
   <div class="key" aria-label="Map key">
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M1 7h20" stroke="#C60C30" stroke-width="4"/><circle cx="11" cy="7" r="3.4" fill="var(--stnfill)" stroke="#C60C30" stroke-width="1.6"/></svg>Station</span>
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M1 4h20" stroke="#C60C30" stroke-width="3.4"/><path d="M1 10h20" stroke="#00A1DE" stroke-width="3.4"/><rect x="7" y="1.2" width="8" height="11.6" rx="4" fill="var(--stnfill)" stroke="var(--ink)" stroke-width="1.8"/></svg>Transfer</span>
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M1 7h20" stroke="var(--metra-sample)" stroke-width="4.4"/><path d="M1 7h20" stroke="var(--city)" stroke-width="1.4"/></svg>Metra line</span>
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="#C60C30" stroke="var(--ink)" stroke-width="1.1" stroke-linejoin="round"/></svg>Live train</span>
+    <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="#C60C30" stroke="var(--ink)" stroke-width="1.1" stroke-linejoin="round" stroke-dasharray="2.2 1.6"/></svg>Odd report, being checked</span>
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="none" stroke="var(--stalec)" stroke-width="1.5" stroke-linejoin="round"/></svg>Out of date</span>
   </div>
-  <p class="extras">By the title: find a station (or press /), sound, cute trains, satellite, light or dark. Sound (brown noise and spoken check-ins) starts with your first click or tap; the speaker button or M changes or mutes it. Leave it alone and the buttons fade away, then it rides along with a train.</p>
+  <p class="extras">Leave it alone and the buttons fade away, then it rides along with a train. Sound (brown noise and spoken check-ins) starts with your first click or tap; the speaker button changes or mutes it.</p>
+  <div class="keys" aria-label="Keyboard shortcuts">
+    <span><kbd>/</kbd>Find a station</span><span><kbd>?</kbd>This guide</span><span><kbd>T</kbd>Light or dark</span><span><kbd>S</kbd>Satellite</span>
+    <span><kbd>C</kbd>Cute trains</span><span><kbd>M</kbd>Sound on or off</span><span><kbd>+</kbd><kbd>&minus;</kbd>Zoom</span><span><kbd>0</kbd>Whole map</span>
+    <span><kbd>&larr;</kbd><kbd>&rarr;</kbd>Stations and trains on the map</span><span><kbd>Esc</kbd>Close</span>
+  </div>
   <p class="about">NITABot is an unofficial personal project made for fun and is not affiliated with NITA. It isn&rsquo;t affiliated with the CTA or Metra either: train positions and times come from CTA&rsquo;s public Train Tracker data and Metra&rsquo;s public GTFS feeds.</p>
   <div class="foot">
-    <button class="go">Start exploring</button>
+    <button class="go">Got it</button>
     <span class="hint">Open this again any time with <b>?</b> by the title.</span>
   </div>
 </div>
+<div id="welcome" role="dialog" aria-modal="false" aria-labelledby="welTitle" aria-describedby="welLede" hidden>
+  <h2 id="welTitle">Every CTA &lsquo;L&rsquo; and Metra train, live</h2>
+  <p id="welLede">Each arrow is a real train, drawn where it last reported.</p>
+  <div class="wbtns"><button class="go">Start watching</button><button class="tour">Show me around</button></div>
+  <p class="about">NITABot is an unofficial personal project made for fun and is not affiliated with NITA.</p>
+</div>
+<div id="hint" class="pnl" role="status" aria-live="polite"><span class="ht"></span><button class="hx" aria-label="Got it">×</button></div>
 
 
 <script>
@@ -1232,7 +1280,8 @@ svg.addEventListener("keydown",e=>{const here=e.target.closest&&e.target.closest
   if(best)best.focus()});
 addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest('input:not([type="checkbox"]),textarea'))return;
   if(e.key==="/"&&!e.ctrlKey&&!e.metaKey&&!introOpen){e.preventDefault();openSearch();return}
-  if(e.key==="?"){e.preventDefault();introOpen?closeIntro():openIntro();return}
+  if(e.key==="?"){e.preventDefault();if(welcomeOpen){closeWelcome("tour");return}introOpen?closeIntro():openIntro();return}
+  if(welcomeOpen&&e.key==="Escape"){closeWelcome("watch");return}
   if(introOpen){if(e.key==="Escape")closeIntro();return}
   if(e.key==="Escape"&&chase&&chase.cap&&!selected){closeCard();return}
   if(e.key==="Escape"){if(sndMenu.classList.contains("on")){closeSndMenu();sndBtn.focus({preventScroll:true})}else if($("apanel").classList.contains("on"))closeAlerts();else if(spopRec)closeStationPop();else if(document.body.classList.contains("boardsheet"))closeBoardSheet();
@@ -1367,7 +1416,8 @@ const firstGesture=e=>{removeEventListener("pointerdown",firstGesture,true);remo
 const SND_NOTE_KEY="nitabot.soundNoted",sndNote=$("sndnote");let sndNoteT=0;
 function hideSoundNote(){clearTimeout(sndNoteT);sndNote.classList.remove("on")}
 function soundNote(){let seen=false;try{seen=localStorage.getItem(SND_NOTE_KEY)==="1"}catch(_){}
-  if(seen||!(sndOn||ciOn))return;try{localStorage.setItem(SND_NOTE_KEY,"1")}catch(_){}
+  if(seen||!(sndOn||ciOn))return;
+  if(welcomeOpen||hintNow){setTimeout(soundNote,1200);return}   // one message at a time: after the welcome and the first traintry{localStorage.setItem(SND_NOTE_KEY,"1")}catch(_){}
   const what=[sndOn&&SND_NAME[sndMode],ciOn&&"spoken train check-ins"].filter(Boolean).join(" and "),touch=matchMedia("(pointer:coarse)").matches;
   sndNote.innerHTML=`<span>Sound is on: ${what}.${touch?" Change it any time with the speaker button.":" Press M to mute, or use the speaker button."}</span>`
     +`<button class="sn-m">Mute</button><button class="sn-x" aria-label="Close">×</button>`;
@@ -1442,7 +1492,7 @@ function openIntro(){
 function closeIntro(){
   if(!introOpen||introBusy)return;introOpen=false;introBusy=true;
   store.set();introVeil.classList.remove("on");helpBtn.setAttribute("aria-expanded","false");
-  const done=()=>{intro.hidden=true;intro.classList.remove("anim");introBusy=false;
+  const done=()=>{intro.hidden=true;intro.classList.remove("anim");introBusy=false;if(ahaPending){ahaPending=false;setTimeout(()=>showAha(0),300)}
     helpBtn.classList.add("catch");setTimeout(()=>helpBtn.classList.remove("catch"),700);
     if(introBack&&introBack!==document.body&&introBack.focus)introBack.focus({preventScroll:true});else helpBtn.focus({preventScroll:true})};
   if(reduceMotion()){done();return}
@@ -1455,8 +1505,59 @@ introVeil.addEventListener("pointerdown",e=>{e.stopPropagation();closeIntro()});
 intro.addEventListener("keydown",e=>{if(e.key!=="Tab")return;const f=[...intro.querySelectorAll("button,a[href]")].filter(x=>!x.disabled);
   if(!f.length)return;const i=f.indexOf(document.activeElement);
   if(e.shiftKey&&(i<=0)){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus()}});
-helpBtn.onclick=e=>{e.stopPropagation();introOpen?closeIntro():openIntro()};
-if(!store.get())setTimeout(openIntro,350);
+helpBtn.onclick=e=>{e.stopPropagation();if(welcomeOpen){closeWelcome("tour");return}introOpen?closeIntro():openIntro()};
+/* ---- first visit: a small welcome card low on the screen (the full guide is one tap away), then one real train
+   pointed out, then a few one-time hints the first time each thing comes up. Returning visitors (anyone who has
+   closed the guide or the card in this browser) see none of it. */
+const welcome=$("welcome"),ONBOARD_KEY="nitabot.onboard";let welcomeOpen=false,ahaDone=false,ahaPending=false;
+const onboarding=()=>{try{return localStorage.getItem(ONBOARD_KEY)==="1"}catch(_){return false}};
+function openWelcome(){welcomeOpen=true;try{localStorage.setItem(ONBOARD_KEY,"1")}catch(_){}
+  welcome.hidden=false;welcome.classList.remove("out");welcome.classList.add("in");hideTip();
+  setTimeout(()=>{if(welcomeOpen)welcome.querySelector(".go").focus({preventScroll:true})},60)}
+function closeWelcome(next){if(!welcomeOpen)return;welcomeOpen=false;store.set();
+  const done=()=>{welcome.hidden=true;welcome.classList.remove("in","out")};
+  if(reduceMotion())done();else{welcome.classList.remove("in");welcome.classList.add("out");setTimeout(done,330)}
+  if(next==="tour"){ahaPending=true;openIntro()}else if(next==="watch")setTimeout(()=>showAha(0),reduceMotion()?0:250)}
+welcome.querySelector(".go").onclick=e=>{e.stopPropagation();closeWelcome("watch")};
+welcome.querySelector(".tour").onclick=e=>{e.stopPropagation();closeWelcome("tour")};
+welcome.addEventListener("pointerdown",e=>e.stopPropagation());
+addEventListener("pointerdown",e=>{if(welcomeOpen&&!e.target.closest("#welcome"))closeWelcome("explore")},true);   // they've started exploring on their own
+// the one live train: nearest the middle of the screen, an 'L' train if there is one, reporting and not in doubt
+function showAha(tries){if(ahaDone||introOpen||document.body.classList.contains("ambient"))return;
+  const W=cw(),H=ch(),I=uiInsets();let best=null,bd=1e9;
+  for(const t of trains){if(t.stale||t.held||t.hidden||!t.known||!t.shown)continue;
+    const px=(t.shown[0]-vb.x)*W/vb.w,py=(t.shown[1]-vb.y)*H/vb.h;
+    if(px<70||px>W-70||py<I.top+90||py>H-I.bot-50)continue;
+    const d=Math.hypot(px-W/2,py-H*.45)+(t.L.sys==="metra"?160:0);if(d<bd){bd=d;best=t}}
+  if(!best){if(tries<20)setTimeout(()=>showAha(tries+1),500);return}
+  ahaDone=true;const t=best,dest=(t.cta||{}).dest||"";t.g.classList.add("aha");
+  showHint(`That&rsquo;s a ${esc(t.L.name)} train, live${dest?`, headed to ${esc(dest)}`:""}. Tap it.`,
+    ()=>{if(t.hidden||!t.g.isConnected)return null;const r=t.arrow.getBoundingClientRect();return r.width?{x:r.left+r.width/2,y:r.top-4,yb:r.bottom+4}:null},
+    {ms:10000,force:true,onHide:()=>t.g.classList.remove("aha"),onClick:()=>selectTrain(t),tag:"aha"})}
+/* one-time hints: a dark note pointing at the thing it's about; each shows once per browser, never in ambient
+   mode or during a ride, and only for visitors who started with the welcome card */
+const HINT_KEY="nitabot.hints",hintEl=$("hint");let hintNow=null;
+const hintList=()=>{try{return JSON.parse(localStorage.getItem(HINT_KEY)||"[]")}catch(_){return[]}};
+function hintMark(k){try{const a=hintList();if(!a.includes(k)){a.push(k);localStorage.setItem(HINT_KEY,JSON.stringify(a))}}catch(_){}}
+function hideHint(){if(!hintNow)return;const h=hintNow;hintNow=null;clearTimeout(h.t);clearInterval(h.iv);hintEl.classList.remove("on");if(h.onHide)h.onHide()}
+function showHint(html,at,o={}){
+  if(!o.force&&(!onboarding()||(o.key&&hintList().includes(o.key))))return;
+  if(welcomeOpen||introOpen||document.body.classList.contains("ambient")||document.body.classList.contains("chasing"))return;
+  if(o.key)hintMark(o.key);hideHint();
+  hintEl.querySelector(".ht").innerHTML=html;hintEl.style.cursor=o.onClick?"pointer":"";
+  const place=()=>{const p=at&&at(),w=hintEl.offsetWidth,h=hintEl.offsetHeight,tb=document.querySelector(".top").getBoundingClientRect().bottom;
+    if(at&&!p){hideHint();return}
+    if(!p){hintEl.classList.add("free");hintEl.classList.remove("below");hintEl.style.left=Math.round((innerWidth-w)/2)+"px";hintEl.style.top=Math.round(tb+12)+"px";return}
+    hintEl.classList.remove("free");const left=Math.max(8,Math.min(innerWidth-w-8,p.x-26));let top=p.y-h-10;
+    const roomBelow=(p.yb||p.y)+10+h<innerHeight-70,below=(o.below&&roomBelow)||top<tb+6;if(below)top=(p.yb||p.y)+10;   // below when asked and there's room: it then covers the map, not the panelhintEl.classList.toggle("below",below);
+    hintEl.style.left=Math.round(left)+"px";hintEl.style.top=Math.round(top)+"px";hintEl.style.setProperty("--hx",Math.max(12,Math.min(w-22,p.x-left-5))+"px")};
+  hintNow={onHide:o.onHide,onClick:o.onClick,tag:o.tag||o.key};place();hintEl.classList.add("on");
+  hintNow.iv=setInterval(place,250);hintNow.t=setTimeout(hideHint,o.ms||8000)}
+hintEl.querySelector(".hx").onclick=e=>{e.stopPropagation();hideHint()};
+hintEl.addEventListener("click",e=>{if(e.target.closest(".hx"))return;const h=hintNow;if(h&&h.onClick){hideHint();h.onClick()}});
+hintEl.addEventListener("pointerdown",e=>e.stopPropagation());
+addEventListener("pointerdown",e=>{if(hintNow&&!e.target.closest("#hint"))hideHint()},true);   // any tap elsewhere: they've moved on
+if(!store.get())setTimeout(openWelcome,350);
 $("zin").onclick=()=>zoomBy(1/1.4);$("zout").onclick=()=>zoomBy(1.4);$("fit").onclick=resetView;
 let resizeT=0;
 addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{
@@ -2253,6 +2354,9 @@ function selectTrain(t){
   const W=cw(),H=ch(),I=uiInsets(),px=(t.shown[0]-vb.x)*W/vb.w,py=(t.shown[1]-vb.y)*H/vb.h;
   const bottom=isNarrow()?Math.min(H-I.bot,H-card.offsetHeight-8):H-I.bot;
   if(!(px>24&&px<W-24&&py>I.top+16&&py<bottom-16)){const cy=(I.top+bottom)/2;flyTo({x:t.shown[0]-vb.w/2,y:t.shown[1]-cy/H*vb.h,w:vb.w,h:vb.h})}
+  if(hintNow&&hintNow.tag==="aha")hideHint();
+  setTimeout(()=>{const b=card.querySelector(".fl");if(selected===t&&b)showHint("<b>Follow</b> rides along behind this train.",
+    ()=>{const b=card.querySelector(".fl");if(selected!==t||!b)return null;const r=b.getBoundingClientRect();return r.width?{x:r.left+r.width/2,y:r.top,yb:r.bottom}:null},{key:"follow",below:true})},600);
   labelsDirty=true}
 function stopFollowing(){if(!following)return;following=null;if(selected)renderCard()}
 function closeCard(){if(chase&&chase.cap&&!selected){hideRideCap(true);chase.stop=true;endChase(performance.now(),false);return}   // the train of the moment's caption: stop riding
@@ -2567,7 +2671,9 @@ function openStationPop(rec){if(spopRec===rec){closeStationPop();return}
   if(!spopRec)spopBack=document.activeElement;
   hideTip();closeAlerts();closeBoardSheet();if(selected)closeCard();
   spopRec=rec;spop.classList.add("on");document.body.classList.add("pop");renderStationPop();placeStationPop();labelsDirty=true;arrivalsTick();atsOnStation(rec);
-  spop.setAttribute("aria-labelledby","spopName");spop.focus({preventScroll:true})}       // keyboard and screen-reader users land in the sheet
+  spop.setAttribute("aria-labelledby","spopName");spop.focus({preventScroll:true});
+  setTimeout(()=>{const b=spop.querySelector(".star");if(spopRec===rec&&b&&!b.disabled)showHint(`<b>☆ Save station</b> keeps it in Your stations, up to ${FAV_MAX}.`,
+    ()=>{const b=spop.querySelector(".star");if(spopRec!==rec||!b)return null;const r=b.getBoundingClientRect();return r.width?{x:r.left+Math.min(60,r.width/2),y:r.top,yb:r.bottom}:null},{key:"save",below:true})},700)}       // keyboard and screen-reader users land in the sheet
 function closeStationPop(){if(!spopRec)return;const back=spop.contains(document.activeElement);spopRec=null;spop.classList.remove("on");document.body.classList.remove("pop");labelsDirty=true;
   if(back&&spopBack&&spopBack.isConnected&&spopBack.focus)spopBack.focus({preventScroll:true})}
 let spopSig="";
@@ -2608,7 +2714,7 @@ function runSearch(){const q=normQ(sInput.value);sIdx=0;
   sHits=STATIONS.map(r=>[sc(r),r]).filter(x=>x[0]<9).sort((a,b)=>a[0]-b[0]||a[1].label.localeCompare(b[1].label)).slice(0,8).map(x=>x[1]);
   sList.innerHTML=sHits.length?sHits.map((r,i)=>`<li role="option" id="sr${i}" data-i="${i}" aria-selected="${i===0}">`
       +`<span class="sn">${esc(r.full)}</span><span class="sb">${ORDER.filter(k=>r.lines.has(k)).map(bullet).join("")}</span></li>`).join("")
-    :`<li class="sh-hint">No station matches “${esc(sInput.value.trim())}”</li>`;
+    :`<li class="sh-hint">No station matches “${esc(sInput.value.trim())}”. Try part of the name, like “Fuller” or “Union”.</li>`;
   if(sHits.length)sInput.setAttribute("aria-activedescendant","sr0");else sInput.removeAttribute("aria-activedescendant")}
 function markSearch(){[...sList.querySelectorAll("[role=option]")].forEach((li,i)=>li.setAttribute("aria-selected",String(i===sIdx)));
   sInput.setAttribute("aria-activedescendant","sr"+sIdx);const li=$("sr"+sIdx);if(li)li.scrollIntoView({block:"nearest"})}
@@ -2702,7 +2808,7 @@ let lastInput=Date.now();
 const AMBIENT_MS=90000,AMBIENT_PHONE_MS=15000;
 for(const ev of["pointermove","pointerdown","keydown","wheel","touchstart"])addEventListener(ev,()=>{lastInput=Date.now();
   if(document.body.classList.contains("idle")||document.body.classList.contains("ambient")){document.body.classList.remove("idle","ambient");labelsDirty=true}},{passive:true,capture:true});
-function tickIdle(){const busy=introOpen||$("apanel").classList.contains("on")||sndMenu.classList.contains("on")||$("search").classList.contains("on")||spopRec||document.body.classList.contains("boardsheet")||(selected&&!(chase&&selected===chase.t));
+function tickIdle(){const busy=introOpen||welcomeOpen||$("apanel").classList.contains("on")||sndMenu.classList.contains("on")||$("search").classList.contains("on")||spopRec||document.body.classList.contains("boardsheet")||(selected&&!(chase&&selected===chase.t));
   const quiet=Date.now()-lastInput;
   document.body.classList.toggle("idle",!busy&&quiet>10000);
   const amb=!busy&&quiet>(matchMedia("(pointer:coarse)").matches?AMBIENT_PHONE_MS:AMBIENT_MS);
@@ -2839,7 +2945,7 @@ function rideVB(t){const W=cw(),H=ch(),w=Math.max(MIN_W,Math.min(maxW(),Math.max
     if(sideSheet()){const cwid=(card.offsetWidth||Math.min(340,W*.46))+16;sx=cwid+(W-cwid)/2;sy=I.top+(H-I.top-I.bot)*.58}
     else{const sh=card.classList.contains("on")&&card.offsetHeight?card.offsetHeight:220,bot=66+sh;sy=I.top+Math.max(40,H-I.top-bot)*.62}}
   return{x:t.shown[0]-sx*k,y:t.shown[1]-sy*k,w,h}}
-function chaseBusy(){return introOpen||(selected&&!(chase&&(chase.card||chase.manual)&&selected===chase.t))||spopRec||document.body.classList.contains("boardsheet")}
+function chaseBusy(){return introOpen||welcomeOpen||(selected&&!(chase&&(chase.card||chase.manual)&&selected===chase.t))||spopRec||document.body.classList.contains("boardsheet")}
 function startRide(now){const t=pickChaseTrain();if(!t){chase={phase:"rest",t0:now};return}wakeOn();
   chaseLast=t;camAnim=null;following=null;ciPrep(t);
   chase={phase:"in",t0:now,t,home:chase&&chase.home||fitAll(),from:{...vb},a:0,tilt:0,goTilt:canTilt()};
@@ -3297,7 +3403,8 @@ function fadeCTA(){const k=+ctaFadeK().toFixed(3);if(k===ctaK)return;ctaK=k;cons
   for(const g of[ctaW.track,ctaW.cases])set(g,tr);
   for(const g of[ctaW.stn,ctaW.trail,ctaW.train,xlinkG])set(g,gone);
   for(const g of[ctaW.stn,ctaW.train,xlinkG])g.style.pointerEvents=off?"none":"";
-  document.body.classList.toggle("ctafaded",off);labelsDirty=true}
+  document.body.classList.toggle("ctafaded",off);labelsDirty=true;
+  if(off)setTimeout(()=>{if(document.body.classList.contains("ctafaded"))showHint("This is all of Metra. The &lsquo;L&rsquo; fades so the suburbs show; zoom in to bring it back.",null,{key:"metra",ms:7000})},900)}
 let ambK=1;
 function frame(now){
   const dt=Math.min(.25,(now-lastFrame)/1000);lastFrame=now;
@@ -3352,7 +3459,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 if(GEO_ISSUES.length)console.warn("Map ordering issues:",GEO_ISSUES);
-window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,closeStationPop,renderBoard,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,get ctaFade(){return ctaK},glidePlan,curS,posDiag,posState,
+window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,closeStationPop,renderBoard,get welcomeOpen(){return welcomeOpen},get hintTag(){return hintNow&&hintNow.tag},showAha,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,get ctaFade(){return ctaK},glidePlan,curS,posDiag,posState,
   llAt:(key,ri,s,off=0)=>{const r=LINES[key].routes[ri],d=trackD(r,s),p=along(r.anc,r.ac,d),a=angAt(r,segAt(r.ac,d));return ungeo(p[0]-Math.sin(a)*off,p[1]+Math.cos(a)*off)},
   trackD,sharedPrefix,idleFor:ms=>{lastInput=Date.now()-ms;tickIdle()},get chaseCap(){return!!(chase&&chase.cap)},ARR,inkOn,MH,metraHealth,pollAlerts,get spopRec(){return spopRec},get focusKey(){return focusKey},get STALE_AFTER(){return STALE_AFTER},get HIDE_UNRESOLVED(){return HIDE_UNRESOLVED}};
 applyStyle();tickHeader();poll();pollAlerts();pollMetra();loadTimetable();setInterval(loadTimetable,6*3600e3);requestAnimationFrame(frame);

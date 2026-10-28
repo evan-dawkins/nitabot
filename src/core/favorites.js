@@ -23,7 +23,9 @@ function openStationPop(rec){if(spopRec===rec){closeStationPop();return}
   if(!spopRec)spopBack=document.activeElement;
   hideTip();closeAlerts();closeBoardSheet();if(selected)closeCard();
   spopRec=rec;spop.classList.add("on");document.body.classList.add("pop");renderStationPop();placeStationPop();labelsDirty=true;arrivalsTick();atsOnStation(rec);
-  spop.setAttribute("aria-labelledby","spopName");spop.focus({preventScroll:true})}       // keyboard and screen-reader users land in the sheet
+  spop.setAttribute("aria-labelledby","spopName");spop.focus({preventScroll:true});
+  setTimeout(()=>{const b=spop.querySelector(".star");if(spopRec===rec&&b&&!b.disabled)showHint(`<b>☆ Save station</b> keeps it in Your stations, up to ${FAV_MAX}.`,
+    ()=>{const b=spop.querySelector(".star");if(spopRec!==rec||!b)return null;const r=b.getBoundingClientRect();return r.width?{x:r.left+Math.min(60,r.width/2),y:r.top,yb:r.bottom}:null},{key:"save",below:true})},700)}       // keyboard and screen-reader users land in the sheet
 function closeStationPop(){if(!spopRec)return;const back=spop.contains(document.activeElement);spopRec=null;spop.classList.remove("on");document.body.classList.remove("pop");labelsDirty=true;
   if(back&&spopBack&&spopBack.isConnected&&spopBack.focus)spopBack.focus({preventScroll:true})}
 let spopSig="";
@@ -64,7 +66,7 @@ function runSearch(){const q=normQ(sInput.value);sIdx=0;
   sHits=STATIONS.map(r=>[sc(r),r]).filter(x=>x[0]<9).sort((a,b)=>a[0]-b[0]||a[1].label.localeCompare(b[1].label)).slice(0,8).map(x=>x[1]);
   sList.innerHTML=sHits.length?sHits.map((r,i)=>`<li role="option" id="sr${i}" data-i="${i}" aria-selected="${i===0}">`
       +`<span class="sn">${esc(r.full)}</span><span class="sb">${ORDER.filter(k=>r.lines.has(k)).map(bullet).join("")}</span></li>`).join("")
-    :`<li class="sh-hint">No station matches “${esc(sInput.value.trim())}”</li>`;
+    :`<li class="sh-hint">No station matches “${esc(sInput.value.trim())}”. Try part of the name, like “Fuller” or “Union”.</li>`;
   if(sHits.length)sInput.setAttribute("aria-activedescendant","sr0");else sInput.removeAttribute("aria-activedescendant")}
 function markSearch(){[...sList.querySelectorAll("[role=option]")].forEach((li,i)=>li.setAttribute("aria-selected",String(i===sIdx)));
   sInput.setAttribute("aria-activedescendant","sr"+sIdx);const li=$("sr"+sIdx);if(li)li.scrollIntoView({block:"nearest"})}
@@ -158,7 +160,7 @@ let lastInput=Date.now();
 const AMBIENT_MS=90000,AMBIENT_PHONE_MS=15000;
 for(const ev of["pointermove","pointerdown","keydown","wheel","touchstart"])addEventListener(ev,()=>{lastInput=Date.now();
   if(document.body.classList.contains("idle")||document.body.classList.contains("ambient")){document.body.classList.remove("idle","ambient");labelsDirty=true}},{passive:true,capture:true});
-function tickIdle(){const busy=introOpen||$("apanel").classList.contains("on")||sndMenu.classList.contains("on")||$("search").classList.contains("on")||spopRec||document.body.classList.contains("boardsheet")||(selected&&!(chase&&selected===chase.t));
+function tickIdle(){const busy=introOpen||welcomeOpen||$("apanel").classList.contains("on")||sndMenu.classList.contains("on")||$("search").classList.contains("on")||spopRec||document.body.classList.contains("boardsheet")||(selected&&!(chase&&selected===chase.t));
   const quiet=Date.now()-lastInput;
   document.body.classList.toggle("idle",!busy&&quiet>10000);
   const amb=!busy&&quiet>(matchMedia("(pointer:coarse)").matches?AMBIENT_PHONE_MS:AMBIENT_MS);

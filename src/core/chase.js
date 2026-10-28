@@ -33,7 +33,7 @@ function rideVB(t){const W=cw(),H=ch(),w=Math.max(MIN_W,Math.min(maxW(),Math.max
     if(sideSheet()){const cwid=(card.offsetWidth||Math.min(340,W*.46))+16;sx=cwid+(W-cwid)/2;sy=I.top+(H-I.top-I.bot)*.58}
     else{const sh=card.classList.contains("on")&&card.offsetHeight?card.offsetHeight:220,bot=66+sh;sy=I.top+Math.max(40,H-I.top-bot)*.62}}
   return{x:t.shown[0]-sx*k,y:t.shown[1]-sy*k,w,h}}
-function chaseBusy(){return introOpen||(selected&&!(chase&&(chase.card||chase.manual)&&selected===chase.t))||spopRec||document.body.classList.contains("boardsheet")}
+function chaseBusy(){return introOpen||welcomeOpen||(selected&&!(chase&&(chase.card||chase.manual)&&selected===chase.t))||spopRec||document.body.classList.contains("boardsheet")}
 function startRide(now){const t=pickChaseTrain();if(!t){chase={phase:"rest",t0:now};return}wakeOn();
   chaseLast=t;camAnim=null;following=null;ciPrep(t);
   chase={phase:"in",t0:now,t,home:chase&&chase.home||fitAll(),from:{...vb},a:0,tilt:0,goTilt:canTilt()};

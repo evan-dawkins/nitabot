@@ -169,7 +169,10 @@ def main():
         # ---- welcome guide: first visit, dismissed, return visit, reopen
         ctx, pg, errs = ctx_for(br, port, seen=False)
         pg.wait_for_timeout(1500); E = pg.evaluate
-        check("first visit: the guide opens by itself", E("__cta.introOpen"))
+        check("first visit: the welcome card opens by itself", E("__cta.welcomeOpen"))
+        check("the card has the exact disclaimer", DISCLAIMER in E("document.getElementById('welcome').innerText"))
+        E("document.querySelector('#welcome .tour').click()"); pg.wait_for_timeout(900)
+        check("Show me around opens the full guide", E("__cta.introOpen"))
         txt = E("document.getElementById('intro').innerText")
         check("guide has the exact disclaimer", DISCLAIMER in txt)
         check("guide says it isn't affiliated with the CTA or Metra either", "affiliated with the CTA or Metra" in txt)
@@ -187,15 +190,16 @@ def main():
         E("document.getElementById('helpBtn').click()"); pg.wait_for_timeout(800)
         check("? reopens it", E("__cta.introOpen"))
         E("document.querySelector('#intro .go').click()"); pg.wait_for_timeout(800)
-        check("Start exploring closes it", not E("__cta.introOpen"))
+        check("Got it closes it", not E("__cta.introOpen"))
         ctx.close()
         ctx, pg, errs = ctx_for(br, port, storage_broken=True)
         pg.wait_for_timeout(1500); E = pg.evaluate
-        opened = E("__cta.introOpen"); E("document.querySelector('#intro .go').click()"); pg.wait_for_timeout(800)
-        check("storage blocked: guide still opens and closes; map works", opened and not E("__cta.introOpen") and E("__cta.trains.length") > 0, "; ".join(errs[:2]))
+        opened = E("__cta.welcomeOpen"); E("document.querySelector('#welcome .go').click()"); pg.wait_for_timeout(800)
+        check("storage blocked: welcome card still opens and closes; map works", opened and not E("__cta.welcomeOpen") and E("__cta.trains.length") > 0, "; ".join(errs[:2]))
         ctx.close()
         ctx, pg, errs = ctx_for(br, port, seen=False, phone=True)
         pg.wait_for_timeout(1500); E = pg.evaluate
+        E("document.querySelector('#welcome .tour').click()"); pg.wait_for_timeout(900)
         r = E("(()=>{const b=document.getElementById('intro').getBoundingClientRect();const g=document.querySelector('#intro .go').getBoundingClientRect();return[b.left,b.right,b.top,b.bottom,g.bottom,innerWidth,innerHeight]})()")
         check("phone: the guide fits the screen and its button is reachable", r[0] >= 0 and r[1] <= r[5] and r[2] >= 0 and r[3] <= r[6] + 1, str([round(v) for v in r]))
         pg.screenshot(path=os.path.join(T.OUT, "phone-tutorial.png"))

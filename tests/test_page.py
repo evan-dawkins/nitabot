@@ -314,7 +314,7 @@ def main():
         # ---- welcome guide on first visit
         pg, errs = open_page(br, port, intro_hidden=False)
         pg.wait_for_timeout(1500)
-        check("welcome guide shows on a first visit", pg.evaluate("__cta.introOpen"))
+        check("welcome card shows on a first visit", pg.evaluate("__cta.welcomeOpen"))
         pg.screenshot(path=os.path.join(OUT, "desktop-welcome.png"))
         pg.context.close()
 

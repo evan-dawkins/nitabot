@@ -298,6 +298,9 @@ function selectTrain(t){
   const W=cw(),H=ch(),I=uiInsets(),px=(t.shown[0]-vb.x)*W/vb.w,py=(t.shown[1]-vb.y)*H/vb.h;
   const bottom=isNarrow()?Math.min(H-I.bot,H-card.offsetHeight-8):H-I.bot;
   if(!(px>24&&px<W-24&&py>I.top+16&&py<bottom-16)){const cy=(I.top+bottom)/2;flyTo({x:t.shown[0]-vb.w/2,y:t.shown[1]-cy/H*vb.h,w:vb.w,h:vb.h})}
+  if(hintNow&&hintNow.tag==="aha")hideHint();
+  setTimeout(()=>{const b=card.querySelector(".fl");if(selected===t&&b)showHint("<b>Follow</b> rides along behind this train.",
+    ()=>{const b=card.querySelector(".fl");if(selected!==t||!b)return null;const r=b.getBoundingClientRect();return r.width?{x:r.left+r.width/2,y:r.top,yb:r.bottom}:null},{key:"follow",below:true})},600);
   labelsDirty=true}
 function stopFollowing(){if(!following)return;following=null;if(selected)renderCard()}
 function closeCard(){if(chase&&chase.cap&&!selected){hideRideCap(true);chase.stop=true;endChase(performance.now(),false);return}   // the train of the moment's caption: stop riding
