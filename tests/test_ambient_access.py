@@ -94,6 +94,18 @@ def main():
         check("arrow keys move between stations and trains", moved)
         pg.keyboard.press("Tab"); out = E("!document.activeElement.closest('#map')")
         check("one Tab leaves the map (no 400-stop trek)", out, E("document.activeElement.id||document.activeElement.className"))
+        # picking a train opens its card without moving the camera; an off-screen train is panned in at the same zoom
+        r = E("""(()=>{Object.assign(__cta.vb,__cta.fitAll());const v0=JSON.stringify(__cta.vb);
+            const t=__cta.trains.find(t=>t.L.key==='red'&&!t.stale);__cta.selectTrain(t);const same=JSON.stringify(__cta.vb)===v0;
+            document.querySelector('#card .x').click();return same})()""")
+        check("clicking a train on screen opens its card and leaves the map where it was", r)
+        pg.wait_for_timeout(400)
+        r = E("""(()=>{const f=__cta.fitAll(),t=__cta.trains.find(t=>t.L.key==='blue'&&!t.stale);
+            Object.assign(__cta.vb,{x:t.shown[0]+f.w,y:t.shown[1]+f.h,w:f.w/4,h:f.h/4});const w0=__cta.vb.w;__cta.selectTrain(t);return [w0,t.shown[0],t.shown[1]]})()""")
+        pg.wait_for_timeout(1100)
+        ok = E(f"""(()=>{{const v=__cta.vb,x={r[1]},y={r[2]};return Math.abs(v.w-{r[0]})<1e-6&&x>v.x&&x<v.x+v.w&&y>v.y&&y<v.y+v.h}})()""")
+        check("an off-screen train is panned into view without zooming", ok)
+        E("document.querySelector('#card .x').click()"); pg.wait_for_timeout(300); E("Object.assign(__cta.vb,__cta.fitAll())")
         # train card focus
         E("()=>{const t=__cta.trains.find(t=>t.L.key==='red');t.g.focus()}"); pg.keyboard.press("Enter"); pg.wait_for_timeout(500)
         check("opening a train with Enter moves focus into its card", E("document.getElementById('card').contains(document.activeElement)"))

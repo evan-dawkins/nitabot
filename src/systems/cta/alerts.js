@@ -292,9 +292,13 @@ function selectTrain(t){
   if(!card.classList.contains("on"))cardBack=document.activeElement;   // before re-stacking the train, which drops its focus
   if(selected)selected.g.classList.remove("sel");
   selected=t;t.g.classList.add("sel");t.g.parentNode.appendChild(t.g);
-  following=t;card.classList.add("on");document.body.classList.add("sheet");renderCard();card.focus({preventScroll:true});
-  const r=cw()/ch(),tw=vb.w>FIT_W*0.2?Math.max(MIN_W,FIT_W/9):vb.w;    // zoom in to the neighbourhood only if we're far out
-  flyTo({x:t.shown[0]-tw/2,y:t.shown[1]-(tw/r)/2,w:tw,h:tw/r});labelsDirty=true}
+  card.classList.add("on");document.body.classList.add("sheet");renderCard();card.focus({preventScroll:true});
+  // picking a train opens its card and leaves the camera alone (Follow is what rides along). Only a train that's
+  // off-screen, or hidden under the phone's bottom sheet, gets panned into view, at the same zoom
+  const W=cw(),H=ch(),I=uiInsets(),px=(t.shown[0]-vb.x)*W/vb.w,py=(t.shown[1]-vb.y)*H/vb.h;
+  const bottom=isNarrow()?Math.min(H-I.bot,H-card.offsetHeight-8):H-I.bot;
+  if(!(px>24&&px<W-24&&py>I.top+16&&py<bottom-16)){const cy=(I.top+bottom)/2;flyTo({x:t.shown[0]-vb.w/2,y:t.shown[1]-cy/H*vb.h,w:vb.w,h:vb.h})}
+  labelsDirty=true}
 function stopFollowing(){if(!following)return;following=null;if(selected)renderCard()}
 function closeCard(){if(chase&&chase.cap&&!selected){hideRideCap(true);chase.stop=true;endChase(performance.now(),false);return}   // the train of the moment's caption: stop riding
   if(chase&&(chase.manual||chase.card)&&selected===chase.t){if(!chase.manual)chase.stop=true;endChase(performance.now(),false)}   // back to the whole network
