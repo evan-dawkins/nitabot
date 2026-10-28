@@ -247,9 +247,13 @@ function tickMood(){
 // a slow ticker: the line drifts right to left across the empty part of the top bar, then comes around again
 const moodTxt=moodEl.querySelector(".mt"),MOOD_SPEED=26;   // pixels per second; longer lines move a little faster
 let moodX=null;
+let moodFit="";
 function moodFrame(dt){
-  const W=moodEl.clientWidth,w=moodTxt.offsetWidth;if(!W)return;
-  if(reduceMotion()){moodTxt.style.transform=`translateX(${Math.max(0,(W-w)/2)}px)`;return}   // no motion: sits still
+  const W=moodEl.clientWidth;if(!W)return;let w=moodTxt.offsetWidth;
+  if(moodFit!==moodText+"|"+W){moodFit=moodText+"|"+W;moodTxt.style.fontSize="";w=moodTxt.offsetWidth;    // shrink a little (up to 12%) rather than move
+    if(w>W&&w*.88<=W){moodTxt.style.fontSize=(parseFloat(getComputedStyle(moodEl).fontSize)*W/w*.98).toFixed(2)+"px";w=moodTxt.offsetWidth}
+    moodEl.classList.toggle("still",w<=W)}
+  if(w<=W||reduceMotion()){moodTxt.style.transform=`translateX(${isNarrow()?0:Math.max(0,(W-w)/2).toFixed(1)}px)`;return}   // whole and still
   if(moodX==null)moodX=W*.55;
   moodX-=MOOD_SPEED*Math.max(1,Math.min(1.7,w/420))*dt;if(moodX<-w)moodX=W;
   moodTxt.style.transform=`translateX(${moodX.toFixed(1)}px)`}

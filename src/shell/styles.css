@@ -97,6 +97,7 @@ svg#labels{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
 #mood .mt{position:absolute;left:0;top:0;white-space:nowrap;will-change:transform}
 #mood.swap{opacity:0}
+#mood.still{-webkit-mask-image:none;mask-image:none}
 @media (max-width:760px),(max-height:500px){#mood{height:26px;line-height:26px;font-size:18px;margin:0 12px}}
 /* tall phones: the ticker gets its own slim line under the buttons */
 @media (max-width:760px){.top{flex-wrap:wrap;row-gap:0}#mood{order:3;flex:1 0 100%;margin:-6px 0 3px;height:24px;line-height:24px;font-size:16px}}
@@ -121,9 +122,7 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
   transform:translate(-50%,-50%);transform-origin:0 0;}
 #intro[hidden]{display:none}
 #intro.anim{transition:transform .5s var(--ease-io),opacity .45s ease,border-radius .5s}
-#intro .kick{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--live);font-weight:700;display:flex;align-items:center;gap:7px}
-#intro .kick i{width:7px;height:7px;border-radius:50%;background:var(--live)}
-#intro h2{margin:6px 0 8px;font-size:24px;line-height:1.12;font-weight:700;padding-right:24px}
+#intro h2{margin:2px 0 8px;font-size:24px;line-height:1.12;font-weight:700;padding-right:24px;text-wrap:balance}
 #intro p{margin:0 0 12px;font-size:15.5px;line-height:1.45}
 #intro .lede{color:var(--ink)}
 #intro ol.steps{list-style:none;margin:2px 0 14px;padding:0;display:grid;gap:9px}
@@ -170,7 +169,7 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .mh.quiet i{background:none;border:1.5px solid currentColor;width:8px;height:8px}
 .mh:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 #mbanner{position:absolute;left:50%;transform:translateX(-50%);top:calc(62px + env(safe-area-inset-top,0px));z-index:4;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;
-  max-width:min(640px,calc(100vw - 24px));background:var(--panel);border:1px solid var(--edge);border-left:4px solid var(--err);border-radius:var(--r);
+  max-width:min(640px,calc(100vw - 24px));background:var(--panel);border:1px solid color-mix(in srgb,var(--err) 45%,var(--edge));background:color-mix(in srgb,var(--err) 7%,var(--panel));border-radius:var(--r);
   padding:7px 8px 7px 12px;font-size:14px;line-height:1.35;box-shadow:var(--shadow)}
 #mbanner[hidden]{display:none}
 #mbanner span{color:var(--muted);flex:1 1 240px}
@@ -241,6 +240,7 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 #apanel .ahd button:hover{color:var(--ink);background:var(--hover)}
 #apanel .alist{overflow-y:auto;overscroll-behavior:contain}
 #afilt{padding:8px 12px 9px;border-bottom:1px solid var(--edge);display:grid;gap:7px;background:var(--panel2)}
+#afilt[hidden]{display:none}
 .aseg{display:flex;gap:2px;padding:2px;border-radius:8px;background:var(--hover);justify-self:start}
 .aseg button{height:26px;padding:0 10px;border:0;border-radius:6px;background:none;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;display:inline-flex;gap:5px;align-items:center}
 .aseg button span{font-weight:500;font-size:12px}
@@ -263,12 +263,10 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .aitem .amap:hover{background:var(--pressed)}
 .awarn{margin:10px 12px 0;padding:8px 10px;border-radius:8px;font-size:13px;line-height:1.35;color:var(--ink);background:color-mix(in srgb,var(--warn) 14%,transparent)}
 .sg.ahl .stn,.sg.ahl .pill{stroke:var(--warn)!important;stroke-width:3.2!important}
-.aitem{display:grid;grid-template-columns:4px 1fr;gap:0 11px;padding:10px 14px 10px 12px;border-bottom:1px solid var(--edge);cursor:pointer}
+.aitem{display:block;padding:10px 14px;border-bottom:1px solid var(--edge);cursor:pointer}
 .aitem:last-child{border-bottom:0}
 .aitem:hover{background:var(--hover)}
 .aitem{transition:background-color var(--t-fast)}
-.aitem .bars{display:flex;flex-direction:column;gap:2px;border-radius:2px;overflow:hidden}
-.aitem .bars i{flex:1;min-height:6px}
 .aitem .tags{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:12.5px;color:var(--muted);margin-bottom:3px}
 .aitem .tags .fx{color:var(--warn);font-weight:600}
 .aitem .h{font-size:14.5px;line-height:1.3}
@@ -344,7 +342,11 @@ body.idle .console,body.idle .zoom,body.idle #helpBtn,body.idle .ibtn{opacity:.3
 .mark .tools,.abtn,#mood,#board,#fstrip,.ops>span:has(#count){transition:opacity 1.2s ease}
 body.ambient .console,body.ambient .zoom,body.ambient .mark .tools,body.ambient .abtn,body.ambient #mood,body.ambient #board,body.ambient #fstrip,
 body.ambient .ops>span:has(#count),body.ambient #satcred,body.ambient #tip{opacity:0!important;pointer-events:none}
-body.ambient .top{border-bottom-color:transparent;transition:border-color 1.2s ease}
+body.ambient .top{border-bottom-color:transparent}
+.top{transition:border-color 1.2s ease,background-color 1.2s ease}
+@media (max-width:760px){body.ambient .top{background:transparent}
+  .mark b,.state{transition:text-shadow 1.2s ease}
+  body.ambient .mark b,body.ambient .state{text-shadow:0 0 3px var(--city),0 0 6px var(--city),0 0 10px var(--city)}}
 /* the train of the moment's caption */
 #ridecap{position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));translate:-50% 8px;z-index:4;display:flex;align-items:center;gap:9px;
   max-width:min(620px,calc(100vw - 24px));padding:7px 6px 7px 13px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);box-shadow:var(--shadow);font-size:14px}
@@ -518,8 +520,8 @@ body.chasing .stlbl,body.chasing .lakelbl{display:none}
 .stateline{fill:none;stroke:var(--stateline);stroke-width:1.3px;stroke-dasharray:9 4 2 4;stroke-linecap:butt;vector-effect:non-scaling-stroke;opacity:.8}
 .stname{font-family:var(--sans);font-weight:600;fill:var(--statelbl);letter-spacing:.55em;pointer-events:none}
 body.satmode .stateline{stroke:#fff;opacity:.75} body.satmode .stname{fill:#fff;opacity:.8}
-.stlbl{font-family:var(--sans);font-size:13px;font-weight:600;fill:#5E93BB;letter-spacing:.32em}   /* town names: >= 4.5:1 on the town plates */
-:root[data-theme="light"] .stlbl{fill:#56677A}
+.stlbl{font-family:var(--sans);font-size:13px;font-weight:600;fill:#6C9DC4;letter-spacing:.32em}   /* town names: >= 4.5:1 on the town plates */
+:root[data-theme="light"] .stlbl{fill:#4E5F72}
 .shore{fill:none;stroke:var(--shore);stroke-width:1.8;vector-effect:non-scaling-stroke}
 .lakelbl{font-family:var(--sans);font-size:30px;font-weight:600;fill:var(--lakelbl);letter-spacing:.42em}
 /* lake water: slow drifting glints + a few soft ripples. They fade in and out as they drift, so nothing pops.
@@ -674,7 +676,7 @@ button{touch-action:manipulation}
   #ridecap{left:8px;right:8px;translate:0 8px;max-width:none}#ridecap.pnl.on{translate:0 0}#ridecap .rc-k{display:none}}
 @media (max-width:480px){ .mark .logo{display:none} #updated{display:none}
   #helpBtn,.ibtn{width:28px;height:28px} .state{border:0;padding:0 4px;height:28px} .abtn{height:28px}
-  .ops>span:has(#count){display:none} .state.live #stateText{display:none}
+  .ops>span:has(#count){display:none}
   .mark{gap:6px} .mark .tools{gap:4px} .ops{gap:9px} .mark b{font-size:17px;letter-spacing:-.01em} }
 @media (max-width:380px){ #helpBtn,.ibtn{width:27px;height:27px} .mark b{font-size:16px} .mark .tools{gap:3px} }
 @media (max-width:340px){ #helpBtn,.ibtn{width:25px;height:25px} .mark .tools{gap:3px} .mark b{font-size:15.5px} #styleBtn{display:none} }

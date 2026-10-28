@@ -108,10 +108,12 @@ function renderAlerts(){
   // filters: system, then the categories that actually have alerts (with counts)
   const sysN=k=>pool.filter(a=>k==="all"||a.sys===k).length,inSys=pool.filter(a=>aSys==="all"||a.sys===aSys);
   if(aCat!=="all"&&!inSys.some(a=>a.cat===aCat))aCat="all";
-  $("afilt").innerHTML=`<div class="aseg" role="group" aria-label="System">${[["all","All"],["cta","CTA"],["metra","Metra"]].map(([k,l])=>
-      `<button data-sys="${k}" aria-pressed="${aSys===k}">${l}<span>${sysN(k)}</span></button>`).join("")}</div>`
-    +`<div class="acats" role="group" aria-label="Type of alert">${[["all","Everything"],...ACAT].map(([k,l])=>{const c=k==="all"?inSys.length:inSys.filter(a=>a.cat===k).length;
-      return c||k==="all"?`<button data-cat="${k}" aria-pressed="${aCat===k}" title="${esc(l)}">${esc(k==="all"?l:ACAT_SHORT[k])} <span>${c}</span></button>`:""}).join("")}</div>`;
+  const showSys=(sysN("cta")>0&&sysN("metra")>0)||aSys!=="all",showCats=ACAT.filter(([k])=>inSys.some(a=>a.cat===k)).length>1||aCat!=="all";
+  $("afilt").hidden=!showSys&&!showCats;
+  $("afilt").innerHTML=(showSys?`<div class="aseg" role="group" aria-label="System">${[["all","All"],["cta","CTA"],["metra","Metra"]].map(([k,l])=>
+      `<button data-sys="${k}" aria-pressed="${aSys===k}">${l}<span>${sysN(k)}</span></button>`).join("")}</div>`:"")
+    +(showCats?`<div class="acats" role="group" aria-label="Type of alert">${[["all","Everything"],...ACAT].map(([k,l])=>{const c=k==="all"?inSys.length:inSys.filter(a=>a.cat===k).length;
+      return c||k==="all"?`<button data-cat="${k}" aria-pressed="${aCat===k}" title="${esc(l)}">${esc(k==="all"?l:ACAT_SHORT[k])} <span>${c}</span></button>`:""}).join("")}</div>`:"");
   $("ascope").textContent=focusKey?`${LINES[focusKey].code} and system-wide`:"";
   const vis=visibleAlerts(),L=$("alist");
   // a feed that isn't answering never reads as "no alerts": say whose, and since when
@@ -119,13 +121,12 @@ function renderAlerts(){
   if(!vis.length){const what=(aCat==="all"?"":ACAT_NAME[aCat].toLowerCase()+" ")+"alerts";
     L.innerHTML=down+`<div class="aempty">No ${aSys==="all"?"":SYS_NAME[aSys]+" "}${esc(what)}${focusKey?" for the "+esc(LINES[focusKey].name):""} right now.</div>`;return}
   L.innerHTML=down+vis.map(a=>{
-    const bars=a.keys.length?a.keys.map(k=>`<i style="background:${LINES[k].color}"></i>`).join(""):`<i style="background:var(--faint)"></i>`;
     const lines=a.keys.length?a.keys.map(k=>bullet(k)).join(""):`<span class="aall">${a.sys==="metra"?"Metra":"CTA"}${a.stns.length?"":" · all lines"}</span>`;
     const when=a.start&&a.start>serverNow()/1000?fmtFrom(a.start):a.end?fmtUntil(a.end):"";
     const mapb=a.stns.length||a.keys.length?`<button class="amap" data-id="${esc(a.id)}">Show on map</button>`:"";
     const more=`<div class="more"><div>${a.where?`<p class="awhere"><b>Stations:</b> ${esc(a.where)}</p>`:""}${a.desc&&a.desc!==a.header?esc(a.desc):""}${a.url?`<p><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">Full notice on ${a.sys==="metra"?"metra.com":"transitchicago.com"} ↗</a></p>`:""}${mapb}</div></div>`;
     return`<div class="aitem${openAlerts.has(a.id)?" open":""}${a.serious?" major":""}" data-id="${esc(a.id)}" role="button" tabindex="0" aria-expanded="${openAlerts.has(a.id)}">`
-      +`<span class="bars">${bars}</span><div><div class="tags"><span class="asys ${a.sys}">${SYS_NAME[a.sys]}</span><span class="acat c-${a.cat}">${esc(ACAT_NAME[a.cat])}</span>${a.serious?'<span class="amaj">Major</span>':""}${when?`<span>${esc(when)}</span>`:""}<span class="chev" aria-hidden="true">▾</span></div>`
+      +`<div><div class="tags"><span class="asys ${a.sys}">${SYS_NAME[a.sys]}</span><span class="acat c-${a.cat}">${esc(ACAT_NAME[a.cat])}</span>${a.serious?'<span class="amaj">Major</span>':""}${when?`<span>${esc(when)}</span>`:""}<span class="chev" aria-hidden="true">▾</span></div>`
       +`<div class="h">${esc(a.header||a.desc.split("\n")[0])}</div><div class="alines">${lines}${a.where&&!openAlerts.has(a.id)?`<span class="awh">${esc(a.where)}</span>`:""}</div>${more}</div></div>`}).join("");
 }
 function toggleAlertItem(it){const id=it.dataset.id;
