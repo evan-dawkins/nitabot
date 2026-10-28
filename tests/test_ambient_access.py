@@ -68,7 +68,7 @@ def main():
         pg.keyboard.press("Enter"); pg.wait_for_timeout(1500)
         check("Enter flies there and opens its sheet, focus inside it", E("__cta.spopRec&&__cta.spopRec.id==='OTC'&&document.getElementById('spop').contains(document.activeElement)"))
         txt = E("document.getElementById('spop').textContent")
-        check("station sheet lists times before the board button", txt.lower().find("add to your board") > txt.lower().find("departures") >= 0, txt[:120])
+        check("station sheet lists times before the Save station button", txt.lower().find("save station") > txt.lower().find("departures") >= 0, txt[:120])
         pg.keyboard.press("Escape"); pg.wait_for_timeout(300)
         check("Esc closes the sheet and focus goes back", not E("!!__cta.spopRec") and E("document.activeElement&&document.activeElement.id")=="searchBtn", E("document.activeElement&&(document.activeElement.id||document.activeElement.tagName)"))
         # map keyboard: Tab leaves the map in one press, arrows move

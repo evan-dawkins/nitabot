@@ -32,8 +32,8 @@ function renderStationPop(){const rec=spopRec;if(!rec)return;
   const lines=ORDER.filter(k=>rec.lines.has(k)),on=isFav(rec.id),full=!on&&FAV.ids.length>=FAV_MAX;   // CTA's full station name in the title
   const html=`<button class="x" aria-label="Close station">×</button><div class="nm" id="spopName">${esc(rec.full)}</div><div class="ln">${lines.map(bullet).join("")}</div>`
     +stationSchedule(rec,3)+xferHTML(rec)
-    +`<button class="star" aria-pressed="${on}" ${full?"disabled":""}>${on?"★ On your board":"☆ Add to your board"}</button>`
-    +(full?`<div class="note">Your board holds ${FAV_MAX} stations. Remove one to add this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"");
+    +`<button class="star" aria-pressed="${on}" ${full?"disabled":""}>${on?"★ Saved":"☆ Save station"}</button>`
+    +(full?`<div class="note">You can save up to ${FAV_MAX} stations. Remove one to save this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"");
   if(html===spopSig)return;spopSig=html;spop.innerHTML=html;labelsDirty=true;
   for(const b of spop.querySelectorAll(".xf button"))b.onclick=()=>{const r=STN.get(b.dataset.id);if(r){const z=Math.min(vb.w,FIT_W*.12),ra=cw()/ch();flyTo({x:r.xy[0]-z/2,y:r.xy[1]-z/ra/2,w:z,h:z/ra});openStationPop(r)}};
   spop.querySelector(".x").onclick=closeStationPop;spop.querySelector(".star").onclick=()=>toggleFav(rec)}
@@ -43,7 +43,7 @@ function xferHTML(rec){const btn=r=>`<button data-id="${esc(r.id)}" title="Show 
   const ws=XLINKS.filter(x=>x.kind==="cc"&&(x.a===rec||x.b===rec)).map(x=>x.a===rec?x.b:x.a);
   let h="";
   if(xs.length)h+=`<div class="xf"><span class="kick2">${rec.sys==="metra"?"Transfer to the L":"Transfer to Metra"}</span>${xs.map(btn).join("")}</div>`;
-  if(ws.length)h+=`<div class="xf"><span class="kick2">Walk to · free transfer</span>${ws.map(btn).join("")}</div>`;
+  if(ws.length)h+=`<div class="xf"><span class="kick2">Free walking transfer</span>${ws.map(btn).join("")}</div>`;
   return h}
 function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transform="";return}
   const sx=cw()/vb.w,sy=ch()/vb.h,px=(spopRec.xy[0]-vb.x)*sx,py=(spopRec.xy[1]-vb.y)*sy,w=spop.offsetWidth,h=spop.offsetHeight,W=cw(),H=ch(),I=uiInsets();
@@ -96,13 +96,13 @@ function renderBoard(){
   if(!board.classList.contains("fly"))board.classList.toggle("min",min);
   document.body.classList.toggle("favmin",min);
   let src="",body;
-  if(!favs.length){const old=oldFavs();body=`<p class="bmsg">Click any station on the map, then ☆, to pin it here. Up to ${FAV_MAX}.</p>`
+  if(!favs.length){const old=oldFavs();body=`<p class="bmsg">Tap or click any station on the map, then ☆ Save station. Up to ${FAV_MAX}.</p>`
     +(old.length?`<p class="bmsg"><button class="imp">Bring in ${old.length===1?"your station":"your "+old.length+" stations"} from CTABot and MetraBot</button></p>`:"")}
   else body=favs.map(rec=>{const r=boardRows(rec);if(r.src)src=src||r.src;
     return`<div class="fav" data-id="${esc(rec.id)}"><div class="fn"><button class="go" title="Show ${esc(rec.full)} on the map">${esc(rec.label)}</button>`
-      +`<button class="rm" aria-label="Remove ${esc(rec.full)} from your board" title="Remove">×</button></div>`
+      +`<button class="rm" aria-label="Remove ${esc(rec.full)} from your stations" title="Remove">×</button></div>`
       +(r.html||`<div class="none">${r.msg}</div>`)+`</div>`}).join("");
-  const foot=!favs.length?"":mode==="sim"?"Simulated trains, not real.":src==="pred"?"Times are CTA's live predictions. Faded = scheduled, no train reporting for it yet.":"";
+  const foot=!favs.length?"":mode==="sim"?"Simulated trains, not live data.":src==="pred"?"Minutes are CTA's live predictions. Faded times are from the schedule: no train is reporting for them yet.":"";
   const html=`<div class="bh"><span class="kick2">★ Your stations</span>${favs.length?`<span class="cnt">${favs.length}/${FAV_MAX}</span>`:""}`
     +(mode==="sim"?`<span class="simtag">Simulated</span>`:"")
     +`<button class="col" aria-label="${narrow?"Close your stations":"Tuck your stations into the ★ button"}" title="${narrow?"Close":"Tuck into ★"}">${narrow?"×":"▴"}</button></div>`

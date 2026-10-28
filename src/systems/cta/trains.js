@@ -247,16 +247,16 @@ async function poll(){
   try{
     const resp=await fetch(WORKER_URL+"/cta/positions",{cache:"no-store",signal:ac.signal});
     let data=null;try{data=await resp.json()}catch(_){}
-    if(!data||typeof data!=="object")throw new Error(resp.ok?"The feed relay sent something unreadable":"The feed relay answered with an error ("+resp.status+")");
+    if(!data||typeof data!=="object")throw new Error(resp.ok?"NITABot's data server sent something it couldn't read":"NITABot's data server had a problem (error "+resp.status+")");
     if(data.error)throw new Error("CTA's feed returned an error: "+data.error);
-    if(!resp.ok)throw new Error("The feed relay answered with an error ("+resp.status+")");
+    if(!resp.ok)throw new Error("NITABot's data server had a problem (error "+resp.status+")");
     let fa=+data.fetched_at;if(isFinite(fa)&&fa>0){if(fa<1e12)fa*=1000;clockOffset=Date.now()-fa;lastFeedAt=fa}else{clockOffset=0;lastFeedAt=Date.now()}
     if(mode==="sim"){liveBack=true}                 // live works again: offer to switch, don't mix it with simulated trains
     else{ingest(data);everLoaded=true}
     sonarPing();
     if(fails&&alertsErr)pollAlerts();                // the relay is back: fetch alerts now instead of in up to 2 minutes
     fails=0;lastOkAt=Date.now();lastError="";
-  }catch(e){fails++;lastError=e&&e.name==="AbortError"?"The feed took too long to answer":(e&&e.message)||"Network error"}
+  }catch(e){fails++;lastError=e&&e.name==="AbortError"?"The data took too long to arrive":(e&&e.message)||"Couldn't connect"}
   finally{clearTimeout(to);inflight=false;radarLanded(pollT0);const wait=fails?Math.min(POLL,10000*fails):POLL;   // after a miss, try again sooner
     nextPollAt=Date.now()+wait;pollTimer=setTimeout(poll,wait);refreshStatus()}
 }

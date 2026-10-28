@@ -60,9 +60,9 @@ function mStationTimes(){if(!mTrips)return;const nowSec=Math.floor(serverNow()/1
 const M_ESCALATE=90000,M_UPSTREAM_STALE=180000;
 const MH={kind:"",fails:0,lastUsable:0,lastTry:0,firstMissAt:0,lastMissAt:0,newestFix:0,vehicles:0,detail:""};
 function mClassify(resp,data){
-  if(!data||typeof data!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"Worker answered "+resp.status:"unreadable answer"};
+  if(!data||typeof data!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"NITABot's data server had a problem (error "+resp.status+")":"the data couldn't be read"};
   if(data.metra_error)return{kind:"metra",detail:"Metra's feed: "+String(data.metra_error).slice(0,120)};
-  if(!data.metra_lines||typeof data.metra_lines!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"Worker answered "+resp.status:"no positions in the answer"};
+  if(!data.metra_lines||typeof data.metra_lines!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"NITABot's data server had a problem (error "+resp.status+")":"no train positions came back"};
   let n=0,newest=0;for(const k in data.metra_lines){const vs=data.metra_lines[k];if(!Array.isArray(vs))continue;
     for(const v of vs){if(!v||v.latitude==null)continue;n++;const f=+v.updated_at||0;if(f>newest)newest=f}}
   const at=+data.fetched_at>0?+data.fetched_at:Date.now();

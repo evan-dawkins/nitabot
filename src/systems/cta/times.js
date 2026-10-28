@@ -49,7 +49,7 @@ function arrivalSections(rec,per){
   const a=upcoming(rec);
   if(!a)return{msg:"Getting arrival times…"};
   if(a.err&&!a.etas)return{msg:"CTA's arrival times aren't answering. Trying again every 15 seconds."};
-  const paused=a.err?`<div class="snote">Live times paused: these are CTA's times from ${ago(Date.now()-a.at)}. Trying again.</div>`:"";
+  const paused=a.err?`<div class="snote">Live times paused: these are CTA's times from ${ago(Date.now()-a.at)}. Trying again every 15 seconds.</div>`:"";
   if(a.metra&&!mTrips)return{msg:"Metra's predicted times aren't available right now."};
   if(!a.etas.length)return{msg:a.err?"CTA's arrival times aren't answering. Trying again every 15 seconds.":"No trains on the way right now."};
   const nowMs=serverNow(),groups=new Map();
@@ -59,5 +59,5 @@ function arrivalSections(rec,per){
 function stationSchedule(rec,per){const r=arrivalSections(rec,per);
   if(r.msg)return`<div class="fav none" style="padding:0;border:0">${r.msg}</div>`;
   if(r.src==="board")return r.html+`<div class="note">From Metra's timetable; a live prediction replaces the time when Metra has one.</div>`;
-  return r.html+(rec.sys==="metra"?`<div class="note">Minutes are Metra's live predictions. Faded = no train reporting its position for it yet.</div>`
-    :`<div class="note">Minutes are CTA's live predictions. Faded = scheduled, no train reporting for it yet.</div>`)}
+  return r.html+(rec.sys==="metra"?`<div class="note">Minutes are Metra's live predictions. Faded times are from the schedule: no train is reporting for them yet.</div>`
+    :`<div class="note">Minutes are CTA's live predictions. Faded times are from the schedule: no train is reporting for them yet.</div>`)}

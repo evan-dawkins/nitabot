@@ -111,11 +111,11 @@ def main():
         check("transfer links are short walks (none over 800 m)", far < 800, f"longest {far} m")
         E("__cta.openStationPop(__cta.STN.get('40850'))"); pg.wait_for_timeout(700)
         t = E("document.getElementById('spop').textContent")           # (innerText would be upper-cased by the heading style)
-        check("Library's sheet lists its checked walks (Jackson Red and Blue)", "Walk to" in t and t.count("Jackson") >= 2, t.replace("\n", " | ")[:140])
+        check("Library's sheet lists its checked walks (Jackson Red and Blue)", "walking transfer" in t and t.count("Jackson") >= 2, t.replace("\n", " | ")[:140])
         E("document.querySelector('#spop .x').click()")
         E("__cta.openStationPop(__cta.STN.get('40680'))"); pg.wait_for_timeout(500)
         t = E("document.getElementById('spop').textContent")
-        check("Adams/Wabash still shows no walk or Metra transfer (none checked)", "Walk to" not in t and "Transfer to" not in t)
+        check("Adams/Wabash still shows no walk or Metra transfer (none checked)", "walking transfer" not in t and "Transfer to" not in t)
         E("document.querySelector('#spop .x').click()")
         # transfers visible at regional and downtown zoom; labels don't collide at either
         for f in (3.0, .12):

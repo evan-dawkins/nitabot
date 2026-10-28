@@ -832,7 +832,7 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
   <ol class="steps">
     <li><span class="n">1</span><span><b>Drag to move, scroll or pinch to zoom.</b> Zoom out for the suburbs and every Metra line.</span></li>
     <li><span class="n">2</span><span><b>Tap a train</b> to see where it&rsquo;s headed, then <b>Follow</b> to ride along.</span></li>
-    <li><span class="n">3</span><span><b>Tap a station</b> for its next trains. <b>☆</b> pins it to your board.</span></li>
+    <li><span class="n">3</span><span><b>Tap a station</b> for its next trains. <b>☆ Save station</b> keeps it in Your stations.</span></li>
     <li><span class="n">4</span><span><b>Alerts</b> (top right) has CTA and Metra service notices. The <b>line bar</b> (bottom) shows one line at a time.</span></li>
   </ol>
   <div class="key" aria-label="Map key">
@@ -842,7 +842,7 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="#C60C30" stroke="var(--bg)" stroke-width="1.3"/></svg>Live train</span>
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="#6B7E8F" stroke="var(--bg)" stroke-width="1.3" opacity=".7"/></svg>Out of date</span>
   </div>
-  <p class="extras">By the title: sound, cute trains, satellite, light or dark. Leave it alone for a couple of minutes and it rides along with a train.</p>
+  <p class="extras">By the title: find a station (or press /), sound, cute trains, satellite, light or dark. Leave it alone and the buttons fade away, then it rides along with a train.</p>
   <p class="about">NITABot is an unofficial personal project made for fun and is not affiliated with NITA. It isn&rsquo;t affiliated with the CTA or Metra either: train positions and times come from CTA&rsquo;s public Train Tracker data and Metra&rsquo;s public GTFS feeds.</p>
   <div class="foot">
     <button class="go">Start exploring</button>
@@ -1882,16 +1882,16 @@ async function poll(){
   try{
     const resp=await fetch(WORKER_URL+"/cta/positions",{cache:"no-store",signal:ac.signal});
     let data=null;try{data=await resp.json()}catch(_){}
-    if(!data||typeof data!=="object")throw new Error(resp.ok?"The feed relay sent something unreadable":"The feed relay answered with an error ("+resp.status+")");
+    if(!data||typeof data!=="object")throw new Error(resp.ok?"NITABot's data server sent something it couldn't read":"NITABot's data server had a problem (error "+resp.status+")");
     if(data.error)throw new Error("CTA's feed returned an error: "+data.error);
-    if(!resp.ok)throw new Error("The feed relay answered with an error ("+resp.status+")");
+    if(!resp.ok)throw new Error("NITABot's data server had a problem (error "+resp.status+")");
     let fa=+data.fetched_at;if(isFinite(fa)&&fa>0){if(fa<1e12)fa*=1000;clockOffset=Date.now()-fa;lastFeedAt=fa}else{clockOffset=0;lastFeedAt=Date.now()}
     if(mode==="sim"){liveBack=true}                 // live works again: offer to switch, don't mix it with simulated trains
     else{ingest(data);everLoaded=true}
     sonarPing();
     if(fails&&alertsErr)pollAlerts();                // the relay is back: fetch alerts now instead of in up to 2 minutes
     fails=0;lastOkAt=Date.now();lastError="";
-  }catch(e){fails++;lastError=e&&e.name==="AbortError"?"The feed took too long to answer":(e&&e.message)||"Network error"}
+  }catch(e){fails++;lastError=e&&e.name==="AbortError"?"The data took too long to arrive":(e&&e.message)||"Couldn't connect"}
   finally{clearTimeout(to);inflight=false;radarLanded(pollT0);const wait=fails?Math.min(POLL,10000*fails):POLL;   // after a miss, try again sooner
     nextPollAt=Date.now()+wait;pollTimer=setTimeout(poll,wait);refreshStatus()}
 }
@@ -2107,9 +2107,9 @@ function refreshStatus(){
   if(mode==="sim"){
     const vis=trains.filter(t=>!focusKey||t.L.key===focusKey);
     $("count").textContent=vis.length;for(const k of ORDER)$("n-"+k).textContent=trains.filter(t=>t.L.key===k).length;
-    setState("sim","Simulated");$("updated").textContent="Not real positions";metraUI("ok",false);
+    setState("sim","Simulated");$("updated").textContent="Simulated trains, not live data";metraUI("ok",false);
     notice(liveBack?`The live feed is working again. <div class="acts"><button class="go" data-act="live">Switch to live</button></div>`
-      :`Simulated trains, not real positions. <div class="acts"><button data-act="live">Try live</button></div>`);
+      :`Simulated trains, not live data. <div class="acts"><button data-act="live">Try live</button></div>`);
     return}
   const vis=trains.filter(t=>!focusKey||t.L.key===focusKey),fresh=vis.filter(t=>!t.stale&&!t.hidden),any=everLoaded||mEverLoaded;
   $("count").textContent=any?fresh.length:"–";
@@ -2120,18 +2120,18 @@ function refreshStatus(){
   const mh=metraHealth(),mDown=mh==="down"||(!mEverLoaded&&MH.fails>=2);
   if(!any){
     if(C.down&&mDown){setState("err","Offline");$("updated").textContent="No data received yet";metraUI(mh,false);
-      notice(`Can't reach the live feeds. <span>${C.err||MH.detail}. Trying again every 30 s.</span>${SIM_OFFER}`)}
+      notice(`Can't reach the live feeds. <span>${C.err||MH.detail}. Trying again every 30 seconds.</span>${SIM_OFFER}`)}
     else{setState("busy","Connecting");$("updated").textContent="Waiting for first report";metraUI(mh,!C.down);notice("")}
     return}
   $("updated").textContent=C.loaded?"CTA updated "+ago(C.age):"Waiting for CTA";
   if(C.down&&mDown){setState("err","Offline");metraUI(mh,false);
-    notice(`Can't reach the live feeds. <span>Trains are shown at their last known positions. Retrying every 30 s.</span>${SIM_OFFER}`);return}
+    notice(`Can't reach the live feeds. <span>Trains are shown at their last known positions. Trying again every 30 seconds.</span>${SIM_OFFER}`);return}
   metraUI(mh,true);
   if(C.down){setState("warn","CTA offline");
-    notice(`CTA's feed isn't answering. <span>${C.loaded?`L trains are shown at their last known positions (${ago(C.age)}).`:`L trains will appear when it answers.`} Metra is separate. Retrying every 30 s.</span>`);return}
-  if(C.slow){setState("warn","CTA delayed");notice("");return}
+    notice(`CTA's feed isn't answering. <span>${C.loaded?`L trains are shown at their last known positions (${ago(C.age)}).`:`L trains will appear when it answers.`} Metra is separate. Trying again every 30 seconds.</span>`);return}
+  if(C.slow){setState("warn","CTA updates slow");notice("");return}
   if(!trains.length){setState("live","Live");notice(`No trains are reporting right now. <span>Overnight only the Red and Blue Lines run, and Metra runs few trains. The map fills in as service starts.</span>`);return}
-  if(trains.every(t=>t.stale)){setState("warn","Feeds not moving");notice(`The feeds are answering, but no train has reported a new position recently.`);return}
+  if(trains.every(t=>t.stale)){setState("warn","Data not updating");notice(`The feeds are answering, but no train has reported a new position recently.`);return}
   notice("");setState(inflight||mInflight?"busy":"live","Live");
 }
 const fmtHM=ms=>new Date(ms).toLocaleTimeString([],{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
@@ -2142,9 +2142,9 @@ function metraUI(mh,banner){const m=$("mhealth"),b=$("mbanner");
   const last=MH.lastUsable?`Last good Metra update ${ago(Date.now()-MH.lastUsable)} (${fmtHM(MH.lastUsable)}).`:"No Metra update received yet.";
   const why=MH.detail?` Reason: ${MH.detail}.`:"";
   m.title=mh==="empty"?"Metra's feed is answering but has no trains reporting right now (normal late at night)."
-    :mh==="down"?`Metra updates have stopped. ${last}${why} Trying again every 30 s.`
+    :mh==="down"?`Metra updates have stopped. ${last}${why} Trying again every 30 seconds.`
     :`Missed a Metra update at ${fmtHM(MH.lastMissAt||Date.now())}${MH.fails>1?` (${MH.fails} in a row)`:""}. ${last}${why} Trying again shortly.`;
-  m.querySelector("span").textContent=mh==="empty"?"Metra: none reporting":mh==="down"?"Metra stopped":"Metra";
+  m.querySelector("span").textContent=mh==="empty"?"Metra: none reporting":mh==="down"?"No Metra updates":"Metra";
   m.setAttribute("aria-label",m.title);
   const on=banner&&mh==="down";
   if(on){const h=`<b>Metra updates have stopped.</b> <span>${MH.lastUsable?`Last good update ${ago(Date.now()-MH.lastUsable)}.`:"No update yet."} Metra trains stay greyed out where they last reported. ${everLoaded&&!(Date.now()-lastOkAt>3*POLL)?"L trains are still live.":""}</span><button data-act="mretry">Try now</button>`;
@@ -2155,7 +2155,7 @@ $("mbanner").addEventListener("click",e=>{if(e.target.closest("[data-act=mretry]
 /* when each feed last delivered fresh data, always on screen: Metra's license asks for the date and time the data
    was last updated, and it's the honest answer to "is this live?" from across the room. A feed more than 90 s
    behind turns amber. */
-function tickAsOf(){const el=$("asof");if(mode==="sim"){el.innerHTML="Simulated, not live data";el.className="asof";return}
+function tickAsOf(){const el=$("asof");if(mode==="sim"){el.innerHTML="Simulated trains, not live data";el.className="asof";return}
   const t=ms=>fmtHM(ms).replace(/\s?[AP]M$/i,""),now=Date.now(),day=new Date(Math.max(lastOkAt,MH.lastUsable)||now).toLocaleDateString([],{month:"short",day:"numeric",timeZone:"America/Chicago"});
   const part=(name,ms)=>ms?`<span class="${now-ms>90000?"late":""}">${name} ${t(ms)}</span>`:`<span class="late">${name} waiting</span>`;
   const h=`<span class="lbl">Data as of</span> ${part("CTA",everLoaded?lastOkAt:0)}<i aria-hidden="true">·</i>${part("Metra",MH.lastUsable)}<i aria-hidden="true">·</i><span class="day">${day}</span>`;
@@ -2164,7 +2164,7 @@ function tickAsOf(){const el=$("asof");if(mode==="sim"){el.innerHTML="Simulated,
 function tickHeader(){
   tickAsOf();
   const left=Math.max(0,nextPollAt-Date.now());
-  $("state").title=mode==="sim"?"Simulated trains, not real positions":
+  $("state").title=mode==="sim"?"Simulated trains, not live data":
     (everLoaded?"Updated "+ago(Date.now()-lastOkAt)+". ":"")+(inflight?"Checking now.":nextPollAt?"Next check in about "+Math.max(5,Math.ceil(left/5000)*5)+" s.":"")
     +" CTA and Metra publish new positions about every 30 seconds.";
 }
@@ -2260,7 +2260,7 @@ function renderCard(){
         +`<span class="t"><b>${w}</b> ${tm?fmtClock(tm/1000):""}</span></div>`}).join("")+`</div>`}
   const headline=v.dest?`to ${esc(v.dest)}`:"Destination not known";
   const age=serverNow()-t.updated;
-  const foot=mode==="sim"?`<span>Simulated train, not real</span>`
+  const foot=mode==="sim"?`<span>Simulated train, not live data</span>`
     :t.held?`<span class="wn">Shown where it was ${ago(age)}: its newest report jumped somewhere it couldn't have reached, so it's being checked</span>`
     :t.stale?`<span class="wn">No new position for ${ago(age).replace(" ago","")}</span>`
     :t.L.sys==="metra"?(v.delayed?`<span class="wn">Running ${Math.round(v.delay/60)} min late, per Metra</span>`:`<span>GPS position from Metra, ${ago(age)}</span>`)
@@ -2341,7 +2341,7 @@ function arrivalSections(rec,per){
   const a=upcoming(rec);
   if(!a)return{msg:"Getting arrival times…"};
   if(a.err&&!a.etas)return{msg:"CTA's arrival times aren't answering. Trying again every 15 seconds."};
-  const paused=a.err?`<div class="snote">Live times paused: these are CTA's times from ${ago(Date.now()-a.at)}. Trying again.</div>`:"";
+  const paused=a.err?`<div class="snote">Live times paused: these are CTA's times from ${ago(Date.now()-a.at)}. Trying again every 15 seconds.</div>`:"";
   if(a.metra&&!mTrips)return{msg:"Metra's predicted times aren't available right now."};
   if(!a.etas.length)return{msg:a.err?"CTA's arrival times aren't answering. Trying again every 15 seconds.":"No trains on the way right now."};
   const nowMs=serverNow(),groups=new Map();
@@ -2351,8 +2351,8 @@ function arrivalSections(rec,per){
 function stationSchedule(rec,per){const r=arrivalSections(rec,per);
   if(r.msg)return`<div class="fav none" style="padding:0;border:0">${r.msg}</div>`;
   if(r.src==="board")return r.html+`<div class="note">From Metra's timetable; a live prediction replaces the time when Metra has one.</div>`;
-  return r.html+(rec.sys==="metra"?`<div class="note">Minutes are Metra's live predictions. Faded = no train reporting its position for it yet.</div>`
-    :`<div class="note">Minutes are CTA's live predictions. Faded = scheduled, no train reporting for it yet.</div>`)}
+  return r.html+(rec.sys==="metra"?`<div class="note">Minutes are Metra's live predictions. Faded times are from the schedule: no train is reporting for them yet.</div>`
+    :`<div class="note">Minutes are CTA's live predictions. Faded times are from the schedule: no train is reporting for them yet.</div>`)}
 /* =====================================================================
    METRA FEED — Metra's live GPS positions and trip predictions, through the same Worker MetraBot uses
    (/?trips=1, every 30 s; paused while the tab is hidden, like the CTA feed).
@@ -2415,9 +2415,9 @@ function mStationTimes(){if(!mTrips)return;const nowSec=Math.floor(serverNow()/1
 const M_ESCALATE=90000,M_UPSTREAM_STALE=180000;
 const MH={kind:"",fails:0,lastUsable:0,lastTry:0,firstMissAt:0,lastMissAt:0,newestFix:0,vehicles:0,detail:""};
 function mClassify(resp,data){
-  if(!data||typeof data!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"Worker answered "+resp.status:"unreadable answer"};
+  if(!data||typeof data!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"NITABot's data server had a problem (error "+resp.status+")":"the data couldn't be read"};
   if(data.metra_error)return{kind:"metra",detail:"Metra's feed: "+String(data.metra_error).slice(0,120)};
-  if(!data.metra_lines||typeof data.metra_lines!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"Worker answered "+resp.status:"no positions in the answer"};
+  if(!data.metra_lines||typeof data.metra_lines!=="object")return{kind:resp&&!resp.ok?"http":"unreadable",detail:resp&&!resp.ok?"NITABot's data server had a problem (error "+resp.status+")":"no train positions came back"};
   let n=0,newest=0;for(const k in data.metra_lines){const vs=data.metra_lines[k];if(!Array.isArray(vs))continue;
     for(const v of vs){if(!v||v.latitude==null)continue;n++;const f=+v.updated_at||0;if(f>newest)newest=f}}
   const at=+data.fetched_at>0?+data.fetched_at:Date.now();
@@ -2527,8 +2527,8 @@ function renderStationPop(){const rec=spopRec;if(!rec)return;
   const lines=ORDER.filter(k=>rec.lines.has(k)),on=isFav(rec.id),full=!on&&FAV.ids.length>=FAV_MAX;   // CTA's full station name in the title
   const html=`<button class="x" aria-label="Close station">×</button><div class="nm" id="spopName">${esc(rec.full)}</div><div class="ln">${lines.map(bullet).join("")}</div>`
     +stationSchedule(rec,3)+xferHTML(rec)
-    +`<button class="star" aria-pressed="${on}" ${full?"disabled":""}>${on?"★ On your board":"☆ Add to your board"}</button>`
-    +(full?`<div class="note">Your board holds ${FAV_MAX} stations. Remove one to add this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"");
+    +`<button class="star" aria-pressed="${on}" ${full?"disabled":""}>${on?"★ Saved":"☆ Save station"}</button>`
+    +(full?`<div class="note">You can save up to ${FAV_MAX} stations. Remove one to save this.</div>`:on?`<div class="note">Click again to remove it.</div>`:"");
   if(html===spopSig)return;spopSig=html;spop.innerHTML=html;labelsDirty=true;
   for(const b of spop.querySelectorAll(".xf button"))b.onclick=()=>{const r=STN.get(b.dataset.id);if(r){const z=Math.min(vb.w,FIT_W*.12),ra=cw()/ch();flyTo({x:r.xy[0]-z/2,y:r.xy[1]-z/ra/2,w:z,h:z/ra});openStationPop(r)}};
   spop.querySelector(".x").onclick=closeStationPop;spop.querySelector(".star").onclick=()=>toggleFav(rec)}
@@ -2538,7 +2538,7 @@ function xferHTML(rec){const btn=r=>`<button data-id="${esc(r.id)}" title="Show 
   const ws=XLINKS.filter(x=>x.kind==="cc"&&(x.a===rec||x.b===rec)).map(x=>x.a===rec?x.b:x.a);
   let h="";
   if(xs.length)h+=`<div class="xf"><span class="kick2">${rec.sys==="metra"?"Transfer to the L":"Transfer to Metra"}</span>${xs.map(btn).join("")}</div>`;
-  if(ws.length)h+=`<div class="xf"><span class="kick2">Walk to · free transfer</span>${ws.map(btn).join("")}</div>`;
+  if(ws.length)h+=`<div class="xf"><span class="kick2">Free walking transfer</span>${ws.map(btn).join("")}</div>`;
   return h}
 function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transform="";return}
   const sx=cw()/vb.w,sy=ch()/vb.h,px=(spopRec.xy[0]-vb.x)*sx,py=(spopRec.xy[1]-vb.y)*sy,w=spop.offsetWidth,h=spop.offsetHeight,W=cw(),H=ch(),I=uiInsets();
@@ -2591,13 +2591,13 @@ function renderBoard(){
   if(!board.classList.contains("fly"))board.classList.toggle("min",min);
   document.body.classList.toggle("favmin",min);
   let src="",body;
-  if(!favs.length){const old=oldFavs();body=`<p class="bmsg">Click any station on the map, then ☆, to pin it here. Up to ${FAV_MAX}.</p>`
+  if(!favs.length){const old=oldFavs();body=`<p class="bmsg">Tap or click any station on the map, then ☆ Save station. Up to ${FAV_MAX}.</p>`
     +(old.length?`<p class="bmsg"><button class="imp">Bring in ${old.length===1?"your station":"your "+old.length+" stations"} from CTABot and MetraBot</button></p>`:"")}
   else body=favs.map(rec=>{const r=boardRows(rec);if(r.src)src=src||r.src;
     return`<div class="fav" data-id="${esc(rec.id)}"><div class="fn"><button class="go" title="Show ${esc(rec.full)} on the map">${esc(rec.label)}</button>`
-      +`<button class="rm" aria-label="Remove ${esc(rec.full)} from your board" title="Remove">×</button></div>`
+      +`<button class="rm" aria-label="Remove ${esc(rec.full)} from your stations" title="Remove">×</button></div>`
       +(r.html||`<div class="none">${r.msg}</div>`)+`</div>`}).join("");
-  const foot=!favs.length?"":mode==="sim"?"Simulated trains, not real.":src==="pred"?"Times are CTA's live predictions. Faded = scheduled, no train reporting for it yet.":"";
+  const foot=!favs.length?"":mode==="sim"?"Simulated trains, not live data.":src==="pred"?"Minutes are CTA's live predictions. Faded times are from the schedule: no train is reporting for them yet.":"";
   const html=`<div class="bh"><span class="kick2">★ Your stations</span>${favs.length?`<span class="cnt">${favs.length}/${FAV_MAX}</span>`:""}`
     +(mode==="sim"?`<span class="simtag">Simulated</span>`:"")
     +`<button class="col" aria-label="${narrow?"Close your stations":"Tuck your stations into the ★ button"}" title="${narrow?"Close":"Tuck into ★"}">${narrow?"×":"▴"}</button></div>`

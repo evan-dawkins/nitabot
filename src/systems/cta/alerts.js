@@ -196,9 +196,9 @@ function refreshStatus(){
   if(mode==="sim"){
     const vis=trains.filter(t=>!focusKey||t.L.key===focusKey);
     $("count").textContent=vis.length;for(const k of ORDER)$("n-"+k).textContent=trains.filter(t=>t.L.key===k).length;
-    setState("sim","Simulated");$("updated").textContent="Not real positions";metraUI("ok",false);
+    setState("sim","Simulated");$("updated").textContent="Simulated trains, not live data";metraUI("ok",false);
     notice(liveBack?`The live feed is working again. <div class="acts"><button class="go" data-act="live">Switch to live</button></div>`
-      :`Simulated trains, not real positions. <div class="acts"><button data-act="live">Try live</button></div>`);
+      :`Simulated trains, not live data. <div class="acts"><button data-act="live">Try live</button></div>`);
     return}
   const vis=trains.filter(t=>!focusKey||t.L.key===focusKey),fresh=vis.filter(t=>!t.stale&&!t.hidden),any=everLoaded||mEverLoaded;
   $("count").textContent=any?fresh.length:"–";
@@ -209,18 +209,18 @@ function refreshStatus(){
   const mh=metraHealth(),mDown=mh==="down"||(!mEverLoaded&&MH.fails>=2);
   if(!any){
     if(C.down&&mDown){setState("err","Offline");$("updated").textContent="No data received yet";metraUI(mh,false);
-      notice(`Can't reach the live feeds. <span>${C.err||MH.detail}. Trying again every 30 s.</span>${SIM_OFFER}`)}
+      notice(`Can't reach the live feeds. <span>${C.err||MH.detail}. Trying again every 30 seconds.</span>${SIM_OFFER}`)}
     else{setState("busy","Connecting");$("updated").textContent="Waiting for first report";metraUI(mh,!C.down);notice("")}
     return}
   $("updated").textContent=C.loaded?"CTA updated "+ago(C.age):"Waiting for CTA";
   if(C.down&&mDown){setState("err","Offline");metraUI(mh,false);
-    notice(`Can't reach the live feeds. <span>Trains are shown at their last known positions. Retrying every 30 s.</span>${SIM_OFFER}`);return}
+    notice(`Can't reach the live feeds. <span>Trains are shown at their last known positions. Trying again every 30 seconds.</span>${SIM_OFFER}`);return}
   metraUI(mh,true);
   if(C.down){setState("warn","CTA offline");
-    notice(`CTA's feed isn't answering. <span>${C.loaded?`L trains are shown at their last known positions (${ago(C.age)}).`:`L trains will appear when it answers.`} Metra is separate. Retrying every 30 s.</span>`);return}
-  if(C.slow){setState("warn","CTA delayed");notice("");return}
+    notice(`CTA's feed isn't answering. <span>${C.loaded?`L trains are shown at their last known positions (${ago(C.age)}).`:`L trains will appear when it answers.`} Metra is separate. Trying again every 30 seconds.</span>`);return}
+  if(C.slow){setState("warn","CTA updates slow");notice("");return}
   if(!trains.length){setState("live","Live");notice(`No trains are reporting right now. <span>Overnight only the Red and Blue Lines run, and Metra runs few trains. The map fills in as service starts.</span>`);return}
-  if(trains.every(t=>t.stale)){setState("warn","Feeds not moving");notice(`The feeds are answering, but no train has reported a new position recently.`);return}
+  if(trains.every(t=>t.stale)){setState("warn","Data not updating");notice(`The feeds are answering, but no train has reported a new position recently.`);return}
   notice("");setState(inflight||mInflight?"busy":"live","Live");
 }
 const fmtHM=ms=>new Date(ms).toLocaleTimeString([],{hour:"numeric",minute:"2-digit",timeZone:"America/Chicago"});
@@ -231,9 +231,9 @@ function metraUI(mh,banner){const m=$("mhealth"),b=$("mbanner");
   const last=MH.lastUsable?`Last good Metra update ${ago(Date.now()-MH.lastUsable)} (${fmtHM(MH.lastUsable)}).`:"No Metra update received yet.";
   const why=MH.detail?` Reason: ${MH.detail}.`:"";
   m.title=mh==="empty"?"Metra's feed is answering but has no trains reporting right now (normal late at night)."
-    :mh==="down"?`Metra updates have stopped. ${last}${why} Trying again every 30 s.`
+    :mh==="down"?`Metra updates have stopped. ${last}${why} Trying again every 30 seconds.`
     :`Missed a Metra update at ${fmtHM(MH.lastMissAt||Date.now())}${MH.fails>1?` (${MH.fails} in a row)`:""}. ${last}${why} Trying again shortly.`;
-  m.querySelector("span").textContent=mh==="empty"?"Metra: none reporting":mh==="down"?"Metra stopped":"Metra";
+  m.querySelector("span").textContent=mh==="empty"?"Metra: none reporting":mh==="down"?"No Metra updates":"Metra";
   m.setAttribute("aria-label",m.title);
   const on=banner&&mh==="down";
   if(on){const h=`<b>Metra updates have stopped.</b> <span>${MH.lastUsable?`Last good update ${ago(Date.now()-MH.lastUsable)}.`:"No update yet."} Metra trains stay greyed out where they last reported. ${everLoaded&&!(Date.now()-lastOkAt>3*POLL)?"L trains are still live.":""}</span><button data-act="mretry">Try now</button>`;
@@ -244,7 +244,7 @@ $("mbanner").addEventListener("click",e=>{if(e.target.closest("[data-act=mretry]
 /* when each feed last delivered fresh data, always on screen: Metra's license asks for the date and time the data
    was last updated, and it's the honest answer to "is this live?" from across the room. A feed more than 90 s
    behind turns amber. */
-function tickAsOf(){const el=$("asof");if(mode==="sim"){el.innerHTML="Simulated, not live data";el.className="asof";return}
+function tickAsOf(){const el=$("asof");if(mode==="sim"){el.innerHTML="Simulated trains, not live data";el.className="asof";return}
   const t=ms=>fmtHM(ms).replace(/\s?[AP]M$/i,""),now=Date.now(),day=new Date(Math.max(lastOkAt,MH.lastUsable)||now).toLocaleDateString([],{month:"short",day:"numeric",timeZone:"America/Chicago"});
   const part=(name,ms)=>ms?`<span class="${now-ms>90000?"late":""}">${name} ${t(ms)}</span>`:`<span class="late">${name} waiting</span>`;
   const h=`<span class="lbl">Data as of</span> ${part("CTA",everLoaded?lastOkAt:0)}<i aria-hidden="true">·</i>${part("Metra",MH.lastUsable)}<i aria-hidden="true">·</i><span class="day">${day}</span>`;
@@ -253,7 +253,7 @@ function tickAsOf(){const el=$("asof");if(mode==="sim"){el.innerHTML="Simulated,
 function tickHeader(){
   tickAsOf();
   const left=Math.max(0,nextPollAt-Date.now());
-  $("state").title=mode==="sim"?"Simulated trains, not real positions":
+  $("state").title=mode==="sim"?"Simulated trains, not live data":
     (everLoaded?"Updated "+ago(Date.now()-lastOkAt)+". ":"")+(inflight?"Checking now.":nextPollAt?"Next check in about "+Math.max(5,Math.ceil(left/5000)*5)+" s.":"")
     +" CTA and Metra publish new positions about every 30 seconds.";
 }
@@ -349,7 +349,7 @@ function renderCard(){
         +`<span class="t"><b>${w}</b> ${tm?fmtClock(tm/1000):""}</span></div>`}).join("")+`</div>`}
   const headline=v.dest?`to ${esc(v.dest)}`:"Destination not known";
   const age=serverNow()-t.updated;
-  const foot=mode==="sim"?`<span>Simulated train, not real</span>`
+  const foot=mode==="sim"?`<span>Simulated train, not live data</span>`
     :t.held?`<span class="wn">Shown where it was ${ago(age)}: its newest report jumped somewhere it couldn't have reached, so it's being checked</span>`
     :t.stale?`<span class="wn">No new position for ${ago(age).replace(" ago","")}</span>`
     :t.L.sys==="metra"?(v.delayed?`<span class="wn">Running ${Math.round(v.delay/60)} min late, per Metra</span>`:`<span>GPS position from Metra, ${ago(age)}</span>`)
