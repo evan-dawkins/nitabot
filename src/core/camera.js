@@ -236,8 +236,21 @@ sndMenu.addEventListener("keydown",e=>{const items=[...sndMenu.querySelectorAll(
   if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();items[(i+(e.key==="ArrowDown"?1:items.length-1))%items.length].focus()}
   else if(e.key==="Tab")closeSndMenu()});
 document.addEventListener("pointerdown",e=>{if(sndMenu.classList.contains("on")&&!e.target.closest("#sndmenu,#snd"))closeSndMenu()});
-const firstGesture=()=>{removeEventListener("pointerdown",firstGesture,true);removeEventListener("keydown",firstGesture,true);
-  if(sndOn||ciOn){startAudio();ciPreload()}else applySound()};
+const firstGesture=e=>{removeEventListener("pointerdown",firstGesture,true);removeEventListener("keydown",firstGesture,true);
+  if(sndOn||ciOn){startAudio();ciPreload();if(!(e&&e.target&&e.target.closest&&e.target.closest("#snd,#sndmenu")))setTimeout(soundNote,350)}else applySound()};
+/* the first time sound starts, say so once, with a way to turn it off right there */
+const SND_NOTE_KEY="nitabot.soundNoted",sndNote=$("sndnote");let sndNoteT=0;
+function hideSoundNote(){clearTimeout(sndNoteT);sndNote.classList.remove("on")}
+function soundNote(){let seen=false;try{seen=localStorage.getItem(SND_NOTE_KEY)==="1"}catch(_){}
+  if(seen||!(sndOn||ciOn))return;try{localStorage.setItem(SND_NOTE_KEY,"1")}catch(_){}
+  const what=[sndOn&&SND_NAME[sndMode],ciOn&&"spoken train check-ins"].filter(Boolean).join(" and "),touch=matchMedia("(pointer:coarse)").matches;
+  sndNote.innerHTML=`<span>Sound is on: ${what}.${touch?" Change it any time with the speaker button.":" Press M to mute, or use the speaker button."}</span>`
+    +`<button class="sn-m">Mute</button><button class="sn-x" aria-label="Close">×</button>`;
+  if(!isNarrow()){const b=sndBtn.getBoundingClientRect();sndNote.style.left=Math.max(8,b.left-10)+"px";sndNote.style.top=(b.bottom+8)+"px"}
+  else{sndNote.style.left="";sndNote.style.top=(document.querySelector(".top").getBoundingClientRect().bottom+6)+"px"}
+  sndNote.classList.add("on");sndNoteT=setTimeout(hideSoundNote,10000);
+  sndNote.querySelector(".sn-m").onclick=()=>{setSndMode("off");if(ciOn)setCheckins(false);hideSoundNote();sndBtn.focus({preventScroll:true})};
+  sndNote.querySelector(".sn-x").onclick=hideSoundNote}
 addEventListener("pointerdown",firstGesture,true);addEventListener("keydown",firstGesture,true);
 applySound();
 /* radar: centred on the downtown terminals, one full turn per 30 s data refresh.

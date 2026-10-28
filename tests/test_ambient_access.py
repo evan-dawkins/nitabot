@@ -47,6 +47,12 @@ def main():
                 bad.append(f"{k} {r:.2f}")
         worst = min(max(ratio(L["color"].lstrip("#"), "FFFFFF"), ratio(L["color"].lstrip("#"), "0B1620")) for L in T.NET["lines"].values())
         check("line badges use the higher-contrast text (all >= 4.5:1 except where no text colour can reach it)", not bad, f"worst possible {worst:.2f}; failing {bad}")
+        # the first click starts sound, and says so once, with a Mute right there
+        pg.mouse.click(700, 520); pg.wait_for_timeout(900)
+        note = E("[document.getElementById('sndnote').classList.contains('on'),document.getElementById('sndnote').textContent]")
+        check("first click: a one-time 'Sound is on' note with Mute", note[0] and "Sound is on" in note[1] and "Mute" in note[1], note[1][:90])
+        E("document.querySelector('#sndnote .sn-m').click()"); pg.wait_for_timeout(300)
+        check("Mute turns the sound and check-ins off and closes the note", E("[document.getElementById('snd').getAttribute('aria-pressed'),__cta.ciOn,document.getElementById('sndnote').classList.contains('on')]") == ["false", False, False])
         # empty board tucked into the star
         tucked = E("document.getElementById('board').classList.contains('min')&&getComputedStyle(document.getElementById('favBtn')).display!=='none'")
         check("empty 'Your stations' board is tucked into the star", tucked)

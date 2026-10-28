@@ -518,6 +518,12 @@ body.chasing .stlbl,body.chasing .lakelbl{display:none}
 #tip .lc{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:-1px}
 
 /* ---------- notice ---------- */
+#sndnote{position:fixed;z-index:8;display:flex;align-items:center;gap:8px;max-width:min(380px,calc(100vw - 16px));padding:8px 8px 8px 12px;
+  background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);box-shadow:var(--shadow);font-size:13.5px;line-height:1.35;color:var(--ink)}
+#sndnote span{flex:1 1 auto}
+#sndnote button{flex:none;height:30px;padding:0 12px;border-radius:7px;border:1px solid var(--edge);background:var(--panel2);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer}
+#sndnote .sn-x{width:30px;padding:0;font-size:17px;color:var(--muted)}
+@media (max-width:760px),(max-height:500px){#sndnote{left:8px;right:8px;max-width:none}}
 #notice{position:absolute;left:50%;transform:translateX(-50%);top:calc(56px + env(safe-area-inset-top,0px));background:var(--panel);
   border:1px solid var(--edge);border-radius:18px;padding:5px 6px 5px 14px;font-size:14px;max-width:min(620px,calc(100vw - 28px));display:flex;
   color:var(--ink);align-items:center;gap:6px 12px;flex-wrap:wrap;z-index:4;box-shadow:var(--shadow)}
@@ -837,6 +843,7 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
 </div>
 <div id="apanel" class="pnl" role="dialog" aria-label="Service alerts"><div class="ahd"><b>Service alerts</b><span id="ascope"></span><button id="aclose" aria-label="Close alerts">×</button></div><div id="afilt"></div><div class="alist" id="alist"></div></div>
 <div id="notice" class="pnl" role="status"></div>
+<div id="sndnote" class="pnl" role="status" aria-live="polite"></div>
 <div id="mbanner" role="alert" hidden></div>
 <div id="ridecap" class="pnl" role="status" aria-live="polite"></div>
 <div id="search" class="pnl" role="dialog" aria-label="Find a station">
@@ -862,7 +869,7 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="#C60C30" stroke="var(--ink)" stroke-width="1.1" stroke-linejoin="round"/></svg>Live train</span>
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="none" stroke="var(--stalec)" stroke-width="1.5" stroke-linejoin="round"/></svg>Out of date</span>
   </div>
-  <p class="extras">By the title: find a station (or press /), sound, cute trains, satellite, light or dark. Leave it alone and the buttons fade away, then it rides along with a train.</p>
+  <p class="extras">By the title: find a station (or press /), sound, cute trains, satellite, light or dark. Sound (brown noise and spoken check-ins) starts with your first click or tap; the speaker button or M changes or mutes it. Leave it alone and the buttons fade away, then it rides along with a train.</p>
   <p class="about">NITABot is an unofficial personal project made for fun and is not affiliated with NITA. It isn&rsquo;t affiliated with the CTA or Metra either: train positions and times come from CTA&rsquo;s public Train Tracker data and Metra&rsquo;s public GTFS feeds.</p>
   <div class="foot">
     <button class="go">Start exploring</button>
@@ -1352,8 +1359,21 @@ sndMenu.addEventListener("keydown",e=>{const items=[...sndMenu.querySelectorAll(
   if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();items[(i+(e.key==="ArrowDown"?1:items.length-1))%items.length].focus()}
   else if(e.key==="Tab")closeSndMenu()});
 document.addEventListener("pointerdown",e=>{if(sndMenu.classList.contains("on")&&!e.target.closest("#sndmenu,#snd"))closeSndMenu()});
-const firstGesture=()=>{removeEventListener("pointerdown",firstGesture,true);removeEventListener("keydown",firstGesture,true);
-  if(sndOn||ciOn){startAudio();ciPreload()}else applySound()};
+const firstGesture=e=>{removeEventListener("pointerdown",firstGesture,true);removeEventListener("keydown",firstGesture,true);
+  if(sndOn||ciOn){startAudio();ciPreload();if(!(e&&e.target&&e.target.closest&&e.target.closest("#snd,#sndmenu")))setTimeout(soundNote,350)}else applySound()};
+/* the first time sound starts, say so once, with a way to turn it off right there */
+const SND_NOTE_KEY="nitabot.soundNoted",sndNote=$("sndnote");let sndNoteT=0;
+function hideSoundNote(){clearTimeout(sndNoteT);sndNote.classList.remove("on")}
+function soundNote(){let seen=false;try{seen=localStorage.getItem(SND_NOTE_KEY)==="1"}catch(_){}
+  if(seen||!(sndOn||ciOn))return;try{localStorage.setItem(SND_NOTE_KEY,"1")}catch(_){}
+  const what=[sndOn&&SND_NAME[sndMode],ciOn&&"spoken train check-ins"].filter(Boolean).join(" and "),touch=matchMedia("(pointer:coarse)").matches;
+  sndNote.innerHTML=`<span>Sound is on: ${what}.${touch?" Change it any time with the speaker button.":" Press M to mute, or use the speaker button."}</span>`
+    +`<button class="sn-m">Mute</button><button class="sn-x" aria-label="Close">×</button>`;
+  if(!isNarrow()){const b=sndBtn.getBoundingClientRect();sndNote.style.left=Math.max(8,b.left-10)+"px";sndNote.style.top=(b.bottom+8)+"px"}
+  else{sndNote.style.left="";sndNote.style.top=(document.querySelector(".top").getBoundingClientRect().bottom+6)+"px"}
+  sndNote.classList.add("on");sndNoteT=setTimeout(hideSoundNote,10000);
+  sndNote.querySelector(".sn-m").onclick=()=>{setSndMode("off");if(ciOn)setCheckins(false);hideSoundNote();sndBtn.focus({preventScroll:true})};
+  sndNote.querySelector(".sn-x").onclick=hideSoundNote}
 addEventListener("pointerdown",firstGesture,true);addEventListener("keydown",firstGesture,true);
 applySound();
 /* radar: centred on the downtown terminals, one full turn per 30 s data refresh.
