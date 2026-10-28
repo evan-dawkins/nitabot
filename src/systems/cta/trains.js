@@ -67,6 +67,7 @@ function makeTrainVisual(L){
   el("circle",{class:"halo",r:16},g);
   el("circle",{class:"ring",r:7,stroke:L.color},g);
   const inner=el("g",{},g);
+  el("path",{class:"case a",d:"M12.5,0 L-7,8 L-3.2,0 L-7,-8 Z"},inner);                  // a band in the land colour, so the train lifts off its own line
   const arrow=el("path",{class:"body arrow",d:"M12.5,0 L-7,8 L-3.2,0 L-7,-8 Z",fill:L.color},inner);
 
   // A CTA 7000-series car, seen from above, facing +x: brushed stainless with ribbed sides, a blue cab end with a
@@ -90,6 +91,7 @@ function makeTrainVisual(L){
   el("path",{d:"M10.2,-4.6 L12.4,-4.6 Q15.4,-4.6 15.6,-2.2 L15.6,2.2 Q15.4,4.6 12.4,4.6 L10.2,4.6 Z",fill:"url(#cta-blue)"},cb);   // blue cab end
   el("path",{d:"M13.2,-2.8 Q14.6,-2.4 14.7,0 Q14.6,2.4 13.2,2.8",stroke:"#0B1118","stroke-width":1.4,fill:"none","stroke-linecap":"round"},cb);  // windshield
   for(const y of[-3.4,3.4])el("circle",{cx:14.8,cy:y,r:.75,fill:"#FF5A6E",stroke:"#FFC2CC","stroke-width":.35},cb);    // headlights
+  el("circle",{class:"case d",r:6.2},g);
   const dot=el("circle",{class:"body",r:6.2,fill:L.color},g);
   el("circle",{class:"hit",r:18},g);
   // trail: a soft band in the line's colour with a bright core, both fading out behind the train

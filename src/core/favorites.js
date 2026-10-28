@@ -45,9 +45,11 @@ function xferHTML(rec){const btn=r=>`<button data-id="${esc(r.id)}" title="Show 
   if(xs.length)h+=`<div class="xf"><span class="kick2">${rec.sys==="metra"?"Transfer to the L":"Transfer to Metra"}</span>${xs.map(btn).join("")}</div>`;
   if(ws.length)h+=`<div class="xf"><span class="kick2">Free walking transfer</span>${ws.map(btn).join("")}</div>`;
   return h}
-function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transform="";return}
-  const sx=cw()/vb.w,sy=ch()/vb.h,px=(spopRec.xy[0]-vb.x)*sx,py=(spopRec.xy[1]-vb.y)*sy,w=spop.offsetWidth,h=spop.offsetHeight,W=cw(),H=ch(),I=uiInsets();
-  let x=px+18,y=py-24;if(x+w>W-12)x=px-18-w;if(ATS&&spopRec.id===ATS.hub&&atsAlpha>.5)x=12;   // at the airport: out of the way, on the leftx=Math.max(12,Math.min(W-w-12,x));y=Math.max(I.top,Math.min(H-I.bot-h-6,y));
+function placeStationPop(){if(!spopRec)return;if(isNarrow()){spop.style.transform="";spop.style.maxHeight="";return}
+  const I=uiInsets(),W=cw(),H=ch(),mh=Math.max(160,H-I.top-I.bot-12)+"px";if(spop.style.maxHeight!==mh)spop.style.maxHeight=mh;   // a tall sheet scrolls inside the space between header and line bar
+  const sx=cw()/vb.w,sy=ch()/vb.h,px=(spopRec.xy[0]-vb.x)*sx,py=(spopRec.xy[1]-vb.y)*sy,w=spop.offsetWidth,h=spop.offsetHeight;
+  let x=px+18,y=py-24;if(x+w>W-12)x=px-18-w;if(ATS&&spopRec.id===ATS.hub&&atsAlpha>.5)x=12;   // at the airport: out of the way, on the left
+  x=Math.max(12,Math.min(W-w-12,x));y=Math.max(I.top,Math.min(H-I.bot-h-6,y));   // always inside the window, clear of the header and line bar
   const tf=`translate(${x.toFixed(0)}px,${y.toFixed(0)}px)`;if(tf!==spop.style.transform){spop.style.transform=tf;labelsDirty=true}}
 spop.addEventListener("pointerdown",e=>e.stopPropagation());
 for(const q of document.querySelectorAll(".pnl"))q.addEventListener("transitionend",e=>{if(e.target===q&&(e.propertyName==="scale"||e.propertyName==="translate"))labelsDirty=true});   // re-place labels once a panel settles

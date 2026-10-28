@@ -71,6 +71,17 @@ def main():
         check("station sheet lists times before the Save station button", txt.lower().find("save station") > txt.lower().find("departures") >= 0, txt[:120])
         pg.keyboard.press("Escape"); pg.wait_for_timeout(300)
         check("Esc closes the sheet and focus goes back", not E("!!__cta.spopRec") and E("document.activeElement&&document.activeElement.id")=="searchBtn", E("document.activeElement&&(document.activeElement.id||document.activeElement.tagName)"))
+        # station sheets stay inside the window: near every edge, for a tall terminal, and when opened off-screen
+        out = E("""(()=>{const bad=[],W=innerWidth,H=innerHeight,fit=__cta.fitAll();
+          const ids=['OTC','CUS','40380',...[...__cta.STN.values()].filter(r=>r.xy).sort((a,b)=>a.xy[0]-b.xy[0]).filter((r,i,a)=>i===0||i===a.length-1).map(r=>r.id),
+                     ...[...__cta.STN.values()].filter(r=>r.xy).sort((a,b)=>a.xy[1]-b.xy[1]).filter((r,i,a)=>i===0||i===a.length-1).map(r=>r.id)];
+          for(const id of ids){const r=__cta.STN.get(id);if(!r)continue;
+            for(const v of [fit,{x:r.xy[0]-fit.w*.02,y:r.xy[1]-fit.h*.02,w:fit.w*.04,h:fit.h*.04},{x:r.xy[0]+fit.w,y:r.xy[1]+fit.h,w:fit.w*.1,h:fit.h*.1}]){
+              Object.assign(__cta.vb,v);__cta.closeStationPop&&__cta.closeStationPop();__cta.openStationPop(r);
+              const b=document.getElementById('spop').getBoundingClientRect();
+              if(b.left<0||b.top<0||b.right>W||b.bottom>H)bad.push(id+' '+[b.left,b.top,b.right,b.bottom].map(Math.round).join(','))}}
+          __cta.closeStationPop&&__cta.closeStationPop();Object.assign(__cta.vb,fit);return bad})()""")
+        check("station sheets always open inside the window (edges, tall terminals, off-screen stations)", not out, "; ".join(out[:4]))
         # map keyboard: Tab leaves the map in one press, arrows move
         E("()=>{const r=__cta.STN.get('40380');r.g.focus()}")
         pg.keyboard.press("ArrowRight"); moved = E("document.activeElement!==__cta.STN.get('40380').g && !!document.activeElement.closest('#map')")

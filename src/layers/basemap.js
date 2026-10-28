@@ -77,7 +77,7 @@ const trainParent=L=>L.sys==="metra"?trainG:ctaW.train,trailParent=L=>L.sys==="m
 // never paints over its neighbour's stripe: side by side, every colour shows in full (as on CTA's map)
 const caseG=el("g",{},trackG);ctaW.cases=el("g",{class:"ctaw"},caseG);ctaW.track=el("g",{class:"ctaw"},trackG);
 for(const key of ORDER){const L=LINES[key],cta=L.sys!=="metra",cg=el("g",{},cta?ctaW.cases:caseG),g=el("g",{},cta?ctaW.track:trackG);
-  for(const r of L.routes){r.cel=el("path",{class:"track case"},cg);r.el=el("path",{class:"track"+(L.sys==="metra"?" metra":""),stroke:L.color},g);
+  for(const r of L.routes){r.cel=el("path",{class:"track case k-"+key},cg);r.el=el("path",{class:"track"+(L.sys==="metra"?" metra":""),stroke:L.color},g);
     if(L.sys==="metra")r.sel=el("path",{class:"track stripe"},g)}         // Metra: a thin stripe down the middle, like a railroad on a map
   lineEls[key]={track:g,cases:cg,stns:[]};}
 stnG.appendChild(ctaW.stn);

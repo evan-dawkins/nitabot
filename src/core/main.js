@@ -26,12 +26,15 @@ function fadeCTA(){const k=+ctaFadeK().toFixed(3);if(k===ctaK)return;ctaK=k;cons
   for(const g of[ctaW.stn,ctaW.trail,ctaW.train,xlinkG])set(g,gone);
   for(const g of[ctaW.stn,ctaW.train,xlinkG])g.style.pointerEvents=off?"none":"";
   document.body.classList.toggle("ctafaded",off);labelsDirty=true}
+let ambK=1;
 function frame(now){
   const dt=Math.min(.25,(now-lastFrame)/1000);lastFrame=now;
   moodFrame(dt);
   const sNow=serverNow(),k=vb.w/cw();
   // trains shrink when you zoom out (so the whole map isn't buried under them) and reach full size ~3 zoom steps in
-  const zf=Math.log2(Math.max(1,FIT_W/vb.w)),tsz=cuteTrains?Math.min(1,.6+.4*zf/3):Math.min(1,.75+.25*zf/3),ks=k*tsz;
+  const ambT=document.body.classList.contains("ambient")?1.4:1;   // ambient: the trains are what you watch from across the room
+  if(ambK!==ambT){ambK=reduceMotion()?ambT:ambK+(ambT-ambK)*Math.min(1,dt*2.2);if(Math.abs(ambT-ambK)<.004)ambK=ambT}
+  const zf=Math.log2(Math.max(1,FIT_W/vb.w)),tsz=(cuteTrains?Math.min(1,.6+.4*zf/3):Math.min(1,.75+.25*zf/3))*ambK,ks=k*tsz;
   for(const t of trains){
     const r=t.L.routes[t.ri],s=curS(t,now),p=poseAt(r,s);t.shown=[p.x,p.y];
     const stale=sNow-t.updated>STALE_AFTER;
@@ -77,7 +80,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 if(GEO_ISSUES.length)console.warn("Map ordering issues:",GEO_ISSUES);
-window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,renderBoard,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,get ctaFade(){return ctaK},glidePlan,curS,posDiag,posState,
+window.__cta={ciSay,ciFacts,ciLines,mciFacts,mciLines,VOS,liveStats,pollMetra,get mTrips(){return mTrips},get VO(){return VO},setCheckins,get ciOn(){return ciOn},FAV,openStationPop,closeStationPop,renderBoard,get introOpen(){return introOpen},get actx(){return actx},get sndOn(){return sndOn},get sndMode(){return sndMode},setSndMode,get RADAR_C(){return RADAR_C},tickMood:()=>{sitAt=0;tickMood()},get moodSit(){return moodSit},liveSituation,get chase(){return chase},startRide:()=>startRide(performance.now()),get ROT(){return ROT},takeAlerts,get alerts(){return alerts},startSim,stopSim,get mode(){return mode},poll,LINES,STN,STATIONS,GEO_ISSUES,layoutLabels,ingest,get trains(){return trains},get vb(){return vb},set vb(v){vb=v},renderLabels,setFocus,selectTrain,fitAll,ARR,arrivalsTick,get FIT_W(){return FIT_W},updateMarkers,closeCard,locate,sAtD,get ctaFade(){return ctaK},glidePlan,curS,posDiag,posState,
   llAt:(key,ri,s,off=0)=>{const r=LINES[key].routes[ri],d=trackD(r,s),p=along(r.anc,r.ac,d),a=angAt(r,segAt(r.ac,d));return ungeo(p[0]-Math.sin(a)*off,p[1]+Math.cos(a)*off)},
   trackD,sharedPrefix,idleFor:ms=>{lastInput=Date.now()-ms;tickIdle()},get chaseCap(){return!!(chase&&chase.cap)},ARR,inkOn,MH,metraHealth,pollAlerts,get spopRec(){return spopRec},get focusKey(){return focusKey},get STALE_AFTER(){return STALE_AFTER},get HIDE_UNRESOLVED(){return HIDE_UNRESOLVED}};
 applyStyle();tickHeader();poll();pollAlerts();pollMetra();loadTimetable();setInterval(loadTimetable,6*3600e3);requestAnimationFrame(frame);

@@ -27,6 +27,7 @@
   --wave:#8DB8D8;     /* water glints */
   --wmul:.68;
   --term:#22384A;
+  --stalec:#8FA1B1;
   --city:#1E3242;--town:#162634;--townedge:#2B4356;--grid:rgba(150,180,205,.07);
   --hover:rgba(255,255,255,.06);
   --pressed:rgba(255,255,255,.09);
@@ -59,6 +60,7 @@
   --wave:#FFFFFF;
   --wmul:1;
   --term:#FFFFFF;
+  --stalec:#5E7080;
   --city:#F7F9FB;--town:#DCE3E9;--townedge:#C3CED8;--grid:rgba(40,62,84,.07);
   --hover:rgba(20,34,46,.06);
   --pressed:rgba(20,34,46,.09);
@@ -509,6 +511,7 @@ body.chasing .stlbl,body.chasing .lakelbl{display:none}
 /* ---------- map ---------- */
 .city{fill:var(--city)}
 .track.case{stroke:var(--city);stroke-width:calc(var(--tw) + 1.6px)}
+:root[data-theme="light"] .track.case.k-y{stroke:#9C8A00;stroke-width:calc(var(--tw) + 2.2px)}   /* Yellow is 1.2:1 on light land: give it an edge */
 /* Metra: the L's solid lines stay solid; Metra's carry a thin land-coloured stripe down the middle, like railroads on a map */
 .track.stripe{stroke:var(--city);stroke-width:calc(var(--tw) * .34)}
 .track.metra{stroke-width:calc(var(--tw) * .92)}
@@ -563,6 +566,12 @@ body.satmode .stateline{stroke:#fff;opacity:.75} body.satmode .stname{fill:#fff;
 .dim{opacity:.07}
 .stnhit{fill:transparent;cursor:pointer}
 .sg{transition:opacity .35s}
+/* ambient: the map steps back so the trains lead. Transfer marks drop to plain station marks, labels go muted,
+   and the smallest names leave. Fill and stroke only (no group opacity: see the rendering note) */
+.pill,.stn.xend,.xlink .xc,.xlink .xi,.lbl{transition:fill 1.2s ease,stroke 1.2s ease}
+body.ambient .pill,body.ambient .stn.xend,body.ambient .pill.xend{fill:var(--stnfill);stroke:var(--muted)!important}
+body.ambient .xlink .xc{stroke:var(--muted)} body.ambient .xlink .xi{stroke:var(--stnfill)}
+body.ambient .lbl{fill:var(--muted)} body.ambient .lbl.t2{display:none}
 .lbl{font-family:var(--sans);font-size:12.5px;font-weight:500;fill:var(--ink);paint-order:stroke;stroke:var(--bg);
   stroke-width:3.2px;stroke-linejoin:round;dominant-baseline:central}
 .lbl.t0{font-size:14px;font-weight:700}
@@ -581,10 +590,12 @@ body.satmode .stateline{stroke:#fff;opacity:.75} body.satmode .stname{fill:#fff;
 .train .hit{fill:transparent}
 .train .glow{opacity:0}
 .train.stale .glow{opacity:0}
-.train .body{stroke:var(--bg);stroke-width:1.7;stroke-linejoin:round}
+.train .case{fill:none;stroke:var(--bg);stroke-width:4.6;stroke-linejoin:round}
+.train:not(.known) .case.a,.train.known .case.d{display:none}
+.train .body{stroke:var(--ink);stroke-width:1.5;stroke-linejoin:round}   /* ink rim: the train reads as a thing on the line, not part of it */
 /* cute trains: a small train seen from above, in the line's colour with a shiny roof and headlight; it sways gently only while really moving */
 .train .car{display:none}
-body.cute .train.known .car{display:inline} body.cute .train .body.arrow{display:none!important}
+body.cute .train.known .car{display:inline} body.cute .train .body.arrow,body.cute .train .case.a{display:none!important}
 .car .shell{fill:#D7DDE3;stroke:var(--bg);stroke-width:1.3;stroke-linejoin:round}
 :root[data-theme="light"] .car .shell{fill:#C9D1D9}
 .car .win{fill:#26384A} .car .lamp{fill:#FFE7A3} .car .door{fill:#B9C2CB}
@@ -603,9 +614,8 @@ body.cute .train.known .car{display:inline} body.cute .train .body.arrow{display
 .train .halo{fill:none;stroke:var(--ink);stroke-width:1.5;opacity:0}
 .train:hover .halo{opacity:.45}
 .train.sel .halo{opacity:.95}
-.train.stale .body{fill:#6B7E8F!important}
+.train.stale .body{fill:var(--bg)!important;stroke:var(--stalec);stroke-width:2}
 .train.held .body{stroke-dasharray:2.2 1.6}   /* waiting on a confirming report: a dashed outline, the marker stays put */
-.train.stale{opacity:.55}
 .train.dim{opacity:.1;pointer-events:none}
 .train.bye{opacity:0!important;transition:opacity .8s}
 .train.born,.trail.born{opacity:0!important}
