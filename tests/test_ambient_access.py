@@ -52,7 +52,7 @@ def main():
         note = E("[document.getElementById('sndnote').classList.contains('on'),document.getElementById('sndnote').textContent]")
         check("first click: a one-time 'Sound is on' note with Mute", note[0] and "Sound is on" in note[1] and "Mute" in note[1], note[1][:90])
         E("document.querySelector('#sndnote .sn-m').click()"); pg.wait_for_timeout(300)
-        check("Mute turns the sound and check-ins off and closes the note", E("[document.getElementById('snd').getAttribute('aria-pressed'),__cta.ciOn,document.getElementById('sndnote').classList.contains('on')]") == ["false", False, False])
+        check("Mute turns the sound and check-ins off and closes the note", E("[document.getElementById('snd').dataset.sound,__cta.ciOn,document.getElementById('sndnote').classList.contains('on')]") == ["off", False, False])
         # empty board tucked into the star
         tucked = E("document.getElementById('board').classList.contains('min')&&getComputedStyle(document.getElementById('favBtn')).display!=='none'")
         check("empty 'Your stations' board is tucked into the star", tucked)
@@ -106,6 +106,15 @@ def main():
         ok = E(f"""(()=>{{const v=__cta.vb,x={r[1]},y={r[2]};return Math.abs(v.w-{r[0]})<1e-6&&x>v.x&&x<v.x+v.w&&y>v.y&&y<v.y+v.h}})()""")
         check("an off-screen train is panned into view without zooming", ok)
         E("document.querySelector('#card .x').click()"); pg.wait_for_timeout(300); E("Object.assign(__cta.vb,__cta.fitAll())")
+        # the line bar follows the zoom: all of Metra shows Metra's buttons, back in shows the L's; a tap still decides
+        E("Object.assign(__cta.vb,__cta.fitAll())"); pg.wait_for_timeout(600)
+        g0 = E("document.querySelector('.gtab[aria-pressed=true]').textContent")
+        E("()=>{const f=__cta.fitAll();__cta.vb.w=__cta.FIT_W*3;__cta.vb.h=__cta.vb.w*900/1440;__cta.vb.x=f.x+f.w/2-__cta.vb.w/2;__cta.vb.y=f.y+f.h/2-__cta.vb.h/2}"); pg.wait_for_timeout(1500)
+        g1 = E("document.querySelector('.gtab[aria-pressed=true]').textContent")
+        E("Object.assign(__cta.vb,__cta.fitAll())"); pg.wait_for_timeout(1500)
+        g2 = E("document.querySelector('.gtab[aria-pressed=true]').textContent")
+        check("zooming out to all of Metra switches the line bar to Metra, and back in to the L", (g0, g1, g2) == ("L", "Metra", "L"), f"{g0} -> {g1} -> {g2}")
+        check("the automatic switch isn't saved as your choice", E("localStorage.getItem('nitabot.lineGroup')") in (None, "cta"))
         # train card focus
         E("()=>{const t=__cta.trains.find(t=>t.L.key==='red');t.g.focus()}"); pg.keyboard.press("Enter"); pg.wait_for_timeout(500)
         check("opening a train with Enter moves focus into its card", E("document.getElementById('card').contains(document.activeElement)"))

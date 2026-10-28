@@ -195,10 +195,9 @@ function wanderWater(){clearTimeout(waterTO);if(sndMode!=="water"||!actx)return;
   waterTO=setTimeout(wanderWater,900+Math.random()*900)}
 function applySound(fast){
   sndOn=sndMode!=="off";
-  sndBtn.setAttribute("aria-pressed",String(sndOn));
+  sndBtn.dataset.sound=sndOn?"on":"off";
   const waiting=sndOn&&(!actx||actx.state!=="running");
-  sndBtn.classList.toggle("wait",waiting);
-  sndBtn.title=`Sound: ${SND_NAME[sndMode]}${waiting?", starts when you click anywhere":""}. Click to choose (M mutes)`;
+  sndBtn.title=`View: sound (${SND_NAME[sndMode]}${waiting?", starts when you click anywhere":""}), cute trains, satellite, light or dark. M mutes`;
   for(const q of sndMenu.querySelectorAll("[data-m]"))q.setAttribute("aria-checked",String(q.dataset.m===sndMode));
   scheduleBubbles();wanderWater();document.body.classList.toggle("sonar",sndMode==="sonar");
   if(!actx)return;
@@ -226,12 +225,15 @@ function setSndMode(m){if(!SND_MODES.includes(m))return;sndMode=m;if(m!=="off")s
   if(m!=="off")startAudio();applySound(true)}
 function openSndMenu(){const r=sndBtn.getBoundingClientRect();
   sndMenu.style.left=Math.max(8,Math.min(innerWidth-sndMenu.offsetWidth-8,r.left-6))+"px";sndMenu.style.top=(r.bottom+8)+"px";
-  sndMenu.classList.add("on");sndBtn.setAttribute("aria-expanded","true");
+  syncViewMenu();sndMenu.classList.add("on");sndBtn.setAttribute("aria-expanded","true");
   (sndMenu.querySelector('[aria-checked="true"]')||sndMenu.querySelector("button")).focus({preventScroll:true})}
 function closeSndMenu(){if(!sndMenu.classList.contains("on"))return;sndMenu.classList.remove("on");sndBtn.setAttribute("aria-expanded","false")}
 sndBtn.onclick=e=>{e.stopPropagation();sndMenu.classList.contains("on")?closeSndMenu():openSndMenu()};
 sndMenu.addEventListener("pointerdown",e=>e.stopPropagation());
+function syncViewMenu(){const on={cute:cuteTrains,sat:document.body.classList.contains("satmode"),dark:document.documentElement.dataset.theme==="dark"};
+  for(const q of sndMenu.querySelectorAll("[data-v]"))q.setAttribute("aria-checked",String(!!on[q.dataset.v]))}
 sndMenu.addEventListener("click",e=>{if(e.target.closest("#ciTog")){e.stopPropagation();setCheckins(!ciOn);return}
+  const v=e.target.closest("[data-v]");if(v){e.stopPropagation();({cute:styleBtn,sat:$("satBtn"),dark:themeBtn})[v.dataset.v].click();syncViewMenu();setTimeout(syncViewMenu,80);setTimeout(syncViewMenu,500);return}
   const q=e.target.closest("[data-m]");if(!q)return;e.stopPropagation();setSndMode(q.dataset.m);closeSndMenu();sndBtn.focus({preventScroll:true})});
 sndMenu.addEventListener("keydown",e=>{const items=[...sndMenu.querySelectorAll("button")],i=items.indexOf(document.activeElement);
   if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();items[(i+(e.key==="ArrowDown"?1:items.length-1))%items.length].focus()}
@@ -246,7 +248,7 @@ function soundNote(){let seen=false;try{seen=localStorage.getItem(SND_NOTE_KEY)=
   if(seen||!(sndOn||ciOn))return;
   if(welcomeOpen||hintNow){setTimeout(soundNote,1200);return}   // one message at a time: after the welcome and the first traintry{localStorage.setItem(SND_NOTE_KEY,"1")}catch(_){}
   const what=[sndOn&&SND_NAME[sndMode],ciOn&&"spoken train check-ins"].filter(Boolean).join(" and "),touch=matchMedia("(pointer:coarse)").matches;
-  sndNote.innerHTML=`<span>Sound is on: ${what}.${touch?" Change it any time with the speaker button.":" Press M to mute, or use the speaker button."}</span>`
+  sndNote.innerHTML=`<span>Sound is on: ${what}.${touch?" Change it any time in the View menu by the title.":" Press M to mute, or use the View menu."}</span>`
     +`<button class="sn-m">Mute</button><button class="sn-x" aria-label="Close">×</button>`;
   if(!isNarrow()){const b=sndBtn.getBoundingClientRect();sndNote.style.left=Math.max(8,b.left-10)+"px";sndNote.style.top=(b.bottom+8)+"px"}
   else{sndNote.style.left="";sndNote.style.top=(document.querySelector(".top").getBoundingClientRect().bottom+6)+"px"}

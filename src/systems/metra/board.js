@@ -33,7 +33,7 @@ function departuresAt(rec,nowSec,n){
   return out.sort((a,b)=>a.tm-b.tm).slice(0,n)}
 function depRow(a,nowSec){
   const late=a.pred?Math.round((a.pred-a.sched)/60):0;
-  const st=a.cx?`<span class="st cx">Canceled</span>`:a.pred?(late>=2?`<span class="st late">${late} min late</span>`:`<span class="st ok">On time</span>`):`<span class="st">Scheduled</span>`;
+  const st=a.cx?`<span class="st cx">Canceled</span>`:a.pred?(late>=2?`<span class="st late">${late} min late</span>`:`<span class="st ok">On time</span>`):"";
   const m=Math.round((a.tm-nowSec)/60),cd=a.cx?"–":m<=0?"Due":m+" min";
   return`<div class="arr dep" title="${a.pred?"Metra's live prediction":"From Metra's timetable"}${a.gps?". Train is reporting GPS":""}">${bullet(a.key)}`
     +`<span class="to">${a.no?`<span class="no">${a.no}</span>`:""}to ${esc(a.dest||"?")}</span>`

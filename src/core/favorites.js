@@ -106,7 +106,7 @@ function renderBoard(){
     return`<div class="fav" data-id="${esc(rec.id)}"><div class="fn"><button class="go" title="Show ${esc(rec.full)} on the map">${esc(rec.label)}</button>`
       +`<button class="rm" aria-label="Remove ${esc(rec.full)} from your stations" title="Remove">×</button></div>`
       +(r.html||`<div class="none">${r.msg}</div>`)+`</div>`}).join("");
-  const foot=!favs.length?"":mode==="sim"?"Simulated trains, not live data.":src==="pred"?"Minutes are CTA's live predictions. Faded times are from the schedule: no train is reporting for them yet.":"";
+  const foot=!favs.length?"":mode==="sim"?"Simulated trains, not live data.":src==="pred"?aboutTimes("Minutes are CTA's live predictions. Faded times are from the schedule: no train is reporting for them yet."):"";
   const html=`<div class="bh"><span class="kick2">★ Your stations</span>${favs.length?`<span class="cnt">${favs.length}/${FAV_MAX}</span>`:""}`
     +(mode==="sim"?`<span class="simtag">Simulated</span>`:"")
     +`<button class="col" aria-label="${narrow?"Close your stations":"Tuck your stations into the ★ button"}" title="${narrow?"Close":"Tuck into ★"}">${narrow?"×":"▴"}</button></div>`
@@ -252,12 +252,13 @@ function tickMood(){
 const moodTxt=moodEl.querySelector(".mt"),MOOD_SPEED=26;   // pixels per second; longer lines move a little faster
 let moodX=null;
 let moodFit="";
+new ResizeObserver(()=>document.documentElement.style.setProperty("--toph",Math.round(document.querySelector(".top").getBoundingClientRect().height)+"px")).observe(document.querySelector(".top"));
 function moodFrame(dt){
   const W=moodEl.clientWidth;if(!W)return;let w=moodTxt.offsetWidth;
   if(moodFit!==moodText+"|"+W){moodFit=moodText+"|"+W;moodTxt.style.fontSize="";w=moodTxt.offsetWidth;    // shrink a little (up to 12%) rather than move
     if(w>W&&w*.88<=W){moodTxt.style.fontSize=(parseFloat(getComputedStyle(moodEl).fontSize)*W/w*.98).toFixed(2)+"px";w=moodTxt.offsetWidth}
     moodEl.classList.toggle("still",w<=W)}
-  if(w<=W||reduceMotion()){moodTxt.style.transform=`translateX(${isNarrow()?0:Math.max(0,(W-w)/2).toFixed(1)}px)`;return}   // whole and still
+  if(w<=W||reduceMotion()){moodTxt.style.transform=`translateX(${Math.max(0,(W-w)/2).toFixed(1)}px)`;return}   // whole and still
   if(moodX==null)moodX=W*.55;
   moodX-=MOOD_SPEED*Math.max(1,Math.min(1.7,w/420))*dt;if(moodX<-w)moodX=W;
   moodTxt.style.transform=`translateX(${moodX.toFixed(1)}px)`}

@@ -221,14 +221,15 @@ def main():
         stop = METRA["trips"][0]["stops"][1]["id"]                 # a station that fake train still has ahead
         pg.evaluate(f"__cta.openStationPop(__cta.STN.get('{stop}'))"); pg.wait_for_timeout(1200)
         txt = pg.evaluate("document.getElementById('spop').innerText")
-        check("Metra station sheet shows Metra's predicted times", "Metra's live predictions" in txt and "2200" in txt, txt.replace("\n", " | ")[:160])
+        about = pg.evaluate("(document.querySelector('#spop details.about')||{}).textContent||''")
+        check("Metra station sheet shows Metra's predicted times", "Metra's live predictions" in about and "2200" in txt and "min" in txt, txt.replace("\n", " | ")[:160])
         pg.screenshot(path=os.path.join(OUT, "desktop-metra-station.png"))
         pg.evaluate("document.querySelector('#spop .x').click()")
         check("no CTA arrival request ever names a Metra station", all(i.isdigit() for i in arrival_ids), ",".join(arrival_ids[:8]))
         # a downtown terminal shows its departure board (from schedule.json)
         pg.evaluate("__cta.openStationPop(__cta.STN.get('CUS'))"); pg.wait_for_timeout(1500)
         txt = pg.evaluate("document.getElementById('spop').innerText")
-        ok = "departures" in txt.lower() and ("Scheduled" in txt or "On time" in txt or "late" in txt) or "No Metra departures in the next 3 hours" in txt
+        ok = "departures" in txt.lower() and "About these times" in txt or "No Metra departures in the next 3 hours" in txt
         check("Union Station shows its departure board", ok, txt.replace("\n", " | ")[:200])
         pg.screenshot(path=os.path.join(OUT, "desktop-departures.png"))
         pg.evaluate("document.querySelector('#spop .x').click()")

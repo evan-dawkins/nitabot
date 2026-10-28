@@ -26,6 +26,9 @@ function fadeCTA(){const k=+ctaFadeK().toFixed(3);if(k===ctaK)return;ctaK=k;cons
   for(const g of[ctaW.stn,ctaW.trail,ctaW.train,xlinkG])set(g,gone);
   for(const g of[ctaW.stn,ctaW.train,xlinkG])g.style.pointerEvents=off?"none":"";
   document.body.classList.toggle("ctafaded",off);labelsDirty=true;
+  // the line bar follows the map: the 'L' fades, so its buttons give way to Metra's (and come back when it does)
+  if(off&&lineGroup==="cta"&&!(focusKey&&LINES[focusKey].sys!=="metra"))setGroup("metra",true);
+  else if(!off&&grpAuto&&lineGroup==="metra"&&!(focusKey&&LINES[focusKey].sys==="metra"))setGroup("cta",true);
   if(off)setTimeout(()=>{if(document.body.classList.contains("ctafaded"))showHint("This is all of Metra. The &lsquo;L&rsquo; fades so the suburbs show; zoom in to bring it back.",null,{key:"metra",ms:7000})},900)}
 let ambK=1;
 function frame(now){

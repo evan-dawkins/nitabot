@@ -19,7 +19,8 @@ for(const key of ORDER){const L=LINES[key],b=document.createElement("button");
   b.innerHTML=`<i style="background:${L.color}"></i>${L.code}<span class="ad" aria-hidden="true"></span><span class="n" id="n-${key}"></span>`;
   b.onclick=()=>setFocus(focusKey===key?null:key);consoleEl.appendChild(b);chips[key]=b}
 consoleEl.appendChild($("focusnote"));
-function setGroup(g){lineGroup=g;try{localStorage.setItem(GROUP_KEY,g)}catch(_){}
+let grpAuto=false;   // switched by the zoom (not by a tap), so zooming back switches it back
+function setGroup(g,auto){lineGroup=g;grpAuto=!!auto;if(!auto)try{localStorage.setItem(GROUP_KEY,g)}catch(_){}
   for(const k of ORDER)chips[k].hidden=LINES[k].sys!==g;
   for(const x in gtabs)gtabs[x].setAttribute("aria-pressed",String(x===g));labelsDirty=true}
 setGroup(lineGroup);

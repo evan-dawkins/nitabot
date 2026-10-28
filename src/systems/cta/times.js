@@ -58,6 +58,7 @@ function arrivalSections(rec,per){
   return{html,src:"pred"}}
 function stationSchedule(rec,per){const r=arrivalSections(rec,per);
   if(r.msg)return`<div class="fav none" style="padding:0;border:0">${r.msg}</div>`;
-  if(r.src==="board")return r.html+`<div class="note">From Metra's timetable; a live prediction replaces the time when Metra has one.</div>`;
-  return r.html+(rec.sys==="metra"?`<div class="note">Minutes are Metra's live predictions. Faded times are from the schedule: no train is reporting for them yet.</div>`
-    :`<div class="note">Minutes are CTA's live predictions. Faded times are from the schedule: no train is reporting for them yet.</div>`)}
+  if(r.src==="board")return r.html+aboutTimes("Times are from Metra's timetable. A live prediction replaces the time when Metra has one, and a status shows beside it.");
+  return r.html+aboutTimes(rec.sys==="metra"?"Minutes are Metra's live predictions. Faded times are from the schedule: no train is reporting for them yet."
+    :"Minutes are CTA's live predictions. Faded times are from the schedule: no train is reporting for them yet.")}
+function aboutTimes(t){return`<details class="about"><summary><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4"/><path d="M8 7.2v4M8 4.9v.1"/></svg>About these times</summary><p>${t}</p></details>`}

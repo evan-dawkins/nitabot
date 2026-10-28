@@ -7,7 +7,7 @@
     <div class="tools">
       <button id="searchBtn" class="ibtn" aria-label="Find a station" title="Find a station (/)" aria-haspopup="dialog" aria-expanded="false" aria-controls="search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.6" cy="8.6" r="5.2"/><path d="M12.5 12.5l4.6 4.6"/></svg></button>
       <button id="helpBtn" class="ibtn" aria-label="Help: open the welcome guide" title="Help and about (?)" aria-controls="intro">?</button>
-      <button id="snd" class="ibtn snd" aria-pressed="true" aria-label="Sound" aria-haspopup="menu" aria-expanded="false" aria-controls="sndmenu" title="Sound (M mutes)"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="sp" d="M3 7.6h3.1L10.4 4v12l-4.3-3.6H3z"/><path class="w1" d="M13.2 7.6c.9.6 1.4 1.4 1.4 2.4s-.5 1.8-1.4 2.4"/><path class="w2" d="M15.5 5.2c1.7 1.2 2.6 2.9 2.6 4.8s-.9 3.6-2.6 4.8"/><path class="x" d="M13.2 7.8l4.6 4.4M17.8 7.8l-4.6 4.4"/></svg></button>
+      <button id="snd" class="ibtn snd" aria-label="View: sound, cute trains, satellite, light or dark" aria-haspopup="menu" aria-expanded="false" aria-controls="sndmenu" title="View: sound, trains, map, theme"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 6h13M3.5 14h13"/><circle class="k" cx="7.5" cy="6" r="2.1"/><circle class="k" cx="12.5" cy="14" r="2.1"/></svg></button>
       <button id="styleBtn" class="ibtn" aria-pressed="false" aria-label="Show trains as cute little trains" title="Cute trains (C)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 12.5V8a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v4.5z"/><path d="M6 8h2.2M11.8 8H14"/><circle cx="6.5" cy="14.6" r="1.4"/><circle cx="13.5" cy="14.6" r="1.4"/></svg></button>
       <button id="satBtn" class="ibtn" aria-pressed="false" aria-label="Switch to the satellite map" title="Satellite map (S)"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6.6"/><path d="M3.4 10h13.2M10 3.4c2 2 2.9 4.2 2.9 6.6s-.9 4.6-2.9 6.6M10 3.4c-2 2-2.9 4.2-2.9 6.6s.9 4.6 2.9 6.6"/></svg></button>
       <button id="theme" class="ibtn theme" aria-label="Switch to light mode" title="Switch to light mode (T)"><svg viewBox="0 0 20 20" aria-hidden="true"><g class="sun"><circle cx="10" cy="10" r="3.4"/><path d="M10 2.6v1.8M10 15.6v1.8M2.6 10h1.8M15.6 10h1.8M4.8 4.8l1.3 1.3M13.9 13.9l1.3 1.3M4.8 15.2l1.3-1.3M13.9 6.1l1.3-1.3"/></g><path class="moon" d="M15.6 12.4A6.2 6.2 0 0 1 7.6 4.4a6.2 6.2 0 1 0 8 8z"/></svg></button>
@@ -18,8 +18,7 @@
     <button class="abtn" id="abtn" aria-expanded="false" aria-controls="apanel" title="CTA and Metra service alerts"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="ico" d="M8 1.8 L15 14 H1 Z M8 6.2 V9.6 M8 11.6 V11.7"/></svg><span id="acount"></span><span class="aw" id="aword"></span></button>
     <span class="state" id="state"><i></i><span id="stateText">Connecting</span></span>
     <span id="mhealth" class="mh" role="status" tabindex="0" hidden><i></i><span>Metra</span></span>
-    <span id="updated">Waiting for first report</span>
-    <span><b id="count">–</b> <span class="cnt-word">trains reporting</span><span class="short">trains</span></span>
+    <span class="vh"><b id="count">–</b> trains reporting</span>
     <span class="asof" id="asof" role="status" aria-live="off" title="When NITABot last received fresh data from each feed (Chicago time)"></span>
   </div>
 </div>
@@ -43,13 +42,19 @@
 <div id="spop" class="pnl" role="dialog" aria-label="Station" tabindex="-1"></div>
 <section id="board" aria-label="Your stations"></section>
 <button id="fstrip" aria-label="Open your stations"></button>
-<div id="sndmenu" class="pnl" role="menu" aria-label="Sound">
+<div id="sndmenu" class="pnl" role="menu" aria-label="View">
+  <div class="mh2" aria-hidden="true">Sound</div>
   <button role="menuitemradio" data-m="brown" aria-checked="false"><span class="ck" aria-hidden="true"></span><span>Brown noise</span></button>
   <button role="menuitemradio" data-m="water" aria-checked="false"><span class="ck" aria-hidden="true"></span><span>Water</span></button>
   <button role="menuitemradio" data-m="sonar" aria-checked="false"><span class="ck" aria-hidden="true"></span><span>Sonar</span></button>
   <button role="menuitemradio" data-m="off" aria-checked="false"><span class="ck" aria-hidden="true"></span><span>Off</span></button>
   <div class="sep" role="separator"></div>
   <button role="menuitemcheckbox" id="ciTog" aria-checked="true" title="A voice checks in on each train of the moment"><span class="ck" aria-hidden="true"></span><span>Train check-ins</span></button>
+  <div class="sep" role="separator"></div>
+  <div class="mh2" aria-hidden="true">Map</div>
+  <button role="menuitemcheckbox" data-v="cute" aria-checked="false"><span class="ck" aria-hidden="true"></span><span>Cute trains</span><kbd>C</kbd></button>
+  <button role="menuitemcheckbox" data-v="sat" aria-checked="false"><span class="ck" aria-hidden="true"></span><span>Satellite map</span><kbd>S</kbd></button>
+  <button role="menuitemcheckbox" data-v="dark" aria-checked="false"><span class="ck" aria-hidden="true"></span><span>Dark mode</span><kbd>T</kbd></button>
 </div>
 <div id="apanel" class="pnl" role="dialog" aria-label="Service alerts"><div class="ahd"><b>Service alerts</b><span id="ascope"></span><button id="aclose" aria-label="Close alerts">×</button></div><div id="afilt"></div><div class="alist" id="alist"></div></div>
 <div id="notice" class="pnl" role="status"></div>
@@ -80,7 +85,7 @@
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="#C60C30" stroke="var(--ink)" stroke-width="1.1" stroke-linejoin="round" stroke-dasharray="2.2 1.6"/></svg>Odd report, being checked</span>
     <span><svg viewBox="0 0 22 14" aria-hidden="true"><path d="M17 7L5 12.5 7.5 7 5 1.5Z" fill="none" stroke="var(--stalec)" stroke-width="1.5" stroke-linejoin="round"/></svg>Out of date</span>
   </div>
-  <p class="extras">Leave it alone and the buttons fade away, then it rides along with a train. Sound (brown noise and spoken check-ins) starts with your first click or tap; the speaker button changes or mutes it.</p>
+  <p class="extras">Leave it alone and the buttons fade away, then it rides along with a train. Sound (brown noise and spoken check-ins) starts with your first click or tap; the View menu by the title changes or mutes it, and holds cute trains, the satellite map and dark mode.</p>
   <div class="keys" aria-label="Keyboard shortcuts">
     <span><kbd>/</kbd>Find a station</span><span><kbd>?</kbd>This guide</span><span><kbd>T</kbd>Light or dark</span><span><kbd>S</kbd>Satellite</span>
     <span><kbd>C</kbd>Cute trains</span><span><kbd>M</kbd>Sound on or off</span><span><kbd>+</kbd><kbd>&minus;</kbd>Zoom</span><span><kbd>0</kbd>Whole map</span>
