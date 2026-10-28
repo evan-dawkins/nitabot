@@ -119,12 +119,26 @@ def main():
         check("closing it ends the ride", not E("__cta.chase && ['in','ride'].includes(__cta.chase.phase)"))
         check("no page errors", not errs, "; ".join(errs[:3]))
         pg.context.close()
+        # the stamp stays fully on screen at every window width, also with a long warning in the status pill
+        bad = []
+        for w in (768, 834, 961, 1024, 1240, 1280, 1440, 1920):
+            pg2, _ = T.open_page(br, port); pg2.set_viewport_size({"width": w, "height": 800})
+            pg2.wait_for_function("__cta.trains.length > 10", timeout=20000); pg2.wait_for_timeout(800)
+            for warn in (False, True):
+                if warn: pg2.evaluate("()=>{document.getElementById('state').className='state warn';document.getElementById('stateText').textContent='Data not updating'}")
+                r = pg2.evaluate("(()=>{const a=document.getElementById('asof').getBoundingClientRect();return a.width>0&&a.left>=0&&a.right<=innerWidth})()")
+                if not r: bad.append(f"{w}{' warn' if warn else ''}")
+            pg2.context.close()
+        check("data-as-of stamp fully on screen at 768-1920 px, with or without a warning", not bad, ", ".join(bad))
         # phone: stamp visible, line bar scroll hint
         pg, errs = T.open_page(br, port, phone=True)
         pg.wait_for_function("__cta.trains.length > 10", timeout=20000); pg.wait_for_timeout(1500)
         r = pg.evaluate("(()=>{const a=document.getElementById('asof').getBoundingClientRect();return[a.width>0&&a.bottom<=innerHeight&&a.top>0,document.getElementById('console').classList.contains('more')]})()")
         check("phone: data-as-of stamp on screen; line bar shows it scrolls", r[0] and r[1], str(r))
         pg.screenshot(path=os.path.join(T.OUT, "phone-asof.png"))
+        pg.evaluate("__cta.openStationPop(__cta.STN.get('40380'))"); pg.wait_for_timeout(600)
+        check("phone: the stamp stays visible while a station sheet is open", pg.evaluate("(()=>{const a=document.getElementById('asof').getBoundingClientRect();return a.width>0&&a.top>=0&&a.bottom<=innerHeight&&getComputedStyle(document.getElementById('asof')).display!=='none'})()"))
+        pg.evaluate("document.querySelector('#spop .x').click()")
         check("no page errors on phone", not errs, "; ".join(errs[:3]))
         pg.context.close(); br.close()
     srv.shutdown()

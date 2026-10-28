@@ -157,11 +157,11 @@ body.idle #helpBtn,body.idle .ibtn{transition:color var(--t-fast),background-col
 .state.sim i{background:none;border:2px solid #A98BF0;width:10px;height:10px} .state.sim{color:#A98BF0}
 :root[data-theme="light"] .state.sim{color:#6D4FC4} :root[data-theme="light"] .state.sim i{border-color:#6D4FC4}
 @keyframes beat{0%,100%{opacity:1}50%{opacity:.3}}
-.asof{display:inline-flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums;color:var(--ink);font-size:13.5px}
+.asof{display:inline-flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums;color:var(--ink);font-size:13.5px;flex:none}   /* never shrinks: Metra's terms require it on screen */
 .asof .lbl{color:var(--muted)} .asof i{font-style:normal;color:var(--faint)} .asof .day{color:var(--muted)}
 .asof .late{color:var(--warn)}
 .snote{margin:8px 0 2px;padding:6px 9px;border-radius:7px;font-size:13px;line-height:1.35;background:color-mix(in srgb,var(--warn) 13%,transparent)}
-#updated{display:none} body.trouble #updated{display:inline}
+#updated{display:none}
 .mh{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px 0 7px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:default;
   color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 .mh[hidden]{display:none}
@@ -347,8 +347,8 @@ body.ambient .ops>span:has(#count),body.ambient #satcred,body.ambient #tip{opaci
 body.ambient .top{border-bottom-color:transparent}
 .top{transition:border-color 1.2s ease,background-color 1.2s ease}
 @media (max-width:760px){body.ambient .top{background:transparent}
-  .mark b,.state{transition:text-shadow 1.2s ease}
-  body.ambient .mark b,body.ambient .state{text-shadow:0 0 3px var(--city),0 0 6px var(--city),0 0 10px var(--city)}}
+  .mark b,.state,.asof{transition:text-shadow 1.2s ease}
+  body.ambient .mark b,body.ambient .state,body.ambient .asof{text-shadow:0 0 3px var(--city),0 0 6px var(--city),0 0 10px var(--city)}}
 /* the train of the moment's caption */
 #ridecap{position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));translate:-50% 8px;z-index:4;display:flex;align-items:center;gap:9px;
   max-width:min(620px,calc(100vw - 24px));padding:7px 6px 7px 13px;background:var(--panel);border:1px solid var(--edge);border-radius:var(--r);box-shadow:var(--shadow);font-size:14px}
@@ -622,6 +622,13 @@ body.cute .train.known .car{display:inline} body.cute .train .body.arrow,body.cu
 .train.grow{transition:opacity .6s} .trail.grow{transition:opacity .6s}
 button{touch-action:manipulation}
 .short{display:none}
+/* narrower desktop windows: the stamp and Live keep their place; the tagline, then words, step aside */
+@media (min-width:761px) and (max-width:1280px){.mark>span{display:none} .ops .cnt-word{display:none} .ops .short{display:inline}}
+@media (min-width:761px) and (max-width:1100px){.ops>span:has(#count){display:none} .abtn .aw{display:none} .asof .day,.asof i:last-of-type{display:none} .ops{gap:10px}}
+@media (min-width:761px) and (max-width:960px){   /* tablet portrait, half a laptop screen: the status row gets its own line */
+  .top{flex-wrap:wrap;height:auto;row-gap:2px;padding-bottom:6px;min-height:calc(52px + env(safe-area-inset-top,0px))}
+  .mark{height:46px} .ops{flex:1 0 100%;justify-content:flex-end} #mood{display:none}}
+@media (min-width:761px) and (max-width:1360px){#mhealth{display:none!important}}   /* the stamp's amber Metra time says it; the banner follows if it lasts */
 /* ---------- phones and narrow windows ---------- */
 @media (max-width:760px),(max-height:500px){
   .abtn{padding:0 9px 0 8px;height:30px} .abtn .aw{display:none}
@@ -630,12 +637,14 @@ button{touch-action:manipulation}
     padding-right:calc(12px + env(safe-area-inset-right,0px));gap:10px}
   .mark span,#nextText,.ops .cnt-word{display:none}
   /* phone: the data-as-of stamp moves to a quiet line over the map's bottom-left corner */
-  .asof{position:fixed;left:calc(10px + env(safe-area-inset-left,0px));bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:1;font-size:11.5px;gap:4px;
-    padding:2px 7px;border-radius:6px;background:var(--panel);border:1px solid var(--edge)}
-  body.hasfav .asof{bottom:calc(100px + env(safe-area-inset-bottom,0px))}
-  body.sheet .asof,body.pop .asof,body.boardsheet .asof{display:none}
-  body:has(#ridecap.on) .asof{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .asof{margin-left:auto;font-size:12.5px;gap:4px}
+  #mhealth{display:none!important}   /* the stamp's amber Metra time carries it here */
   .asof .day,.asof i:last-of-type{display:none}
+  /* the train of the moment's caption sits above the line bar (and the saved-stations strip); the zoom buttons step
+     aside while it shows, since pinching still zooms */
+  body{--bst:60px} body.hasfav{--bst:100px}
+  body:not(.ambient) #ridecap{bottom:calc(var(--bst) + 8px + env(safe-area-inset-bottom,0px))}
+  body:has(#ridecap.on) .zoom{opacity:0!important;pointer-events:none}
   .mark b{font-size:19px}
   #helpBtn,.ibtn{width:30px;height:30px}   /* bigger targets for fingers */
   .ops{gap:11px;font-size:13px}

@@ -234,7 +234,7 @@ function metraUI(mh,banner){const m=$("mhealth"),b=$("mbanner");
   m.title=mh==="empty"?"Metra's feed is answering but has no trains reporting right now (normal late at night)."
     :mh==="down"?`Metra updates have stopped. ${last}${why} Trying again every 30 seconds.`
     :`Missed a Metra update at ${fmtHM(MH.lastMissAt||Date.now())}${MH.fails>1?` (${MH.fails} in a row)`:""}. ${last}${why} Trying again shortly.`;
-  m.querySelector("span").textContent=mh==="empty"?"Metra: none reporting":mh==="down"?"No Metra updates":"Metra";
+  m.querySelector("span").textContent=mh==="empty"?"Metra: none reporting":mh==="down"?"No Metra updates":"Metra updates slow";
   m.setAttribute("aria-label",m.title);
   const on=banner&&mh==="down";
   if(on){const h=`<b>Metra updates have stopped.</b> <span>${MH.lastUsable?`Last good update ${ago(Date.now()-MH.lastUsable)}.`:"No update yet."} Metra trains stay greyed out where they last reported. ${everLoaded&&!(Date.now()-lastOkAt>3*POLL)?"L trains are still live.":""}</span><button data-act="mretry">Try now</button>`;
