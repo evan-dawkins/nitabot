@@ -192,7 +192,7 @@ function notice(html){const n=$("notice");
   else if(n.classList.contains("on")){n.classList.remove("on");n.dataset.h="";labelsDirty=true}}
 $("notice").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   if(b.dataset.act==="sim")startSim();else if(b.dataset.act==="live")stopSim();else if(b.dataset.act==="retry"){poll();pollMetra()}});
-const SIM_OFFER=`<div class="acts"><button class="go" data-act="sim">Show simulated trains</button><button data-act="retry">Try again</button></div>`;
+const SIM_OFFER=`<div class="acts"><button class="go" data-act="retry">Try again</button><button data-act="sim">Show simulated trains</button></div>`;
 function refreshStatus(){
   if(mode==="sim"){
     const vis=trains.filter(t=>!focusKey||t.L.key===focusKey);
@@ -211,7 +211,7 @@ function refreshStatus(){
   if(!any){
     if(C.down&&mDown){setState("err","Offline");$("updated").textContent="No data received yet";metraUI(mh,false);
       notice(`Can't reach the live feeds. <span>${C.err||MH.detail}. Trying again every 30 seconds.</span>${SIM_OFFER}`)}
-    else{setState("busy","Connecting");$("updated").textContent="Waiting for first report";metraUI(mh,!C.down);notice("")}
+    else{setState("busy first","Connecting");$("updated").textContent="Waiting for first report";metraUI(mh,!C.down);notice("")}
     return}
   $("updated").textContent=C.loaded?"CTA updated "+ago(C.age):"Waiting for CTA";
   if(C.down&&mDown){setState("err","Offline");metraUI(mh,false);

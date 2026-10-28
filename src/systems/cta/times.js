@@ -10,7 +10,7 @@ const stnName=rec=>rec.label;
 function lumOf(hex){const h=hex.replace("#",""),v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:((c+.055)/1.055)**2.4);
   return .2126*v[0]+.7152*v[1]+.0722*v[2]}
 function inkOn(hex){const L=lumOf(hex),w=1.05/(L+.05),d=(L+.05)/(lumOf("#0B1620")+.05);return w>=4.5||w>=d?"#FFFFFF":"#0B1620"}
-const bullet=k=>`<span class="bullet" style="background:${LINES[k].color};color:${inkOn(LINES[k].color)}">${LINES[k].code}</span>`;
+const bullet=k=>`<span class="bullet" style="--lc:${LINES[k].color};background:${LINES[k].color};color:${inkOn(LINES[k].color)}">${LINES[k].code}</span>`;
 function feedHealthy(){return everLoaded&&Date.now()-lastOkAt<3*POLL}
 const ARR=new Map();let arrBusy=false;                                  // station id -> {at, etas} or {at, err}
 // a failed refresh keeps the last good times (marked with their age) instead of wiping them; retried every 15 s

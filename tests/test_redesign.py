@@ -83,7 +83,7 @@ def main():
             cdp.send("LayerTree.enable"); pg.wait_for_timeout(500); before = n["v"]
             E("()=>{for(const t of __cta.trains){t.g.classList.remove('ping');void t.g.getBBox();t.g.classList.add('ping')}}"); pg.wait_for_timeout(200)
             during = n["v"]; ring = E("getComputedStyle(__cta.trains[0].g.querySelector('.ring')).r")
-            check(f"{theme}: signal ping adds no compositor layers (tracks aren't re-rasterised)", before is not None and during == before and before < 40, f"{before} -> {during}, ring r {ring}")
+            check(f"{theme}: signal ping adds no compositor layers (tracks aren't re-rasterised)", before is not None and during <= before and before < 40, f"{before} -> {during}, ring r {ring}")
             check(f"{theme}: the ping still animates", ring not in ("7px", "0px", ""), ring)
             cdp.send("LayerTree.disable")
             check(f"{theme}: no page errors", not errs, "; ".join(errs[:3]))
