@@ -38,7 +38,7 @@ function frame(now){
   // trains shrink when you zoom out (so the whole map isn't buried under them) and reach full size ~3 zoom steps in
   const ambT=document.body.classList.contains("ambient")?1.4:1;   // ambient: the trains are what you watch from across the room
   if(ambK!==ambT){ambK=reduceMotion()?ambT:ambK+(ambT-ambK)*Math.min(1,dt*2.2);if(Math.abs(ambT-ambK)<.004)ambK=ambT}
-  const zf=Math.log2(Math.max(1,FIT_W/vb.w)),tsz=(cuteTrains?Math.min(1,.6+.4*zf/3):Math.min(1,.75+.25*zf/3))*ambK,ks=k*tsz;
+  const zf=Math.log2(Math.max(1,FIT_W/vb.w)),tszB=cuteTrains?Math.min(1,.6+.4*zf/3):Math.min(1,.75+.25*zf/3),tsz=tszB*ambK,ks=k*tsz,solo=tszB<.8;   // zoomed far out a cute train is one car: the rest would only smear
   for(const t of trains){
     const r=t.L.routes[t.ri],s=curS(t,now),p=poseAt(r,s);t.shown=[p.x,p.y];
     const stale=sNow-t.updated>STALE_AFTER;
@@ -51,14 +51,28 @@ function frame(now){
     const known=t.dirSign!==0;
     if(t.known!==known){t.known=known;t.arrow.style.display=known?"":"none";t.dot.style.display=known?"none":"";t.g.classList.toggle("known",known)}
     if(cuteTrains){const roll=known&&!stale&&now-t.segT0<t.segDur&&Math.abs(t.segTo-t.segFrom)>.01&&!t.dwell&&!reduceMotion();   // it sways only while it's really moving
-      if(roll!==t.roll){t.roll=roll;t.g.classList.toggle("roll",roll);if(!roll&&t.cb)t.cb.removeAttribute("transform")}
-      if(roll&&t.cb){const c=`translate(0 ${(.25*Math.sin(now/45+t.phase)).toFixed(2)})`;if(c!==t.cbt){t.cbt=c;t.cb.setAttribute("transform",c)}}}   // an attribute, not a CSS animation (see the ping note in styles.css)
+      if(roll!==t.roll){t.roll=roll;t.g.classList.toggle("roll",roll)}
+      t.mv=(t.mv||0)+((roll?1:0)-(t.mv||0))*(1-Math.exp(-dt/.35));if(t.mv<.02&&!roll)t.mv=0;   // eases in and out, so it settles as it stops at a station
+      const sw=t.mv?`translate(0 ${(.25*t.mv*Math.sin(now/45+t.phase)).toFixed(2)})`:"";
+      if(sw!==t.cbt){t.cbt=sw;sw?t.cb.setAttribute("transform",sw):t.cb.removeAttribute("transform")}   // an attribute, not a CSS animation (see the ping note in styles.css)
+      if(t.known&&t.dwell&&!t.wasDwell&&!stale&&!reduceMotion()&&now-(t.puffT||0)>4000){t.puffT=now;t.g.classList.add("puffing");clearTimeout(t.puffTO);t.puffTO=setTimeout(()=>t.g.classList.remove("puffing"),1000)}   // a little puff as it pulls in
+      t.wasDwell=t.dwell;
+      if(solo!==t.solo){t.solo=solo;t.g.classList.toggle("solo",solo)}}
     const tf=`translate(${p.x.toFixed(2)},${p.y.toFixed(2)}) scale(${ks.toFixed(4)})`;if(tf!==t.tf){t.tf=tf;t.g.setAttribute("transform",tf)}
     if(known){const want=(t.dirSign<0?p.ang+Math.PI:p.ang)*180/Math.PI;
       if(t.rot==null||reduceMotion())t.rot=want;else{let d=((want-t.rot)%360+540)%360-180;t.rot+=Math.abs(d)<.3?d:d*(1-Math.exp(-dt/.09))}  // turn at bends over ~0.15 s
       const rs=`rotate(${t.rot.toFixed(1)})`;if(rs!==t.rs){t.rs=rs;t.inner.setAttribute("transform",rs)}
       if(false){const c=0,flip=false;   // (seen from above, so it never needs flipping)   // keep the wheels on the bottom
         if(flip!==t.flip){t.flip=flip;t.carFlip.setAttribute("transform",flip?"scale(1,-1)":"")}}}
+    if(cuteTrains&&known&&!solo&&t.tcars){const sg=t.dirSign,tot=r.ac[r.ac.length-1];   // the cars behind follow the track, so the train bends round curves
+      for(let i=0;i<t.tcars.length;i++){const tc=t.tcars[i],dB=p.d-sg*tc.off*ks,on=dB>=0&&dB<=tot;
+        if(on!==tc.on){tc.on=on;tc.g.style.display=on?"":"none"}
+        if(!on)continue;
+        const q=alongOff(r,dB),ang=angAt(r,segAt(r.ac,dB)),deg=((sg<0?ang+Math.PI:ang)*180/Math.PI).toFixed(1);
+        const tf2=`translate(${((q[0]-p.x)/ks).toFixed(2)},${((q[1]-p.y)/ks).toFixed(2)}) rotate(${deg})`;
+        if(tf2!==tc.tf){tc.tf=tf2;tc.g.setAttribute("transform",tf2)}
+        const sw2=t.mv?`translate(0 ${(.25*t.mv*Math.sin(now/45+t.phase+(i+1)*.9)).toFixed(2)})`:"";
+        if(sw2!==tc.sw){tc.sw=sw2;sw2?tc.cb.setAttribute("transform",sw2):tc.cb.removeAttribute("transform")}}}
     const a=`${t.L.name} train${trainLabel(t)?", "+trainLabel(t).toLowerCase():""}, ${dirText(t)}${t.stale?", position out of date":t.held?", position being checked":""}`;
     if(a!==t.a11y){t.a11y=a;t.g.firstChild.textContent=a}
   }

@@ -66,31 +66,63 @@ function makeTrainVisual(L){
   el("circle",{class:"glow",r:10,fill:L.color},g);
   el("circle",{class:"halo",r:16},g);
   el("circle",{class:"ring",r:7,stroke:L.color},g);
+  for(const n of["a","b","c"])el("circle",{class:"pf pf"+n,r:1.5},g);                       // arrival puffs (cute trains)
   const inner=el("g",{},g);
   el("path",{class:"case a",d:"M12.5,0 L-7,8 L-3.2,0 L-7,-8 Z"},inner);                  // a band in the land colour, so the train lifts off its own line
   const arrow=el("path",{class:"body arrow",d:"M12.5,0 L-7,8 L-3.2,0 L-7,-8 Z",fill:L.color},inner);
 
-  // A CTA 7000-series car, seen from above, facing +x: brushed stainless with ribbed sides, a blue cab end with a
-  // black windshield and pink-ringed headlights, and AC units on the roof. Real cars don't carry their line's colour;
-  // here a thin stripe down each side does, so the lines stay easy to tell apart.
+  // Cute trains are a short consist seen from above, facing +x. The 'L' is a married pair of stainless cars (a blue cab
+  // at each end); Metra is a locomotive and two bilevel coaches in neutral silver (no Metra marks). Either way the
+  // line's colour is a thin stripe down each side so the lines stay easy to tell apart. The lead car is `carFlip > cb`;
+  // the rest follow the track behind it (main.js), so a train bends round a curve instead of staying a rigid block.
   if(!window.__cg){window.__cg=1;
-    const steel=el("linearGradient",{id:"cta-steel",x1:0,y1:0,x2:0,y2:1},defs);
-    for(const[o,c]of[[0,"#8E99A3"],[.18,"#D9DFE4"],[.5,"#F2F5F7"],[.82,"#C9D0D6"],[1,"#7F8A94"]])el("stop",{offset:o,"stop-color":c},steel);
-    const blue=el("linearGradient",{id:"cta-blue",x1:0,y1:0,x2:0,y2:1},defs);
-    for(const[o,c]of[[0,"#0B4FA8"],[.5,"#2F86E6"],[1,"#0A4596"]])el("stop",{offset:o,"stop-color":c},blue)}
+    const grad=(id,stops)=>{const gr=el("linearGradient",{id,x1:0,y1:0,x2:0,y2:1},defs);for(const[o,c]of stops)el("stop",{offset:o,"stop-color":c},gr)};
+    grad("cta-steel",[[0,"#8E99A3"],[.18,"#D9DFE4"],[.5,"#F2F5F7"],[.82,"#C9D0D6"],[1,"#7F8A94"]]);
+    grad("cta-blue",[[0,"#0B4FA8"],[.5,"#2F86E6"],[1,"#0A4596"]]);
+    grad("mt-silver",[[0,"#848F99"],[.2,"#CBD2D8"],[.5,"#E6EAED"],[.8,"#B9C1C8"],[1,"#78838D"]]);
+    grad("mt-loco",[[0,"#59646E"],[.25,"#9AA5AF"],[.5,"#B8C1C9"],[.75,"#8E9AA5"],[1,"#505B65"]])}
+  const METRA=L.sys==="metra";
+  function ctaCar(cb,beam){
+    if(beam)el("path",{d:"M15.5,0 L27,-4.2 L27,4.2 Z",fill:"#FFE7A3",opacity:.16},cb);                                // headlight beam
+    el("path",{d:"M-13,-4.6 L12.4,-4.6 Q15.4,-4.6 15.6,-2.2 L15.6,2.2 Q15.4,4.6 12.4,4.6 L-13,4.6 Q-14.6,4.6 -14.6,3 L-14.6,-3 Q-14.6,-4.6 -13,-4.6 Z",
+      fill:"url(#cta-steel)",stroke:"var(--bg)","stroke-width":1.1,"stroke-linejoin":"round"},cb);                      // stainless body, squared off like the 7000s
+    for(const y of[-4.3,3.2])el("rect",{x:-13.2,y,width:23.4,height:1.1,rx:.55,fill:L.color},cb);                        // the line's colour, down each side
+    el("path",{d:"M-12.6,-2.9H9.4M-12.6,2.9H9.4",stroke:"#9AA5AF","stroke-width":.35,fill:"none"},cb);                   // ribbed stainless edges
+    for(const x of[-10.4,-1.6])el("rect",{x,y:-1.9,width:5.4,height:3.8,rx:.8,fill:"#6E7A85"},cb);                      // roof AC units
+    el("path",{d:"M-9.6,-.9h3.8M-9.6,.9h3.8M-.8,-.9h3.8M-.8,.9h3.8",stroke:"#9AA5AF","stroke-width":.35},cb);
+    el("path",{d:"M-13.6,-2.6 L-13.6,2.6",stroke:"#56626D","stroke-width":1.2,"stroke-linecap":"round"},cb);            // the gangway end between the cars
+    el("path",{d:"M10.2,-4.6 L12.4,-4.6 Q15.4,-4.6 15.6,-2.2 L15.6,2.2 Q15.4,4.6 12.4,4.6 L10.2,4.6 Z",fill:"url(#cta-blue)"},cb);   // blue cab end
+    el("path",{d:"M13.2,-2.8 Q14.6,-2.4 14.7,0 Q14.6,2.4 13.2,2.8",stroke:"#0B1118","stroke-width":1.4,fill:"none","stroke-linecap":"round"},cb);  // windshield
+    for(const y of[-3.4,3.4])el("circle",{cx:14.8,cy:y,r:.75,fill:"#FF5A6E",stroke:"#FFC2CC","stroke-width":.35},cb)}  // headlights (tail lights on the rear car)
+  function metraLoco(cb){
+    el("path",{d:"M15.5,0 L27,-4.2 L27,4.2 Z",fill:"#FFF3C2",opacity:.16},cb);
+    el("path",{d:"M-15,-4.5 L12,-4.5 Q15.6,-4.5 15.8,-2 L15.8,2 Q15.6,4.5 12,4.5 L-15,4.5 Q-15.8,4.5 -15.8,3.6 L-15.8,-3.6 Q-15.8,-4.5 -15,-4.5 Z",
+      fill:"url(#mt-loco)",stroke:"var(--bg)","stroke-width":1.1,"stroke-linejoin":"round"},cb);                        // a diesel locomotive, narrower at the nose
+    for(const y of[-4.2,3.2])el("rect",{x:-14.6,y,width:25,height:1,rx:.5,fill:L.color},cb);                              // the line's colour, down each side
+    el("rect",{x:-12.4,y:-2.6,width:12.6,height:5.2,rx:1.2,fill:"#47525C"},cb);                                          // engine hood
+    for(const x of[-9.6,-5.4,-1.2])el("circle",{cx:x,cy:0,r:1.55,fill:"#2A333B",stroke:"#6E7A85","stroke-width":.35},cb);   // roof fans
+    el("path",{d:"M3.4,-4.3V4.3",stroke:"#6E7A85","stroke-width":.4},cb);
+    el("path",{d:"M5.6,-4.5 L12,-4.5 Q15.6,-4.5 15.8,-2 L15.8,2 Q15.6,4.5 12,4.5 L5.6,4.5 Z",fill:"#3A444D"},cb);       // cab
+    el("path",{d:"M12.2,-3 Q14.6,-2.5 14.7,0 Q14.6,2.5 12.2,3",stroke:"#0B1118","stroke-width":1.5,fill:"none","stroke-linecap":"round"},cb);  // windshield
+    for(const y of[-3.5,3.5])el("circle",{cx:15,cy:y,r:.8,fill:"#FFF3C2",stroke:"#FFFFFF","stroke-width":.35},cb)}      // headlights
+  function metraCoach(cb){
+    el("rect",{x:-15.8,y:-4.4,width:31.6,height:8.8,rx:1.6,fill:"url(#mt-silver)",stroke:"var(--bg)","stroke-width":1.1},cb);   // a bilevel coach
+    for(const y of[-4.1,3.1])el("rect",{x:-15,y,width:30,height:1,rx:.5,fill:L.color},cb);                                // the line's colour, down each side
+    el("path",{d:"M-14,0H14",stroke:"#EEF1F3","stroke-width":1.6,"stroke-linecap":"round",opacity:.9},cb);                // the curved roof's highlight
+    el("path",{d:"M-14,-2.4H14M-14,2.4H14",stroke:"#8E9AA5","stroke-width":.35},cb);                                      // upper-level window line
+    for(let x=-12;x<=12;x+=4)el("path",{d:`M${x},-3.3v.9M${x},2.4v.9`,stroke:"#3A4652","stroke-width":.7,"stroke-linecap":"round"},cb);   // windows
+    for(const x of[-15.2,15.2])el("rect",{x:x-.5,y:-2.4,width:1,height:4.8,rx:.4,fill:"#56626D"},cb)}                    // gangways
   const carFlip=el("g",{class:"car"},inner),cz=el("g",{},carFlip);
-  el("rect",{x:-13.6,y:-3.6,width:29,height:9.2,rx:3,fill:"#000",opacity:.22},cz);                                     // shadow underneath
+  el("rect",{x:-13.6,y:-3.6,width:METRA?32:29,height:9.2,rx:3,fill:"#000",opacity:.22},cz);                           // shadow underneath
   const cb=el("g",{class:"cb"},cz);
-  el("path",{d:"M15.5,0 L27,-4.2 L27,4.2 Z",fill:"#FFE7A3",opacity:.16},cb);                                         // headlight beam
-  el("path",{d:"M-13,-4.6 L12.4,-4.6 Q15.4,-4.6 15.6,-2.2 L15.6,2.2 Q15.4,4.6 12.4,4.6 L-13,4.6 Q-14.6,4.6 -14.6,3 L-14.6,-3 Q-14.6,-4.6 -13,-4.6 Z",
-    fill:"url(#cta-steel)",stroke:"var(--bg)","stroke-width":1.1,"stroke-linejoin":"round"},cb);                        // stainless body, squared off like the 7000s
-  for(const y of[-4.3,3.2])el("rect",{x:-13.2,y,width:23.4,height:1.1,rx:.55,fill:L.color},cb);                          // the line's colour, down each side
-  el("path",{d:"M-12.6,-2.9H9.4M-12.6,2.9H9.4",stroke:"#9AA5AF","stroke-width":.35,fill:"none"},cb);                     // ribbed stainless edges
-  for(const x of[-10.4,-1.6])el("rect",{x,y:-1.9,width:5.4,height:3.8,rx:.8,fill:"#6E7A85"},cb);                        // roof AC units
-  el("path",{d:"M-9.6,-.9h3.8M-9.6,.9h3.8M-.8,-.9h3.8M-.8,.9h3.8",stroke:"#9AA5AF","stroke-width":.35},cb);
-  el("path",{d:"M10.2,-4.6 L12.4,-4.6 Q15.4,-4.6 15.6,-2.2 L15.6,2.2 Q15.4,4.6 12.4,4.6 L10.2,4.6 Z",fill:"url(#cta-blue)"},cb);   // blue cab end
-  el("path",{d:"M13.2,-2.8 Q14.6,-2.4 14.7,0 Q14.6,2.4 13.2,2.8",stroke:"#0B1118","stroke-width":1.4,fill:"none","stroke-linecap":"round"},cb);  // windshield
-  for(const y of[-3.4,3.4])el("circle",{cx:14.8,cy:y,r:.75,fill:"#FF5A6E",stroke:"#FFC2CC","stroke-width":.35},cb);    // headlights
+  METRA?metraLoco(cb):ctaCar(cb,true);
+  // the rest of the train, drawn behind the lead and positioned along the track every frame (cute trains only)
+  const offs=METRA?[31.8,63.6]:[30.8],tcars=[];
+  offs.forEach((o,i)=>{const tg0=el("g",{class:"tcar"},g);g.insertBefore(tg0,inner);
+    const tcb=el("g",{},tg0),sh=el("rect",{x:-14.6,y:-3.6,width:31,height:9.2,rx:3,fill:"#000",opacity:.22},tcb);
+    const body=el("g",{},tcb);
+    if(METRA)metraCoach(body);else{const m=el("g",{transform:"scale(-1,1)"},body);ctaCar(m,false)}                    // the pair's second cab faces backwards
+    tcars.push({g:tg0,cb:tcb,off:o})});
   el("circle",{class:"case d",r:6.2},g);
   const dot=el("circle",{class:"body",r:6.2,fill:L.color},g);
   el("circle",{class:"hit",r:18},g);
@@ -100,7 +132,7 @@ function makeTrainVisual(L){
     el("stop",{offset:0,style:`stop-color:${col};stop-opacity:0`},gr);el("stop",{offset:1,style:`stop-color:${col};stop-opacity:${a}`},gr);return gr};
   const gh=mkGrad(uid+"h",L.color,.8),gc=mkGrad(uid+"c","#FFFFFF",.95);
   const band=el("path",{class:"tband",stroke:`url(#${uid}h)`},tg),core=el("path",{class:"tcore",stroke:`url(#${uid}c)`},tg);
-  return{g,inner,arrow,dot,carFlip,cb,phase:Math.random()*6.3,trail:{g:tg,band,core,grads:[gh,gc]},hist:[],histRi:-1}}
+  return{g,inner,arrow,dot,carFlip,cb,tcars,phase:Math.random()*6.3,trail:{g:tg,band,core,grads:[gh,gc]},hist:[],histRi:-1}}
 let trailUid=0;
 const TRAIL_MS=90000,TRAIL_MAX_PX=150;
 function drawTrail(t,r,p,now,k){
