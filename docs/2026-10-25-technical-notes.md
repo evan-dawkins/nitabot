@@ -81,6 +81,15 @@ Steps 1–3 are done (2026-10-25).
 3. **Turn on GitHub Pages**: Settings, Pages, Deploy from a branch, `main`, `/ (root)`. The site is then at https://evan-dawkins.github.io/nitabot/. The shared Worker already accepts this address; nothing changes there.
 4. **Launch**: link it, or share the URL.
 
+## Dashboard mode (`?dashboard`)
+
+Added 2026-10-31 for Desk Glance, Evan's desk display, which frames `index.html?dashboard` as one slide of a slideshow. Without `?dashboard` nothing changes. With it:
+- **Metra only:** the 'L' is held at its faded ghost, and the train of the moment only rides Metra trains.
+- **No interface:** no controls, welcome guide, hints, sound or voice, and always dark.
+- **Talks to the frame:** each `{type:"nitabot:ride"}` message from the frame starts a new ride from the whole map, never the train before, a little closer in than the site's own ride. Once a second the page sends the frame `{type:"nitabot:state"}`: how many Metra trains can be ridden, when Metra last answered, and the ridden train's line, number, destination, next stop, minutes away and delay. Desk Glance draws its own card from that and skips the slide when nothing can be ridden.
+
+Code is in `src/core/dashboard.js`, plus one-line `DASH` checks in `prologue.js`, `camera.js`, `checkins.js`, `chase.js` and `main.js`, and the CSS at the end of `styles.css`. Tests: `python3 tests/test_dashboard.py`.
+
 ## Request budget
 
-One NITABot tab, visible all day: about 6,500 requests a day to the shared Worker (CTA positions and Metra every 30 s, CTA alerts every 2 minutes), plus open station sheets. A hidden tab asks nothing. The Worker's free plan allows 100,000 a day across MetraBot, CTABot and NITABot together.
+One NITABot tab, visible all day: about 6,500 requests a day to the shared Worker (CTA positions and Metra every 30 s, CTA alerts every 2 minutes), plus open station sheets. A hidden tab asks nothing. The Worker's free plan allows 100,000 a day across MetraBot, CTABot and NITABot together. A Desk Glance dashboard left on all day is one more always-visible NITABot tab (about 6,500 more).

@@ -133,7 +133,7 @@ function setTheme(t){
   const to=t==="dark"?"light":"dark";                         // the icon shows what it switches TO
   themeBtn.setAttribute("aria-label",`Switch to ${to} mode`);themeBtn.title=`Switch to ${to} mode (T)`;
 }
-setTheme(matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");
+setTheme(!DASH&&matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");   // dashboard: always dark, to match Desk Glance
 themeBtn.onclick=e=>{if(e)e.stopPropagation();const next=document.documentElement.dataset.theme==="dark"?"light":"dark";
   if(document.startViewTransition&&!reduceMotion())document.startViewTransition(()=>setTheme(next));else setTheme(next)};
 /* ---- ambient sound ----
@@ -149,6 +149,7 @@ const CI_KEY="nitabot.checkins";let ciOn=true;try{ciOn=localStorage.getItem(CI_K
 try{const v=localStorage.getItem(SND_KEY);if(SND_MODES.includes(v))sndMode=v;
   const l=localStorage.getItem(SND_KEY+"Last");if(SND_MODES.includes(l)&&l!=="off")sndLast=l}catch(_){}
 if(sndMode!=="off")sndLast=sndMode;
+if(DASH)sndMode="off";                                   // dashboard: silent (not saved, so the normal site keeps its sound)
 let sndOn=sndMode!=="off",actx=null,duckG=null,voG=null,bus={},pingIn=null,bubbleTO=0,waterBands=[],waterTO=0;
 function buildNoise(ctx){
   const sr=ctx.sampleRate,n=Math.floor(sr*12),fade=Math.floor(sr*1.5),raw=new Float32Array(n+fade);
@@ -370,6 +371,7 @@ const hintList=()=>{try{return JSON.parse(localStorage.getItem(HINT_KEY)||"[]")}
 function hintMark(k){try{const a=hintList();if(!a.includes(k)){a.push(k);localStorage.setItem(HINT_KEY,JSON.stringify(a))}}catch(_){}}
 function hideHint(){if(!hintNow)return;const h=hintNow;hintNow=null;clearTimeout(h.t);clearInterval(h.iv);hintEl.classList.remove("on");if(h.onHide)h.onHide()}
 function showHint(html,at,o={}){
+  if(DASH)return;
   if(!o.force&&(!onboarding()||(o.key&&hintList().includes(o.key))))return;
   if(welcomeOpen||introOpen||document.body.classList.contains("ambient")||document.body.classList.contains("chasing"))return;
   if(o.key)hintMark(o.key);hideHint();
@@ -386,7 +388,7 @@ hintEl.querySelector(".hx").onclick=e=>{e.stopPropagation();hideHint()};
 hintEl.addEventListener("click",e=>{if(e.target.closest(".hx"))return;const h=hintNow;if(h&&h.onClick){hideHint();h.onClick()}});
 hintEl.addEventListener("pointerdown",e=>e.stopPropagation());
 addEventListener("pointerdown",e=>{if(hintNow&&!e.target.closest("#hint"))hideHint()},true);   // any tap elsewhere: they've moved on
-if(!store.get())setTimeout(openWelcome,350);
+if(!store.get()&&!DASH)setTimeout(openWelcome,350);
 $("zin").onclick=()=>zoomBy(1/1.4);$("zout").onclick=()=>zoomBy(1.4);$("fit").onclick=resetView;
 let resizeT=0;
 addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{

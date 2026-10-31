@@ -836,6 +836,11 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
 #satcred[hidden]{display:none}
 @media (max-width:760px){#satcred{left:10px;transform:none;bottom:calc(116px + env(safe-area-inset-bottom,0px))}}
 @media (max-width:360px){#satBtn{display:none}}
+/* dashboard mode (?dashboard, see core/dashboard.js): the map alone; Desk Glance draws its own card */
+body.dash .top,body.dash .console,body.dash .zoom,body.dash #board,body.dash #fstrip,body.dash #ridecap,body.dash #card,
+body.dash #spop,body.dash #notice,body.dash #sndnote,body.dash #tip,body.dash #mbanner,body.dash #apanel,body.dash #sndmenu,
+body.dash #search,body.dash #intro,body.dash #introVeil,body.dash #welcome,body.dash #hint,body.dash #satcred{display:none!important}
+body.dash{cursor:none}
 </style>
 </head>
 <body>
@@ -951,6 +956,9 @@ const NS="http://www.w3.org/2000/svg";
 const $=id=>document.getElementById(id);
 const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
 const WORKER_URL="https://transit-aquarium.edawk10.workers.dev";
+// ?dashboard: NITABot framed inside Desk Glance (a desk display). Metra only, no controls, no welcome, no sound;
+// the frame asks for a train of the moment each time its slide comes up. See core/dashboard.js.
+const DASH=new URLSearchParams(location.search).has("dashboard");
 
 /* =====================================================================
    NETWORK DATA
@@ -1322,7 +1330,7 @@ function setTheme(t){
   const to=t==="dark"?"light":"dark";                         // the icon shows what it switches TO
   themeBtn.setAttribute("aria-label",`Switch to ${to} mode`);themeBtn.title=`Switch to ${to} mode (T)`;
 }
-setTheme(matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");
+setTheme(!DASH&&matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");   // dashboard: always dark, to match Desk Glance
 themeBtn.onclick=e=>{if(e)e.stopPropagation();const next=document.documentElement.dataset.theme==="dark"?"light":"dark";
   if(document.startViewTransition&&!reduceMotion())document.startViewTransition(()=>setTheme(next));else setTheme(next)};
 /* ---- ambient sound ----
@@ -1338,6 +1346,7 @@ const CI_KEY="nitabot.checkins";let ciOn=true;try{ciOn=localStorage.getItem(CI_K
 try{const v=localStorage.getItem(SND_KEY);if(SND_MODES.includes(v))sndMode=v;
   const l=localStorage.getItem(SND_KEY+"Last");if(SND_MODES.includes(l)&&l!=="off")sndLast=l}catch(_){}
 if(sndMode!=="off")sndLast=sndMode;
+if(DASH)sndMode="off";                                   // dashboard: silent (not saved, so the normal site keeps its sound)
 let sndOn=sndMode!=="off",actx=null,duckG=null,voG=null,bus={},pingIn=null,bubbleTO=0,waterBands=[],waterTO=0;
 function buildNoise(ctx){
   const sr=ctx.sampleRate,n=Math.floor(sr*12),fade=Math.floor(sr*1.5),raw=new Float32Array(n+fade);
@@ -1559,6 +1568,7 @@ const hintList=()=>{try{return JSON.parse(localStorage.getItem(HINT_KEY)||"[]")}
 function hintMark(k){try{const a=hintList();if(!a.includes(k)){a.push(k);localStorage.setItem(HINT_KEY,JSON.stringify(a))}}catch(_){}}
 function hideHint(){if(!hintNow)return;const h=hintNow;hintNow=null;clearTimeout(h.t);clearInterval(h.iv);hintEl.classList.remove("on");if(h.onHide)h.onHide()}
 function showHint(html,at,o={}){
+  if(DASH)return;
   if(!o.force&&(!onboarding()||(o.key&&hintList().includes(o.key))))return;
   if(welcomeOpen||introOpen||document.body.classList.contains("ambient")||document.body.classList.contains("chasing"))return;
   if(o.key)hintMark(o.key);hideHint();
@@ -1575,7 +1585,7 @@ hintEl.querySelector(".hx").onclick=e=>{e.stopPropagation();hideHint()};
 hintEl.addEventListener("click",e=>{if(e.target.closest(".hx"))return;const h=hintNow;if(h&&h.onClick){hideHint();h.onClick()}});
 hintEl.addEventListener("pointerdown",e=>e.stopPropagation());
 addEventListener("pointerdown",e=>{if(hintNow&&!e.target.closest("#hint"))hideHint()},true);   // any tap elsewhere: they've moved on
-if(!store.get())setTimeout(openWelcome,350);
+if(!store.get()&&!DASH)setTimeout(openWelcome,350);
 $("zin").onclick=()=>zoomBy(1/1.4);$("zout").onclick=()=>zoomBy(1.4);$("fit").onclick=resetView;
 let resizeT=0;
 addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{
@@ -2984,7 +2994,7 @@ const canTilt=()=>!isNarrow()&&(navigator.hardwareConcurrency||8)>4;
 const easeIO=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
 const angDiff=(a,b)=>{let d=(b-a)%(2*Math.PI);if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;return d};
 const lerpVB=(a,b,k)=>({x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,w:a.w+(b.w-a.w)*k,h:a.h+(b.h-a.h)*k});
-function chaseOk(t){return t&&!t.gone&&!t.stale&&!t.held&&!t.hidden&&t.dirSign!==0&&t.rot!=null&&(!focusKey||t.L.key===focusKey)}
+function chaseOk(t){return t&&!t.gone&&!t.stale&&!t.held&&!t.hidden&&t.dirSign!==0&&t.rot!=null&&(!focusKey||t.L.key===focusKey)&&(!DASH||t.L.sys==="metra")}
 function pickChaseTrain(){const c=trains.filter(chaseOk);if(!c.length)return null;
   const moving=c.filter(t=>Math.abs(t.segTo-t.segFrom)>.05),pool=(moving.length?moving:c).filter(t=>t!==chaseLast||c.length===1);
   return pool[Math.floor(Math.random()*pool.length)]}
@@ -3127,7 +3137,7 @@ function ciLines(kind,f){
 function ciStop(){VO.gen++;for(const x of VO.srcs)try{x.stop()}catch(_){}VO.srcs=[];for(const x of VO.timers)clearTimeout(x);VO.timers=[];
   if(duckG&&actx){const t=actx.currentTime;duckG.gain.cancelScheduledValues(t);duckG.gain.setTargetAtTime(1,t,.4)}}
 async function ciSay(kind,t){
-  if(!ciOn||!t)return;
+  if(!ciOn||!t||DASH)return;
   const sys=t.L.sys,V=VOS[sys];
   const gen=++VO.gen;for(const x of VO.srcs)try{x.stop()}catch(_){}VO.srcs=[];for(const x of VO.timers)clearTimeout(x);VO.timers=[];
   await voManifest(sys);if(gen!==VO.gen)return;
@@ -3431,6 +3441,33 @@ function applySat(){document.body.classList.toggle("satmode",satOn);satBtn.setAt
   satCred.hidden=!satOn;satKey="";if(satOn)satFrame();labelsDirty=true}
 satBtn.addEventListener("click",()=>{satOn=!satOn;try{localStorage.setItem(SAT_KEY,satOn?"1":"0")}catch(_){}applySat()});
 addEventListener("keydown",e=>{if(e.target.closest&&e.target.closest("input,textarea"))return;if((e.key==="s"||e.key==="S")&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!introOpen)satBtn.click()});
+/* =====================================================================
+   DASHBOARD MODE (?dashboard): NITABot inside Desk Glance
+   Desk Glance, a desk display, frames this page as one slide of its slideshow. Only Metra rides
+   (the 'L' stays as a faint ghost); no controls, welcome, hints, sound or voice.
+   Each time that slide comes up, the frame sends {type:"nitabot:ride"}: the camera starts from the
+   whole map and swings in behind a new train of the moment (never the one before). Once a second
+   this page tells the frame what it's showing (line, train, destination, next stop, when Metra last
+   answered), so the frame can draw its own big card, say how fresh the data is, and skip the slide
+   when no Metra train can be ridden. Nothing else comes in; the normal site never runs this.
+   ===================================================================== */
+if(DASH){
+  document.body.classList.add("dash");
+  const say=m=>{try{parent.postMessage(Object.assign({source:"nitabot"},m),"*")}catch(_){}};
+  addEventListener("message",e=>{const d=e.data;if(!d||d.type!=="nitabot:ride")return;
+    if(chase)finishChase();
+    Object.assign(vb,fitAll());applyVB();updateMarkers();                 // straight from the whole map, flat
+    startRide(performance.now());
+    if(chase&&chase.t)chase.zf=.55});                                    // a bit closer than the site's own ride: read from across the room
+  setInterval(()=>{
+    const t=chase&&chase.t&&(chase.phase==="in"||chase.phase==="ride")?chase.t:null,v=t&&t.cta||{},sNow=serverNow();
+    say({type:"nitabot:state",
+      rideable:trains.filter(chaseOk).length,                             // Metra trains a ride could follow right now
+      metraOkAt:mLastOk||0,metraErr:mErr||"",
+      train:t?{line:t.L.code,name:t.L.name,color:t.L.color,label:trainLabel(t),dest:v.dest||"",next:v.next_sta||"",
+        etaMin:v.arrives_at?Math.max(0,Math.round((v.arrives_at-sNow)/60000)):null,
+        delayMin:v.delay!=null?Math.round(v.delay/60):null,ageMs:Math.max(0,sNow-t.updated)}:null})},1000);
+}
 applySat();
 /* =====================================================================
    MAIN LOOP
@@ -3448,7 +3485,7 @@ function ctaFadeRange(){const v=fitAll(),cx=v.x+v.w/2,cy=v.y+v.h/2,r=v.h/v.w;let
   if(need.length)done=Math.max(...need.map(q=>Math.max(Math.abs(q.xy[0]-cx)*2,Math.abs(q.xy[1]-cy)*2/r)))*1.04;   // a little margin: on screen, not on the edge
   return[Math.max(FIT_W*1.05,done*.7),done]}
 addEventListener("resize",()=>{ctaFadeAt=null;ctaK=-1});
-function ctaFadeK(){if(focusKey&&!isMetra(focusKey))return 0;if(!ctaFadeAt)ctaFadeAt=ctaFadeRange();
+function ctaFadeK(){if(DASH)return 1;if(focusKey&&!isMetra(focusKey))return 0;if(!ctaFadeAt)ctaFadeAt=ctaFadeRange();
   const[a,b]=ctaFadeAt;return Math.max(0,Math.min(1,(vb.w-a)/(b-a)))}
 function fadeCTA(){const k=+ctaFadeK().toFixed(3);if(k===ctaK)return;ctaK=k;const e=k*k*(3-2*k);
   const tr=(1-e*(1-CTA_GHOST)).toFixed(3),gone=(1-e).toFixed(3),off=e>.6;

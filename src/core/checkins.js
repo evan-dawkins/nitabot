@@ -55,7 +55,7 @@ function ciLines(kind,f){
 function ciStop(){VO.gen++;for(const x of VO.srcs)try{x.stop()}catch(_){}VO.srcs=[];for(const x of VO.timers)clearTimeout(x);VO.timers=[];
   if(duckG&&actx){const t=actx.currentTime;duckG.gain.cancelScheduledValues(t);duckG.gain.setTargetAtTime(1,t,.4)}}
 async function ciSay(kind,t){
-  if(!ciOn||!t)return;
+  if(!ciOn||!t||DASH)return;
   const sys=t.L.sys,V=VOS[sys];
   const gen=++VO.gen;for(const x of VO.srcs)try{x.stop()}catch(_){}VO.srcs=[];for(const x of VO.timers)clearTimeout(x);VO.timers=[];
   await voManifest(sys);if(gen!==VO.gen)return;

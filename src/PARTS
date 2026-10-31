@@ -19,5 +19,6 @@ src/core/checkins.js
 src/systems/metra/checkins.js
 src/layers/ats.js
 src/layers/satellite.js
+src/core/dashboard.js
 src/core/main.js
 src/shell/end.html

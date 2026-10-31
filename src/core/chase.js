@@ -17,7 +17,7 @@ const canTilt=()=>!isNarrow()&&(navigator.hardwareConcurrency||8)>4;
 const easeIO=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
 const angDiff=(a,b)=>{let d=(b-a)%(2*Math.PI);if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;return d};
 const lerpVB=(a,b,k)=>({x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,w:a.w+(b.w-a.w)*k,h:a.h+(b.h-a.h)*k});
-function chaseOk(t){return t&&!t.gone&&!t.stale&&!t.held&&!t.hidden&&t.dirSign!==0&&t.rot!=null&&(!focusKey||t.L.key===focusKey)}
+function chaseOk(t){return t&&!t.gone&&!t.stale&&!t.held&&!t.hidden&&t.dirSign!==0&&t.rot!=null&&(!focusKey||t.L.key===focusKey)&&(!DASH||t.L.sys==="metra")}
 function pickChaseTrain(){const c=trains.filter(chaseOk);if(!c.length)return null;
   const moving=c.filter(t=>Math.abs(t.segTo-t.segFrom)>.05),pool=(moving.length?moving:c).filter(t=>t!==chaseLast||c.length===1);
   return pool[Math.floor(Math.random()*pool.length)]}

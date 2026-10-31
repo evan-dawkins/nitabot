@@ -15,7 +15,7 @@ function ctaFadeRange(){const v=fitAll(),cx=v.x+v.w/2,cy=v.y+v.h/2,r=v.h/v.w;let
   if(need.length)done=Math.max(...need.map(q=>Math.max(Math.abs(q.xy[0]-cx)*2,Math.abs(q.xy[1]-cy)*2/r)))*1.04;   // a little margin: on screen, not on the edge
   return[Math.max(FIT_W*1.05,done*.7),done]}
 addEventListener("resize",()=>{ctaFadeAt=null;ctaK=-1});
-function ctaFadeK(){if(focusKey&&!isMetra(focusKey))return 0;if(!ctaFadeAt)ctaFadeAt=ctaFadeRange();
+function ctaFadeK(){if(DASH)return 1;if(focusKey&&!isMetra(focusKey))return 0;if(!ctaFadeAt)ctaFadeAt=ctaFadeRange();
   const[a,b]=ctaFadeAt;return Math.max(0,Math.min(1,(vb.w-a)/(b-a)))}
 function fadeCTA(){const k=+ctaFadeK().toFixed(3);if(k===ctaK)return;ctaK=k;const e=k*k*(3-2*k);
   const tr=(1-e*(1-CTA_GHOST)).toFixed(3),gone=(1-e).toFixed(3),off=e>.6;

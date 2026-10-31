@@ -813,3 +813,8 @@ body.satmode .town,body.satmode .city,body.satmode .grid{display:none}
 #satcred[hidden]{display:none}
 @media (max-width:760px){#satcred{left:10px;transform:none;bottom:calc(116px + env(safe-area-inset-bottom,0px))}}
 @media (max-width:360px){#satBtn{display:none}}
+/* dashboard mode (?dashboard, see core/dashboard.js): the map alone; Desk Glance draws its own card */
+body.dash .top,body.dash .console,body.dash .zoom,body.dash #board,body.dash #fstrip,body.dash #ridecap,body.dash #card,
+body.dash #spop,body.dash #notice,body.dash #sndnote,body.dash #tip,body.dash #mbanner,body.dash #apanel,body.dash #sndmenu,
+body.dash #search,body.dash #intro,body.dash #introVeil,body.dash #welcome,body.dash #hint,body.dash #satcred{display:none!important}
+body.dash{cursor:none}
